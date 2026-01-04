@@ -1,14 +1,44 @@
 <!DOCTYPE html>
+<!-- 
+  Element: <html> - The root element of an HTML page.
+  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/html
+-->
 <html lang="en">
 <head>
+    <!-- 
+      Element: <meta> - Metadata about the HTML document (charset, viewport for mobile scaling).
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
+    -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Family Travel Tracker</title>
+
+    <!-- 
+      LIBRARY: Tailwind CSS
+      Summary: A utility-first CSS framework for rapidly building custom user interfaces.
+      Home: https://tailwindcss.com/
+    -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 
+      LIBRARY: SheetJS (xlsx)
+      Summary: A parser and writer for various spreadsheet formats (Excel, CSV, etc.).
+      Home: https://sheetjs.com/
+    -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- 
+      LIBRARY: Leaflet Maps
+      Summary: An open-source JavaScript library for mobile-friendly interactive maps.
+      Home: https://leafletjs.com/
+    -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+    <!-- 
+      Element: <style> - Contains CSS styling for the document.
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style
+    -->
     <style>
         .checked-row { background-color: #f0fdf4; }
         .park-checkbox:checked, .all-checkbox:checked { accent-color: #15803d; }
@@ -22,7 +52,6 @@
         #settings-modal, #export-modal { transition: opacity 0.2s ease-in-out; }
         @media print { .no-print { display: none; } }
         
-        /* Pulse animation for the warning border */
         @keyframes border-pulse {
             0%, 100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             50% { border-color: #f87171; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3); }
@@ -33,24 +62,48 @@
         }
     </style>
 </head>
+<!-- 
+  Element: <body> - Contains the content of an HTML document.
+  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
+-->
 <body class="bg-stone-50 text-stone-900 font-sans">
 
+    <!-- 
+      Element: <div> - The generic container for flow content.
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div
+    -->
     <div class="max-w-6xl mx-auto p-4 md:p-8 relative">
         <!-- Warning Bubble -->
         <div id="settings-warning" class="hidden absolute top-0 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 z-50 animate-bounce">
+            <!-- 
+               Element: <svg> - Scalable Vector Graphics container.
+               Docs: https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
+            -->
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
             Please Update Settings: Add Family Members
         </div>
 
+        <!-- 
+          Element: <button> - A clickable button.
+          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button
+        -->
         <button id="settings-btn" onclick="toggleSettingsModal(true)" class="absolute top-4 right-4 md:top-8 md:right-8 p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all no-print" title="Settings">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
 
+        <!-- 
+          Element: <header> - Introductory content or navigational aids.
+          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header
+        -->
         <header class="text-center mb-6">
             <h1 class="text-4xl font-bold text-green-800 flex items-center justify-center gap-3">🌎 Family Travel Tracker</h1>
             <p class="text-stone-600 mt-2">Tracking our adventures across North America.</p>
         </header>
 
+        <!-- 
+          Element: <nav> - A section of the page capable of navigation links.
+          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav
+        -->
         <nav class="flex flex-wrap justify-center mb-8 border-b border-stone-200 no-print">
             <button onclick="switchTab('parks')" id="tab-parks" class="px-6 py-3 text-lg transition-all tab-active">National Parks</button>
             <button onclick="switchTab('states')" id="tab-states" class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">States & Provinces</button>
@@ -58,6 +111,7 @@
             <button onclick="switchTab('stats')" id="tab-stats" class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">Stats</button>
         </nav>
 
+        <!-- Stats View Container -->
         <div id="stats-view-container" class="hidden">
             <div class="flex justify-center gap-4 mb-6">
                 <button onclick="setStatsMode('parks')" id="btn-stats-parks" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md">National Parks</button>
@@ -97,6 +151,7 @@
             </div>
         </div>
 
+        <!-- Controls Row -->
         <div id="controls-container" class="flex flex-wrap gap-3 items-center mb-4 no-print">
             <button onclick="toggleExportModal(true)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 px-4 py-2 rounded-lg text-sm transition flex items-center gap-2 font-medium border border-stone-200 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
@@ -104,26 +159,48 @@
             </button>
             <div class="ml-auto flex items-center gap-4">
                 <!-- Search Input -->
+                <!-- 
+                  Element: <input> - An interactive control for user input.
+                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+                -->
                 <div class="relative">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
                     <input type="text" id="search-input" placeholder="Search..." oninput="handleSearch(this.value)" class="pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all w-32 focus:w-56 bg-white">
                 </div>
                 <div id="region-filter-container" class="hidden">
+                    <!-- 
+                      Element: <select> - A control that provides a menu of options.
+                      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select
+                    -->
                     <select id="region-filter" onchange="renderData()" class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors"></select>
                 </div>
                 <div class="text-sm text-stone-500 italic">Auto-saves to browser</div>
             </div>
         </div>
 
+        <!-- Table View -->
         <div id="table-container" class="overflow-auto bg-white rounded-xl shadow-lg border border-stone-200 h-[calc(100vh-320px)] max-h-[800px] min-h-[400px]">
+            <!-- 
+              Element: <table> - Represents tabular data.
+              Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
+            -->
             <table class="w-full text-left border-collapse" id="main-table">
+                <!-- 
+                  Element: <thead> - Defines a set of rows defining the head of the table.
+                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
+                -->
                 <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
                     <tr id="table-header-row"></tr>
                 </thead>
+                <!-- 
+                  Element: <tbody> - Encapsulates a set of rows making up the body of a table.
+                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
+                -->
                 <tbody id="data-list"></tbody>
             </table>
         </div>
 
+        <!-- Map View -->
         <div id="world-map-container" class="hidden">
             <div class="bg-white p-4 rounded-xl shadow-lg border border-stone-200">
                 <div class="flex justify-center gap-4 mb-4">
@@ -233,8 +310,16 @@
         </div>
     </div>
 
+    <!-- 
+      SECTION: Scripts
+      This block contains all the application logic. 
+      Data structures are defined first, followed by app state, then functions.
+    -->
     <script>
+        // --- DATA SECTION: CONSTANTS & ARRAYS ---
+
         const parks = [
+            // US National Parks (63 Total)
             { name: "Acadia", sub: "ME", country: "USA", lat: 44.3386, lng: -68.2733 }, { name: "American Samoa", sub: "AS", country: "USA", lat: -14.2583, lng: -170.6833 },
             { name: "Arches", sub: "UT", country: "USA", lat: 38.7331, lng: -109.5925 }, { name: "Badlands", sub: "SD", country: "USA", lat: 43.8554, lng: -102.3397 },
             { name: "Big Bend", sub: "TX", country: "USA", lat: 29.1275, lng: -103.2425 }, { name: "Biscayne", sub: "FL", country: "USA", lat: 25.4824, lng: -80.1601 },
@@ -267,6 +352,7 @@
             { name: "Wind Cave", sub: "SD", country: "USA", lat: 43.5700, lng: -103.4794 }, { name: "Wrangell–St. Elias", sub: "AK", country: "USA", lat: 61.7104, lng: -142.9850 },
             { name: "Yellowstone", sub: "WY/MT/ID", country: "USA", lat: 44.4280, lng: -110.5885 }, { name: "Yosemite", sub: "CA", country: "USA", lat: 37.8651, lng: -119.5383 },
             { name: "Zion", sub: "UT", country: "USA", lat: 37.2982, lng: -113.0263 },
+            // Major Canadian National Parks
             { name: "Banff", sub: "AB", country: "Canada", lat: 51.4968, lng: -115.9281 }, { name: "Jasper", sub: "AB", country: "Canada", lat: 52.8737, lng: -118.0813 },
             { name: "Yoho", sub: "BC", country: "Canada", lat: 51.4633, lng: -116.5861 }, { name: "Kootenay", sub: "BC", country: "Canada", lat: 50.8830, lng: -116.0427 },
             { name: "Waterton Lakes", sub: "AB", country: "Canada", lat: 49.0503, lng: -113.9160 }, { name: "Pacific Rim", sub: "BC", country: "Canada", lat: 49.0667, lng: -125.7167 },
@@ -315,8 +401,10 @@
             { name: "Yukon", sub: "Canada", capital: "Whitehorse", lat: 60.7212, lng: -135.0568 }
         ];
 
+        // Palette for dynamic family colors
         const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'yellow', 'indigo', 'cyan'];
         
+        // --- APP STATE VARIABLES ---
         let currentTab = 'parks';
         let sortColumn = 1;
         let sortDirection = 'asc';
@@ -327,19 +415,19 @@
         let statsMode = 'parks';
         let searchTerm = '';
         
-        // Settings with Default Family Names and Hometown
+        // Load Settings & Data from LocalStorage
         let settings = JSON.parse(localStorage.getItem('np_travel_settings')) || { 
             showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true, 
             familyMembers: ['John', 'Jane', 'Jim', 'Jess'],
-            hometown: null // { name, lat, lng }
+            hometown: null 
         };
         
         let visitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));
 
         // Initialize Defaults if fresh load
+        // This pre-populates some data for demo/testing purposes if no data exists.
         if (!visitData) {
             visitData = { parks: {}, states: {} };
-            // Pre-populate specific data
             const defaults = [
                 { type: 'states', name: 'California', members: settings.familyMembers },
                 { type: 'states', name: 'Ontario', members: settings.familyMembers },
@@ -354,20 +442,25 @@
             localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
         }
 
-        // Migration Check for Family Members
+        // Migration Check: Ensure familyMembers array exists in settings
         if (!settings.familyMembers) { 
             settings.familyMembers = ['John', 'Jane', 'Jim', 'Jess']; 
             localStorage.setItem('np_travel_settings', JSON.stringify(settings)); 
         }
 
+        // --- HELPER FUNCTIONS ---
+
+        /** Returns a color from the palette based on index to ensure variety. */
         function getMemberColor(index) { return palette[index % palette.length]; }
 
+        /** Filter list and map based on search input */
         function handleSearch(val) {
             searchTerm = val.toLowerCase();
             if (currentTab === 'world') updateMapMarkers();
             else if (currentTab !== 'stats') renderData();
         }
 
+        /** Shows visual warning if no family members are configured */
         function checkFamilyStatus() {
             const warning = document.getElementById('settings-warning');
             const settingsBtn = document.getElementById('settings-btn');
@@ -375,6 +468,7 @@
             else { warning.classList.add('hidden'); settingsBtn.classList.remove('warning-active'); }
         }
 
+        /** Adds a new family member to the list and saves settings */
         function addFamilyMember() {
             const input = document.getElementById('new-member-name');
             const name = input.value.trim();
@@ -385,12 +479,17 @@
             }
         }
 
+        /** Removes a family member by index */
         function removeFamilyMember(index) {
             settings.familyMembers.splice(index, 1);
             updateSetting('familyMembers', settings.familyMembers);
         }
 
         // --- HOMETOWN FUNCTIONS ---
+
+        /** * Fetches coordinates for a city name using OpenStreetMap Nominatim API.
+         * Docs: https://nominatim.org/release-docs/develop/api/Search/
+         */
         async function searchHometown() {
             const input = document.getElementById('hometown-input');
             const query = input.value.trim();
@@ -452,6 +551,10 @@
             });
         }
 
+        /**
+         * Main navigation logic. Switches views, toggles visibility of containers,
+         * updates headers, and triggers data rendering for the selected tab.
+         */
         function switchTab(tab) {
             let previousTab = currentTab;
             currentTab = tab;
@@ -468,11 +571,13 @@
             const regionFilterContainer = document.getElementById('region-filter-container');
             const filterSelect = document.getElementById('region-filter');
 
+            // Hide all main containers first
             tableContainer.classList.add('hidden');
             mapContainer.classList.add('hidden');
             statsViewContainer.classList.add('hidden');
             controlsContainer.classList.remove('hidden');
 
+            // Determine if dropdown filter is needed based on settings
             let options = [];
             let showDropdown = false;
             if (tab === 'parks') {
@@ -495,6 +600,7 @@
                 filterSelect.value = 'all';
             }
 
+            // Dynamically build table headers based on tab and family members
             const headerRow = document.getElementById('table-header-row');
             if (tab === 'parks') {
                 headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th><th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${4+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${4+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
@@ -549,6 +655,9 @@
             }
         }
 
+        /**
+         * Updates a specific setting key in LocalStorage and refreshes the UI.
+         */
         function updateSetting(key, value) {
             settings[key] = value;
             localStorage.setItem('np_travel_settings', JSON.stringify(settings));
@@ -567,6 +676,8 @@
             }
         }
 
+        // --- MAP LOGIC ---
+
         function initWorldMap() {
             if (!worldMap) {
                 worldMap = L.map('world-map').setView([48, -100], 3);
@@ -584,17 +695,21 @@
             updateMapMarkers();
         }
 
+        /**
+         * Clears and redraws markers on the map based on current data/filters.
+         * Handles logic for styling markers (visited/not visited/selected).
+         */
         function updateMapMarkers() {
             if (!worldMap) return;
             mapMarkers.forEach(m => worldMap.removeLayer(m));
             if (hometownMarker) { worldMap.removeLayer(hometownMarker); hometownMarker = null; }
             mapMarkers = [];
             
-            // Helper to generate icon based on state
+            // Icon Factory
             const createIcon = (color, type, isSelected, hasVisits) => {
                 let borderColor = 'white';
-                if (isSelected) borderColor = '#2563eb'; // Blue for selected (High Priority)
-                else if (hasVisits) borderColor = '#f97316'; // Orange if visited in any way
+                if (isSelected) borderColor = '#2563eb'; // Blue for selected
+                else if (hasVisits) borderColor = '#f97316'; // Orange if visited at all
                 
                 const border = `border: ${isSelected ? '3px' : '2px'} solid ${borderColor};`;
                 const scale = isSelected ? 'transform: scale(1.15);' : 'transform: scale(1);';
@@ -617,7 +732,7 @@
 
             // Plot Hometown
             if (settings.hometown) {
-                const homeIcon = createIcon('#3b82f6', 'home', false, false); // Hometown doesn't use visited border logic
+                const homeIcon = createIcon('#3b82f6', 'home', false, false);
                 const homeIconSelected = createIcon('#3b82f6', 'home', true, false);
                 
                 hometownMarker = L.marker([settings.hometown.lat, settings.hometown.lng], { icon: homeIcon, zIndexOffset: 500 }).addTo(worldMap);
@@ -635,6 +750,7 @@
                 dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
             }
 
+            // Apply Visibility Settings
             if (mapMode === 'states') {
                 dataset = dataset.filter(item => {
                     if (item.sub === 'USA') return settings.showUSA;
@@ -670,6 +786,7 @@
             });
         }
 
+        // --- STATS LOGIC ---
         function setStatsMode(mode) {
             statsMode = mode;
             const btnParks = document.getElementById('btn-stats-parks');
@@ -742,6 +859,8 @@
             });
         }
 
+        // --- TABLE LOGIC ---
+        
         function sortTable(n) {
             if (sortColumn === n) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             else { sortColumn = n; sortDirection = 'asc'; }
@@ -765,6 +884,7 @@
                 dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
             }
 
+            // Apply Settings Filters
             if (currentTab === 'states') dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
             if (currentTab === 'parks') {
                 dataset = dataset.filter(i => {
@@ -774,6 +894,7 @@
                 });
             }
 
+            // Apply Dropdown Filter
             const f = document.getElementById('region-filter').value;
             if (currentTab === 'parks') {
                 if (f === 'USA') dataset = dataset.filter(i => i.country === 'USA');
@@ -811,6 +932,8 @@
         function toggleVisit(n, m) { visitData[currentTab][`${n}_${m}`] = !visitData[currentTab][`${n}_${m}`]; save(); renderData(); }
         function toggleAllRow(n, val) { settings.familyMembers.forEach(m => visitData[currentTab][`${n}_${m}`] = val); save(); renderData(); }
         function save() { localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData)); }
+
+        // --- EXPORT/IMPORT ---
 
         function getExportData(targetTab) {
             let ds = targetTab === 'parks' ? [...parks] : [...states];
@@ -850,6 +973,7 @@
             }; reader.readAsText(f);
         }
 
+        // Initialize App
         window.onload = () => {
             checkFamilyStatus();
             switchTab('parks');
