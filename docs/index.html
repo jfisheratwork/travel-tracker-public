@@ -215,6 +215,11 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Footer -->
+        <footer class="mt-12 border-t border-stone-200 pt-6 text-center text-sm text-stone-400 no-print">
+            Made with help of Gemini Pro
+        </footer>
     </div>
 
     <!-- Settings Modal Overlay -->
@@ -523,6 +528,31 @@
             updateSetting('familyMembers', settings.familyMembers);
         }
 
+        /**
+         * Helper to generate a valid Wikipedia URL for parks and states.
+         * Handles country-specific disambiguation and common Wikipedia naming patterns.
+         */
+        function getWikiLink(item, type) {
+            let query = item.name.replace(/ /g, '_');
+            if (type === 'parks') {
+                if (item.name === 'Glacier') {
+                    return item.country === 'USA' 
+                        ? 'https://en.wikipedia.org/wiki/Glacier_National_Park_(U.S.)' 
+                        : 'https://en.wikipedia.org/wiki/Glacier_National_Park_(Canada)';
+                }
+                // Most US/Canada parks map directly to Name_National_Park
+                return `https://en.wikipedia.org/wiki/${query}_National_Park`;
+            } else {
+                // States/Provinces
+                if (item.sub === 'USA') {
+                    if (['Georgia', 'Washington', 'New York'].includes(item.name)) {
+                        return `https://en.wikipedia.org/wiki/${query}_(state)`;
+                    }
+                }
+                return `https://en.wikipedia.org/wiki/${query}`;
+            }
+        }
+
         // --- HOMETOWN FUNCTIONS ---
 
         /** * Fetches coordinates for a city name using OpenStreetMap Nominatim API.
@@ -822,7 +852,22 @@
 
                 const marker = L.marker([item.lat, item.lng], { icon: normalIcon }).addTo(worldMap);
                 const subtitle = mapMode === 'parks' ? 'National Park' : `Capital: ${item.capital}`;
-                const popupContent = `<div class="font-sans min-w-[150px] p-1"><strong class="text-sm block">${item.name}</strong><span class="text-xs text-stone-500 block border-b pb-1 mb-1">${subtitle}</span><div class="space-y-0.5 text-xs">${settings.familyMembers.map(m => `<div class="flex justify-between"><span>${m}</span><span class="${dataStore[`${item.name}_${m}`] ? 'text-green-600 font-bold' : 'text-stone-300'}">${dataStore[`${item.name}_${m}`] ? 'Visited' : 'No'}</span></div>`).join('')}</div></div>`;
+                const wikiUrl = getWikiLink(item, mapMode); // Get Wiki Link for Popup
+
+                const popupContent = `
+                    <div class="font-sans min-w-[150px] p-1">
+                        <strong class="text-sm block">${item.name}</strong>
+                        <span class="text-xs text-stone-500 block border-b pb-1 mb-1">${subtitle}</span>
+                        <div class="space-y-0.5 text-xs">
+                            ${settings.familyMembers.map(m => `<div class="flex justify-between"><span>${m}</span><span class="${dataStore[`${item.name}_${m}`] ? 'text-green-600 font-bold' : 'text-stone-300'}">${dataStore[`${item.name}_${m}`] ? 'Visited' : 'No'}</span></div>`).join('')}
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-stone-100">
+                            <a href="${wikiUrl}" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+                                Wikipedia Article
+                            </a>
+                        </div>
+                    </div>`;
                 marker.bindPopup(popupContent);
                 
                 marker.on('popupopen', () => { marker.setIcon(selectedIcon); marker.setZIndexOffset(1000); });
@@ -972,7 +1017,15 @@
                 let vCount = settings.familyMembers.filter(m => dataStore[`${i.name}_${m}`]).length;
                 let tr = document.createElement('tr');
                 tr.className = "hover:bg-stone-50 border-b border-stone-100 " + (vCount > 0 ? "checked-row" : "");
-                let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked)" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td><td class="p-4 font-medium">${i.name}</td><td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
+                let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked)" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
+                <td class="p-4 font-medium">
+                    <a href="${getWikiLink(i, currentTab)}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
+                        ${i.name}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-30"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+                    </a>
+                </td>
+                <td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
+                
                 if (currentTab === 'parks') cells += `<td class="p-4 text-sm text-stone-500">${i.country}</td>`;
                 settings.familyMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
                 cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'text-green-600' : 'text-stone-400'}">${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? '✓' : vCount + '/' + settings.familyMembers.length}</td>`;
