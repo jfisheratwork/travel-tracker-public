@@ -21,12 +21,28 @@
         #world-map { height: 600px; width: 100%; border-radius: 0.75rem; z-index: 1; }
         #settings-modal, #export-modal { transition: opacity 0.2s ease-in-out; }
         @media print { .no-print { display: none; } }
+        
+        /* Pulse animation for the warning border */
+        @keyframes border-pulse {
+            0%, 100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { border-color: #f87171; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3); }
+        }
+        .warning-active {
+            animation: border-pulse 2s infinite;
+            color: #ef4444 !important;
+        }
     </style>
 </head>
 <body class="bg-stone-50 text-stone-900 font-sans">
 
     <div class="max-w-6xl mx-auto p-4 md:p-8 relative">
-        <button onclick="toggleSettingsModal(true)" class="absolute top-4 right-4 md:top-8 md:right-8 p-2 text-stone-400 hover:text-green-700 transition-colors no-print" title="Settings">
+        <!-- Warning Bubble -->
+        <div id="settings-warning" class="hidden absolute top-0 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 z-50 animate-bounce">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            Please Update Settings: Add Family Members
+        </div>
+
+        <button id="settings-btn" onclick="toggleSettingsModal(true)" class="absolute top-4 right-4 md:top-8 md:right-8 p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all no-print" title="Settings">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
 
@@ -87,6 +103,11 @@
                 Export / Import Data
             </button>
             <div class="ml-auto flex items-center gap-4">
+                <!-- Search Input -->
+                <div class="relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+                    <input type="text" id="search-input" placeholder="Search..." oninput="handleSearch(this.value)" class="pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all w-32 focus:w-56 bg-white">
+                </div>
                 <div id="region-filter-container" class="hidden">
                     <select id="region-filter" onchange="renderData()" class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors"></select>
                 </div>
@@ -94,9 +115,9 @@
             </div>
         </div>
 
-        <div id="table-container" class="overflow-x-auto bg-white rounded-xl shadow-lg border border-stone-200">
+        <div id="table-container" class="overflow-auto bg-white rounded-xl shadow-lg border border-stone-200 h-[calc(100vh-320px)] max-h-[800px] min-h-[400px]">
             <table class="w-full text-left border-collapse" id="main-table">
-                <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10">
+                <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
                     <tr id="table-header-row"></tr>
                 </thead>
                 <tbody id="data-list"></tbody>
@@ -119,7 +140,43 @@
         </div>
     </div>
 
-    <!-- Export/Import Modal Overlay -->
+    <!-- Settings Modal Overlay -->
+    <div id="settings-modal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Settings</h2>
+                <button onclick="toggleSettingsModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
+            <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+                <!-- Family Members Section -->
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Manage Family Members</h3>
+                    <div class="space-y-3 mb-4" id="settings-family-list">
+                        <!-- Dynamic List Generated Here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-member-name" placeholder="Enter name" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600" onkeypress="if(event.key === 'Enter') addFamilyMember()">
+                        <button onclick="addFamilyMember()" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition">Add</button>
+                    </div>
+                </div>
+
+                <div class="border-t border-stone-100 pt-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Location Visibility</h3>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-usa" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showUSA', this.checked)"><div><span class="block font-semibold text-stone-800">Include USA States</span><span class="text-xs text-stone-500">Show all 50 US States.</span></div></label>
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-canada" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showCanada', this.checked)"><div><span class="block font-semibold text-stone-800">Include Canadian Provinces</span><span class="text-xs text-stone-500">Show 13 Canadian Provinces.</span></div></label>
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-usa-parks" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showUSAParks', this.checked)"><div><span class="block font-semibold text-stone-800">Include USA National Parks</span><span class="text-xs text-stone-500">Include all 63 US National Parks.</span></div></label>
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-canada-parks" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showCanadianParks', this.checked)"><div><span class="block font-semibold text-stone-800">Include Canadian National Parks</span><span class="text-xs text-stone-500">Include major National Parks of Canada.</span></div></label>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center">
+                <button onclick="toggleSettingsModal(false)" class="bg-green-700 text-white px-8 py-2 rounded-xl font-bold hover:bg-green-800 transition shadow-lg shadow-green-900/20">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export/Import Modal -->
     <div id="export-modal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
             <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
@@ -127,41 +184,23 @@
                 <button onclick="toggleExportModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
             </div>
             <div class="p-8 space-y-8">
-                
                 <!-- Export Section -->
                 <div>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                         Export Data
                     </h3>
-                    
                     <div class="space-y-4">
-                        <!-- Parks Export -->
                         <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
-                            <div>
-                                <span class="block font-bold text-stone-700">National Parks</span>
-                                <span class="text-xs text-stone-500">Current selection based on settings</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="saveToCSV('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button>
-                                <button onclick="saveToExcel('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button>
-                            </div>
+                            <div><span class="block font-bold text-stone-700">National Parks</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
                         </div>
-
-                        <!-- States Export -->
                         <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
-                            <div>
-                                <span class="block font-bold text-stone-700">States & Provinces</span>
-                                <span class="text-xs text-stone-500">Current selection based on settings</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button onclick="saveToCSV('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button>
-                                <button onclick="saveToExcel('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button>
-                            </div>
+                            <div><span class="block font-bold text-stone-700">States & Provinces</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
                         </div>
                     </div>
                 </div>
-
                 <!-- Import Section -->
                 <div>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
@@ -174,33 +213,9 @@
                         <input type="file" accept=".csv" class="hidden" onchange="handleImport(event)">
                     </label>
                 </div>
-
             </div>
             <div class="p-6 bg-stone-50 border-t border-stone-100 text-center">
                 <button onclick="toggleExportModal(false)" class="text-stone-500 hover:text-stone-800 font-medium text-sm transition">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="settings-modal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
-                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Settings</h2>
-                <button onclick="toggleSettingsModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
-            </div>
-            <div class="p-8 space-y-6">
-                <div>
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Location Visibility</h3>
-                    <div class="space-y-4">
-                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-usa" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showUSA', this.checked)"><div><span class="block font-semibold text-stone-800">Include USA States</span><span class="text-xs text-stone-500">Show all 50 US States.</span></div></label>
-                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-canada" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showCanada', this.checked)"><div><span class="block font-semibold text-stone-800">Include Canadian Provinces</span><span class="text-xs text-stone-500">Show 13 Canadian Provinces.</span></div></label>
-                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-usa-parks" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showUSAParks', this.checked)"><div><span class="block font-semibold text-stone-800">Include USA National Parks</span><span class="text-xs text-stone-500">Include all 63 US National Parks.</span></div></label>
-                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-canada-parks" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showCanadianParks', this.checked)"><div><span class="block font-semibold text-stone-800">Include Canadian National Parks</span><span class="text-xs text-stone-500">Include major National Parks of Canada.</span></div></label>
-                    </div>
-                </div>
-            </div>
-            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center">
-                <button onclick="toggleSettingsModal(false)" class="bg-green-700 text-white px-8 py-2 rounded-xl font-bold hover:bg-green-800 transition shadow-lg shadow-green-900/20">Close</button>
             </div>
         </div>
     </div>
@@ -287,8 +302,8 @@
             { name: "Yukon", sub: "Canada", capital: "Whitehorse", lat: 60.7212, lng: -135.0568 }
         ];
 
-        const family = ['Jake', 'Lisa', 'Travis', 'Grace', 'Lucas'];
-        const memberColors = ['blue', 'pink', 'orange', 'purple', 'teal'];
+        const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'yellow', 'indigo', 'cyan'];
+        
         let currentTab = 'parks';
         let sortColumn = 1;
         let sortDirection = 'asc';
@@ -296,11 +311,53 @@
         let mapMarkers = [];
         let mapMode = 'parks'; 
         let statsMode = 'parks';
-        // Updated default settings: showCanadianParks is now true
-        let settings = JSON.parse(localStorage.getItem('np_travel_settings')) || { showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true };
+        let searchTerm = '';
+        let settings = JSON.parse(localStorage.getItem('np_travel_settings')) || { showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true, familyMembers: ['Jake', 'Lisa', 'Travis', 'Grace', 'Lucas'] };
         let visitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3')) || { parks: {}, states: {} };
 
-        // --- TAB MANAGEMENT ---
+        if (!settings.familyMembers) { settings.familyMembers = ['Jake', 'Lisa', 'Travis', 'Grace', 'Lucas']; localStorage.setItem('np_travel_settings', JSON.stringify(settings)); }
+
+        function getMemberColor(index) { return palette[index % palette.length]; }
+
+        function handleSearch(val) {
+            searchTerm = val.toLowerCase();
+            if (currentTab === 'world') updateMapMarkers();
+            else if (currentTab !== 'stats') renderData();
+        }
+
+        function checkFamilyStatus() {
+            const warning = document.getElementById('settings-warning');
+            const settingsBtn = document.getElementById('settings-btn');
+            if (settings.familyMembers.length === 0) { warning.classList.remove('hidden'); settingsBtn.classList.add('warning-active'); } 
+            else { warning.classList.add('hidden'); settingsBtn.classList.remove('warning-active'); }
+        }
+
+        function addFamilyMember() {
+            const input = document.getElementById('new-member-name');
+            const name = input.value.trim();
+            if (name && !settings.familyMembers.includes(name)) {
+                settings.familyMembers.push(name);
+                input.value = '';
+                updateSetting('familyMembers', settings.familyMembers);
+            }
+        }
+
+        function removeFamilyMember(index) {
+            settings.familyMembers.splice(index, 1);
+            updateSetting('familyMembers', settings.familyMembers);
+        }
+
+        function renderSettingsFamilyList() {
+            const list = document.getElementById('settings-family-list');
+            list.innerHTML = '';
+            settings.familyMembers.forEach((member, i) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white p-2 rounded border border-stone-200";
+                div.innerHTML = `<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-${getMemberColor(i)}-500"></div><span class="text-sm font-medium text-stone-700">${member}</span></div><button onclick="removeFamilyMember(${i})" class="text-stone-400 hover:text-red-600 transition"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>`;
+                list.appendChild(div);
+            });
+        }
+
         function switchTab(tab) {
             let previousTab = currentTab;
             currentTab = tab;
@@ -346,9 +403,9 @@
 
             const headerRow = document.getElementById('table-header-row');
             if (tab === 'parks') {
-                headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th><th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>${family.map((m, i) => `<th onclick="sortTable(${4+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${4+family.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
+                headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th><th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${4+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${4+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
             } else {
-                headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">Country</th>${family.map((m, i) => `<th onclick="sortTable(${3+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${3+family.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
+                headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${3+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${3+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
             }
             updateSortIndicators();
 
@@ -372,6 +429,7 @@
         function toggleSettingsModal(show) {
             const modal = document.getElementById('settings-modal');
             if (show) {
+                renderSettingsFamilyList();
                 document.getElementById('setting-usa').checked = settings.showUSA;
                 document.getElementById('setting-canada').checked = settings.showCanada;
                 document.getElementById('setting-usa-parks').checked = settings.showUSAParks;
@@ -398,9 +456,15 @@
         function updateSetting(key, value) {
             settings[key] = value;
             localStorage.setItem('np_travel_settings', JSON.stringify(settings));
-            if (currentTab === 'world') updateMapMarkers();
-            else if (currentTab === 'stats') updateStats();
-            else switchTab(currentTab);
+            checkFamilyStatus();
+            if (key === 'familyMembers') {
+                renderSettingsFamilyList();
+                switchTab(currentTab);
+            } else {
+                if (currentTab === 'world') updateMapMarkers();
+                else if (currentTab === 'stats') updateStats();
+                else switchTab(currentTab);
+            }
         }
 
         function initWorldMap() {
@@ -426,25 +490,37 @@
             mapMarkers = [];
             let dataset = mapMode === 'parks' ? [...parks] : [...states];
             const dataStore = mapMode === 'parks' ? visitData.parks : visitData.states;
-            if (mapMode === 'states') dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
+            
+            // Search Filtering for Map
+            if (searchTerm) {
+                dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
+            }
+
+            if (mapMode === 'states') {
+                dataset = dataset.filter(item => {
+                    if (item.sub === 'USA') return settings.showUSA;
+                    if (item.sub === 'Canada') return settings.showCanada;
+                    return true;
+                });
+            }
             if (mapMode === 'parks') {
-                dataset = dataset.filter(i => {
-                    if (i.country === 'USA') return settings.showUSAParks;
-                    if (i.country === 'Canada') return settings.showCanadianParks;
+                dataset = dataset.filter(item => {
+                    if (item.country === 'USA') return settings.showUSAParks;
+                    if (item.country === 'Canada') return settings.showCanadianParks;
                     return true;
                 });
             }
 
             dataset.forEach(item => {
-                let visitedCount = family.filter(m => dataStore[`${item.name}_${m}`]).length;
-                let color = visitedCount === family.length ? "#16a34a" : (visitedCount > 0 ? "#eab308" : "#9ca3af");
+                let visitedCount = settings.familyMembers.filter(m => dataStore[`${item.name}_${m}`]).length;
+                let color = (settings.familyMembers.length > 0 && visitedCount === settings.familyMembers.length) ? "#16a34a" : (visitedCount > 0 ? "#eab308" : "#9ca3af");
                 let iconHtml = mapMode === 'parks' 
                     ? `<div class="flex items-center justify-center" style="width:32px; height:32px; background-color:${color}; border-radius:50%; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.3); font-size:18px;">🌲</div>`
                     : `<div class="flex items-center justify-center" style="width:32px; height:32px; background-color:${color}; border-radius:50%; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.3); font-size:18px;"><svg viewBox="0 0 24 24" fill="white" style="width:16px;height:16px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg></div>`;
                 const customIcon = L.divIcon({ html: iconHtml, className: 'bg-transparent border-none', iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -16] });
                 const marker = L.marker([item.lat, item.lng], { icon: customIcon }).addTo(worldMap);
                 const subtitle = mapMode === 'parks' ? 'National Park' : `Capital: ${item.capital}`;
-                const popupContent = `<div class="font-sans min-w-[150px] p-1"><strong class="text-sm block">${item.name}</strong><span class="text-xs text-stone-500 block border-b pb-1 mb-1">${subtitle}</span><div class="space-y-0.5 text-xs">${family.map(m => `<div class="flex justify-between"><span>${m}</span><span class="${dataStore[`${item.name}_${m}`] ? 'text-green-600 font-bold' : 'text-stone-300'}">${dataStore[`${item.name}_${m}`] ? 'Visited' : 'No'}</span></div>`).join('')}</div></div>`;
+                const popupContent = `<div class="font-sans min-w-[150px] p-1"><strong class="text-sm block">${item.name}</strong><span class="text-xs text-stone-500 block border-b pb-1 mb-1">${subtitle}</span><div class="space-y-0.5 text-xs">${settings.familyMembers.map(m => `<div class="flex justify-between"><span>${m}</span><span class="${dataStore[`${item.name}_${m}`] ? 'text-green-600 font-bold' : 'text-stone-300'}">${dataStore[`${item.name}_${m}`] ? 'Visited' : 'No'}</span></div>`).join('')}</div></div>`;
                 marker.bindPopup(popupContent);
                 mapMarkers.push(marker);
             });
@@ -489,8 +565,8 @@
             if (showSplit) {
                 const usTotal = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
                 const caTotal = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
-                let usV = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA') && family.some(m => dataStore[`${i.name}_${m}`])).length;
-                let caV = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada') && family.some(m => dataStore[`${i.name}_${m}`])).length;
+                let usV = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
+                let caV = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
                 document.getElementById('regional-stats').classList.remove('hidden');
                 document.getElementById('us-stat-label').innerText = target === 'parks' ? 'US Parks' : 'US States';
                 document.getElementById('us-stat-count').innerText = `${usV}/${usTotal}`;
@@ -503,7 +579,7 @@
             }
 
             const grid = document.getElementById('family-progress-grid'); grid.innerHTML = '';
-            family.forEach((m, i) => {
+            settings.familyMembers.forEach((m, i) => {
                 let mTotal = 0, mUs = 0, mCa = 0;
                 dataset.forEach(item => { if (dataStore[`${item.name}_${m}`]) { mTotal++; if (item.sub === 'USA' || item.country === 'USA') mUs++; else mCa++; } });
                 const totalCap = dataset.length;
@@ -516,7 +592,7 @@
                     if ((target === 'states' && settings.showCanada) || (target === 'parks' && settings.showCanadianParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>CAN</span><span>${mCa}/${caCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-red-500 h-full" style="width:${caCap ? (mCa/caCap)*100 : 0}%"></div></div></div>`;
                     html += `</div>`;
                 } else {
-                    html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${memberColors[i]}-500 h-full" style="width:${totalCap ? (mTotal/totalCap)*100 : 0}%"></div></div>`;
+                    html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${getMemberColor(i)}-500 h-full" style="width:${totalCap ? (mTotal/totalCap)*100 : 0}%"></div></div>`;
                 }
                 grid.innerHTML += html + `</div>`;
             });
@@ -539,6 +615,11 @@
             const list = document.getElementById('data-list');
             let dataset = [...(currentTab === 'parks' ? parks : states)];
             const dataStore = visitData[currentTab];
+
+            // Search Filter
+            if (searchTerm) {
+                dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
+            }
 
             if (currentTab === 'states') dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
             if (currentTab === 'parks') {
@@ -564,27 +645,27 @@
                 if (sortColumn === 1) { vA = a.name.toLowerCase(); vB = b.name.toLowerCase(); }
                 else if (sortColumn === 2) { vA = a.sub.toLowerCase(); vB = b.sub.toLowerCase(); }
                 else if (currentTab === 'parks' && sortColumn === 3) { vA = a.country.toLowerCase(); vB = b.country.toLowerCase(); }
-                else if (sortColumn >= offset && sortColumn < offset + family.length) { let m = family[sortColumn - offset]; vA = dataStore[`${a.name}_${m}`] ? 1 : 0; vB = dataStore[`${b.name}_${m}`] ? 1 : 0; }
-                else if (sortColumn === offset + family.length) { vA = family.filter(m => dataStore[`${a.name}_${m}`]).length; vB = family.filter(m => dataStore[`${b.name}_${m}`]).length; }
+                else if (sortColumn >= offset && sortColumn < offset + settings.familyMembers.length) { let m = settings.familyMembers[sortColumn - offset]; vA = dataStore[`${a.name}_${m}`] ? 1 : 0; vB = dataStore[`${b.name}_${m}`] ? 1 : 0; }
+                else if (sortColumn === offset + settings.familyMembers.length) { vA = settings.familyMembers.filter(m => dataStore[`${a.name}_${m}`]).length; vB = settings.familyMembers.filter(m => dataStore[`${b.name}_${m}`]).length; }
                 return sortDirection === 'asc' ? (vA < vB ? -1 : 1) : (vA > vB ? -1 : 1);
             });
 
             list.innerHTML = '';
             dataset.forEach(i => {
-                let vCount = family.filter(m => dataStore[`${i.name}_${m}`]).length;
+                let vCount = settings.familyMembers.filter(m => dataStore[`${i.name}_${m}`]).length;
                 let tr = document.createElement('tr');
                 tr.className = "hover:bg-stone-50 border-b border-stone-100 " + (vCount > 0 ? "checked-row" : "");
-                let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked)" ${vCount === family.length ? 'checked' : ''}></td><td class="p-4 font-medium">${i.name}</td><td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
+                let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked)" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td><td class="p-4 font-medium">${i.name}</td><td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
                 if (currentTab === 'parks') cells += `<td class="p-4 text-sm text-stone-500">${i.country}</td>`;
-                family.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
-                cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${vCount === family.length ? 'text-green-600' : 'text-stone-400'}">${vCount === family.length ? '✓' : vCount + '/' + family.length}</td>`;
+                settings.familyMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
+                cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'text-green-600' : 'text-stone-400'}">${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? '✓' : vCount + '/' + settings.familyMembers.length}</td>`;
                 tr.innerHTML = cells; list.appendChild(tr);
             });
             updateStats();
         }
 
         function toggleVisit(n, m) { visitData[currentTab][`${n}_${m}`] = !visitData[currentTab][`${n}_${m}`]; save(); renderData(); }
-        function toggleAllRow(n, val) { family.forEach(m => visitData[currentTab][`${n}_${m}`] = val); save(); renderData(); }
+        function toggleAllRow(n, val) { settings.familyMembers.forEach(m => visitData[currentTab][`${n}_${m}`] = val); save(); renderData(); }
         function save() { localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData)); }
 
         function getExportData(targetTab) {
@@ -598,7 +679,7 @@
                     return true;
                 });
             }
-            return ds.map(i => { const r = { [targetTab==='parks'?'Park':'State']: i.name, Region: i.sub }; if (targetTab === 'parks') r.Country = i.country; family.forEach(m => r[m] = store[`${i.name}_${m}`]?'Visited':''); return r; });
+            return ds.map(i => { const r = { [targetTab==='parks'?'Park':'State']: i.name, Region: i.sub }; if (targetTab === 'parks') r.Country = i.country; settings.familyMembers.forEach(m => r[m] = store[`${i.name}_${m}`]?'Visited':''); return r; });
         }
         function saveToCSV(targetTab) {
             const d = getExportData(targetTab); if(!d.length) return;
@@ -618,14 +699,17 @@
                 for (let i = 1; i < lines.length; i++) {
                     const v = lines[i].split(',').map(s => s.replace(/"/g, ''));
                     const offset = target === 'parks' ? 3 : 2; 
-                    family.forEach((m, idx) => { if (v[idx+offset] === 'Visited') visitData[target][`${v[0]}_${m}`] = true; });
+                    settings.familyMembers.forEach((m, idx) => { if (v[idx+offset] === 'Visited') visitData[target][`${v[0]}_${m}`] = true; });
                 }
                 save(); switchTab(target); e.target.value = '';
                 toggleExportModal(false); // Close modal on success
             }; reader.readAsText(f);
         }
 
-        window.onload = () => switchTab('parks');
+        window.onload = () => {
+            checkFamilyStatus();
+            switchTab('parks');
+        };
     </script>
 </body>
 </html>
