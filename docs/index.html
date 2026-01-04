@@ -317,9 +317,10 @@
     -->
     <script>
         // --- DATA SECTION: CONSTANTS & ARRAYS ---
+        // These arrays store the static data for Parks and States.
+        // Lat/Lng are used for the Leaflet map.
 
         const parks = [
-            // US National Parks (63 Total)
             { name: "Acadia", sub: "ME", country: "USA", lat: 44.3386, lng: -68.2733 }, { name: "American Samoa", sub: "AS", country: "USA", lat: -14.2583, lng: -170.6833 },
             { name: "Arches", sub: "UT", country: "USA", lat: 38.7331, lng: -109.5925 }, { name: "Badlands", sub: "SD", country: "USA", lat: 43.8554, lng: -102.3397 },
             { name: "Big Bend", sub: "TX", country: "USA", lat: 29.1275, lng: -103.2425 }, { name: "Biscayne", sub: "FL", country: "USA", lat: 25.4824, lng: -80.1601 },
@@ -405,6 +406,7 @@
         const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'yellow', 'indigo', 'cyan'];
         
         // --- APP STATE VARIABLES ---
+        // State variables track the current view and data
         let currentTab = 'parks';
         let sortColumn = 1;
         let sortDirection = 'asc';
@@ -416,6 +418,8 @@
         let searchTerm = '';
         
         // Load Settings & Data from LocalStorage
+        // Reference: Window.localStorage - https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+        // Settings defaults if no storage exists
         let settings = JSON.parse(localStorage.getItem('np_travel_settings')) || { 
             showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true, 
             familyMembers: ['John', 'Jane', 'Jim', 'Jess'],
@@ -450,17 +454,23 @@
 
         // --- HELPER FUNCTIONS ---
 
-        /** Returns a color from the palette based on index to ensure variety. */
+        /** * Returns a color from the palette based on index to ensure variety. 
+         * Used for assigning consistent colors to family member progress bars.
+         */
         function getMemberColor(index) { return palette[index % palette.length]; }
 
-        /** Filter list and map based on search input */
+        /** * Filter list and map based on search input.
+         * Triggered on input event from the search bar.
+         */
         function handleSearch(val) {
             searchTerm = val.toLowerCase();
             if (currentTab === 'world') updateMapMarkers();
             else if (currentTab !== 'stats') renderData();
         }
 
-        /** Shows visual warning if no family members are configured */
+        /** * Shows visual warning if no family members are configured.
+         * Toggles the visibility of the red warning banner.
+         */
         function checkFamilyStatus() {
             const warning = document.getElementById('settings-warning');
             const settingsBtn = document.getElementById('settings-btn');
@@ -468,7 +478,9 @@
             else { warning.classList.add('hidden'); settingsBtn.classList.remove('warning-active'); }
         }
 
-        /** Adds a new family member to the list and saves settings */
+        /** * Adds a new family member to the list and saves settings.
+         * Triggered from the Settings modal.
+         */
         function addFamilyMember() {
             const input = document.getElementById('new-member-name');
             const name = input.value.trim();
@@ -479,7 +491,9 @@
             }
         }
 
-        /** Removes a family member by index */
+        /** * Removes a family member by index.
+         * Triggered from the Settings modal list.
+         */
         function removeFamilyMember(index) {
             settings.familyMembers.splice(index, 1);
             updateSetting('familyMembers', settings.familyMembers);
@@ -489,6 +503,7 @@
 
         /** * Fetches coordinates for a city name using OpenStreetMap Nominatim API.
          * Docs: https://nominatim.org/release-docs/develop/api/Search/
+         * Updates the map marker and saves location to settings.
          */
         async function searchHometown() {
             const input = document.getElementById('hometown-input');
@@ -522,12 +537,14 @@
             }
         }
 
+        /** Clears the stored hometown setting. */
         function clearHometown() {
             settings.hometown = null;
             updateSetting('hometown', null);
             document.getElementById('hometown-input').value = '';
         }
 
+        /** Renders the UI element showing the current hometown name. */
         function renderHometownUI() {
             const display = document.getElementById('hometown-display');
             const label = document.getElementById('hometown-name');
@@ -540,6 +557,7 @@
             }
         }
 
+        /** Renders the list of family members inside the Settings modal. */
         function renderSettingsFamilyList() {
             const list = document.getElementById('settings-family-list');
             list.innerHTML = '';
@@ -554,6 +572,7 @@
         /**
          * Main navigation logic. Switches views, toggles visibility of containers,
          * updates headers, and triggers data rendering for the selected tab.
+         * @param {string} tab - The ID of the tab to switch to ('parks', 'states', 'world', 'stats').
          */
         function switchTab(tab) {
             let previousTab = currentTab;
@@ -627,6 +646,7 @@
             }
         }
 
+        /** Shows/Hides the Settings Modal. */
         function toggleSettingsModal(show) {
             const modal = document.getElementById('settings-modal');
             if (show) {
@@ -644,6 +664,7 @@
             }
         }
 
+        /** Shows/Hides the Export/Import Modal. */
         function toggleExportModal(show) {
             const modal = document.getElementById('export-modal');
             if (show) {
@@ -655,8 +676,7 @@
             }
         }
 
-        /**
-         * Updates a specific setting key in LocalStorage and refreshes the UI.
+        /** * Updates a specific setting key in LocalStorage and refreshes the UI.
          */
         function updateSetting(key, value) {
             settings[key] = value;
@@ -678,6 +698,7 @@
 
         // --- MAP LOGIC ---
 
+        /** Initializes the World Map Leaflet instance if not already created. */
         function initWorldMap() {
             if (!worldMap) {
                 worldMap = L.map('world-map').setView([48, -100], 3);
@@ -686,6 +707,7 @@
             setTimeout(() => { worldMap.invalidateSize(); updateMapMarkers(); }, 100);
         }
 
+        /** Toggles map mode between 'parks' and 'states' via buttons. */
         function setMapMode(mode) {
             mapMode = mode;
             const btnParks = document.getElementById('btn-map-parks');
@@ -787,6 +809,8 @@
         }
 
         // --- STATS LOGIC ---
+        
+        /** Switches the Stats Tab mode between 'parks' and 'states'. */
         function setStatsMode(mode) {
             statsMode = mode;
             const btnParks = document.getElementById('btn-stats-parks');
@@ -796,6 +820,7 @@
             updateStats();
         }
 
+        /** Calculates statistics and updates the charts and labels in the Stats tab. */
         function updateStats() {
             let target = currentTab === 'stats' ? statsMode : currentTab;
             if (target !== 'parks' && target !== 'states') target = 'parks';
@@ -861,18 +886,21 @@
 
         // --- TABLE LOGIC ---
         
+        /** Sorts the table by a given column index `n` and redraws. */
         function sortTable(n) {
             if (sortColumn === n) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             else { sortColumn = n; sortDirection = 'asc'; }
             updateSortIndicators(); renderData();
         }
 
+        /** Updates sort arrow visuals on table headers. */
         function updateSortIndicators() {
             document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
             const active = document.querySelector(`th[onclick="sortTable(${sortColumn})"]`);
             if (active) active.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
         }
 
+        /** Renders the main data table based on filters and sorting. */
         function renderData() {
             if (currentTab === 'world' || currentTab === 'stats') return;
             const list = document.getElementById('data-list');
@@ -929,12 +957,18 @@
             updateStats();
         }
 
+        /** Toggles a single visit record. */
         function toggleVisit(n, m) { visitData[currentTab][`${n}_${m}`] = !visitData[currentTab][`${n}_${m}`]; save(); renderData(); }
+        
+        /** Toggles visit status for all family members for a location. */
         function toggleAllRow(n, val) { settings.familyMembers.forEach(m => visitData[currentTab][`${n}_${m}`] = val); save(); renderData(); }
+        
+        /** Persists visit data to LocalStorage. */
         function save() { localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData)); }
 
         // --- EXPORT/IMPORT ---
 
+        /** Prepares data for CSV/Excel export. */
         function getExportData(targetTab) {
             let ds = targetTab === 'parks' ? [...parks] : [...states];
             const store = visitData[targetTab];
@@ -948,15 +982,21 @@
             }
             return ds.map(i => { const r = { [targetTab==='parks'?'Park':'State']: i.name, Region: i.sub }; if (targetTab === 'parks') r.Country = i.country; settings.familyMembers.forEach(m => r[m] = store[`${i.name}_${m}`]?'Visited':''); return r; });
         }
+        
+        /** Saves data as a CSV file. */
         function saveToCSV(targetTab) {
             const d = getExportData(targetTab); if(!d.length) return;
             const k = Object.keys(d[0]); let csv = k.join(',') + '\n'; d.forEach(r => csv += k.map(x => `"${r[x]}"`).join(',') + '\n');
             const url = window.URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = `Travel_Tracker_${targetTab}.csv`; a.click();
         }
+        
+        /** Saves data as an Excel file using SheetJS. */
         function saveToExcel(targetTab) {
             const d = getExportData(targetTab); if(!d.length) return;
             const ws = XLSX.utils.json_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, targetTab); XLSX.writeFile(wb, `Family_Travel_${targetTab}.xlsx`);
         }
+        
+        /** Handles CSV file import. */
         function handleImport(e) {
             const f = e.target.files[0]; if (!f) return;
             const reader = new FileReader(); reader.onload = function(ev) {
@@ -974,6 +1014,7 @@
         }
 
         // Initialize App
+        // Reference: Window: load event - https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event
         window.onload = () => {
             checkFamilyStatus();
             switchTab('parks');
