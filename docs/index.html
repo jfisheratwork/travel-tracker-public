@@ -741,39 +741,7 @@
         /** Attempt to fetch 'examples/' folder content to populate dropdown. */
         async function populateExamplesDropdown() {
             const select = document.getElementById('example-select');
-            select.innerHTML = '<option>Scanning examples...</option>';
-            
-            try {
-                // Fetch directory listing
-                const response = await fetch('examples/');
-                if (response.ok) {
-                    const html = await response.text();
-                    const parser = new DOMParser();
-                    const doc = parser.parseFromString(html, 'text/html');
-                    const links = Array.from(doc.querySelectorAll('a'));
-                    
-                    // Extract .json files
-                    const files = links
-                        .map(link => link.getAttribute('href'))
-                        .filter(href => href && href.toLowerCase().endsWith('.json'))
-                        .map(href => decodeURIComponent(href.split('/').pop())); // Handle URL encoding
-
-                    const uniqueFiles = [...new Set(files)];
-
-                    if (uniqueFiles.length > 0) {
-                        select.innerHTML = uniqueFiles.map(file => 
-                            `<option value="${file}">${file.replace('.json', '').replace(/_/g, ' ')}</option>`
-                        ).join('');
-                    } else {
-                        select.innerHTML = '<option disabled>No JSON files found</option>';
-                    }
-                } else {
-                    select.innerHTML = '<option disabled>Examples folder not found</option>';
-                }
-            } catch (err) {
-                console.error("Error loading examples:", err);
-                select.innerHTML = '<option disabled>Error loading examples</option>';
-            }
+            select.innerHTML = '`<option value="family1.json">family1.json</option>` ';
         }
 
         /** Loads a selected example JSON file. */
