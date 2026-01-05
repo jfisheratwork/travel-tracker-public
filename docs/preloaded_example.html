@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<!-- 
+  Element: <html> - The root element of an HTML page.
+  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/html
+-->
+<html lang="en">
+<head>
+    <!-- 
+      Element: <meta> - Metadata about the HTML document (charset, viewport for mobile scaling).
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Travel Tracker</title>
+
+    <!-- 
+      LIBRARY: Tailwind CSS
+      Summary: A utility-first CSS framework for rapidly building custom user interfaces.
+      Home: https://tailwindcss.com/
+    -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 
+      LIBRARY: SheetJS (xlsx)
+      Summary: A parser and writer for various spreadsheet formats (Excel, CSV, etc.).
+      Home: https://sheetjs.com/
+    -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+    <!-- 
+      LIBRARY: Leaflet Maps
+      Summary: An open-source JavaScript library for mobile-friendly interactive maps.
+      Home: https://leafletjs.com/
+    -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- 
+      Element: <style> - Contains CSS styling for the document.
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style
+    -->
+    <style>
+        .checked-row { background-color: #f0fdf4; }
+        .park-checkbox:checked, .all-checkbox:checked { accent-color: #15803d; }
+        .tab-active { border-bottom: 4px solid #15803d; color: #15803d; font-weight: bold; }
+        th.sortable { cursor: pointer; user-select: none; position: relative; }
+        th.sortable:hover { background-color: #e5e7eb; }
+        th.sortable::after { content: '↕'; font-size: 0.8rem; margin-left: 5px; opacity: 0.3; }
+        th.sort-asc::after { content: '↑'; opacity: 1; }
+        th.sort-desc::after { content: '↓'; opacity: 1; }
+        #world-map { height: 600px; width: 100%; border-radius: 0.75rem; z-index: 1; }
+        #settings-modal, #export-modal, #edit-modal { transition: opacity 0.2s ease-in-out; }
+        @media print { .no-print { display: none; } }
+        
+        @keyframes border-pulse {
+            0%, 100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { border-color: #f87171; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.3); }
+        }
+        .warning-active {
+            animation: border-pulse 2s infinite;
+            color: #ef4444 !important;
+        }
+    </style>
+</head>
+<!-- 
+  Element: <body> - Contains the content of an HTML document.
+  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
+-->
+<body class="bg-stone-50 text-stone-900 font-sans">
+
+    <!-- 
+      Element: <div> - The generic container for flow content.
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div
+    -->
+    <div class="max-w-6xl mx-auto p-4 md:p-8 relative">
+        <!-- Warning Bubble -->
+        <div id="settings-warning" class="hidden absolute top-0 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-full shadow-lg text-sm font-bold flex items-center gap-2 z-50 animate-bounce">
+            <!-- 
+               Element: <svg> - Scalable Vector Graphics container.
+               Docs: https://developer.mozilla.org/en-US/docs/Web/SVG/Element/svg
+            -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            Please Update Settings: Add Family Members
+        </div>
+
+        <!-- Top Right Actions: Export & Settings -->
+        <div class="absolute top-4 right-4 md:top-8 md:right-8 flex gap-2 no-print">
+            <button onclick="toggleExportModal(true)" class="p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all" title="Export / Import Data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            </button>
+            <button id="settings-btn" onclick="toggleSettingsModal(true)" class="p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
+
+        <!-- 
+          Element: <header> - Introductory content or navigational aids.
+          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header
+        -->
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-green-800 flex items-center justify-center gap-3">🌎 Family Travel Tracker</h1>
+            <p class="text-stone-600 mt-2">Tracking our adventures across North America.</p>
+        </header>
+
+        <!-- 
+          Element: <nav> - A section of the page capable of navigation links.
+          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav
+        -->
+        <nav class="flex flex-wrap justify-center mb-8 border-b border-stone-200 no-print">
+            <button onclick="switchTab('parks')" id="tab-parks" class="px-6 py-3 text-lg transition-all tab-active">National Parks</button>
+            <button onclick="switchTab('states')" id="tab-states" class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">States & Provinces</button>
+            <button onclick="switchTab('world')" id="tab-world" class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">World Map</button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">Stats</button>
+        </nav>
+
+        <!-- Stats View Container -->
+        <div id="stats-view-container" class="hidden">
+            <div class="flex justify-center gap-4 mb-6">
+                <button onclick="setStatsMode('parks')" id="btn-stats-parks" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md">National Parks</button>
+                <button onclick="setStatsMode('states')" id="btn-stats-states" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200">States & Provinces</button>
+            </div>
+            <div id="stats" class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+                <div class="lg:col-span-1 space-y-4">
+                    <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
+                        <span id="stats-label" class="block text-sm text-stone-500 uppercase tracking-wide font-semibold">Parks Visited</span>
+                        <span id="total-visited" class="text-3xl font-bold text-green-700">0 / 63</span>
+                    </div>
+                    <div id="regional-stats" class="hidden space-y-3 bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                        <div id="us-stat-container" class="space-y-1">
+                            <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span id="us-stat-label">US States</span><span id="us-stat-count">0/50</span></div>
+                            <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200"><div id="us-stat-bar" class="bg-blue-600 h-full transition-all duration-500" style="width: 0%"></div></div>
+                        </div>
+                        <div id="ca-stat-container" class="space-y-1">
+                            <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span id="ca-stat-label">CA Provinces</span><span id="ca-stat-count">0/13</span></div>
+                            <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200"><div id="ca-stat-bar" class="bg-red-600 h-full transition-all duration-500" style="width: 0%"></div></div>
+                        </div>
+                    </div>
+                    <div id="remaining-box" class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
+                        <span class="block text-sm text-stone-500 uppercase tracking-wide">Remaining</span>
+                        <span id="total-remaining" class="text-3xl font-bold text-stone-400">--</span>
+                    </div>
+                </div>
+                <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-stone-200">
+                    <div class="mb-6">
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-sm font-bold text-stone-700 uppercase tracking-wide">Detailed Stats & Provinces</span>
+                            <span id="group-percent" class="text-xs text-stone-500 font-medium">0%</span>
+                        </div>
+                        <div class="w-full bg-stone-200 rounded-full h-4 overflow-hidden"><div id="progress-bar" class="bg-green-600 h-full transition-all duration-700" style="width: 0%"></div></div>
+                    </div>
+                    <div id="family-progress-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Row -->
+        <div id="controls-container" class="flex flex-wrap gap-3 items-center mb-4 no-print">
+            <!-- Search Input -->
+            <!-- 
+                Element: <input> - An interactive control for user input.
+                Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+            -->
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+                <input type="text" id="search-input" placeholder="Search..." oninput="handleSearch(this.value)" class="pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all w-32 focus:w-56 bg-white">
+            </div>
+            
+            <div id="region-filter-container" class="hidden">
+                <!-- 
+                    Element: <select> - A control that provides a menu of options.
+                    Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select
+                -->
+                <select id="region-filter" onchange="renderData()" class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors"></select>
+            </div>
+            
+            <div class="ml-auto text-sm text-stone-500 italic">Auto-saves to browser</div>
+        </div>
+
+        <!-- Table View -->
+        <div id="table-container" class="overflow-auto bg-white rounded-xl shadow-lg border border-stone-200 h-[calc(100vh-320px)] max-h-[800px] min-h-[400px]">
+            <!-- 
+              Element: <table> - Represents tabular data.
+              Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
+            -->
+            <table class="w-full text-left border-collapse" id="main-table">
+                <!-- 
+                  Element: <thead> - Defines a set of rows defining the head of the table.
+                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
+                -->
+                <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
+                    <tr id="table-header-row"></tr>
+                </thead>
+                <!-- 
+                  Element: <tbody> - Encapsulates a set of rows making up the body of a table.
+                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
+                -->
+                <tbody id="data-list"></tbody>
+            </table>
+        </div>
+
+        <!-- Map View -->
+        <div id="world-map-container" class="hidden">
+            <div class="bg-white p-4 rounded-xl shadow-lg border border-stone-200">
+                <div class="flex justify-center gap-4 mb-4">
+                    <button onclick="setMapMode('parks')" id="btn-map-parks" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md">National Parks</button>
+                    <button onclick="setMapMode('states')" id="btn-map-states" class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200">States & Capitals</button>
+                </div>
+                <div id="world-map"></div>
+                <div class="mt-4 flex gap-6 justify-center text-sm">
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span> All Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Partially Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-stone-400"></span> Not Visited</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="mt-12 border-t border-stone-200 pt-6 text-center text-sm text-stone-400 no-print">
+            Made with help of Gemini Pro
+        </footer>
+    </div>
+
+    <!-- Edit Metadata Modal -->
+    <div id="edit-modal" class="fixed inset-0 z-[2100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 transform">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    Edit Trip Details
+                </h2>
+                <button onclick="toggleEditModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <h3 id="edit-modal-title" class="text-lg font-semibold text-stone-700"></h3>
+                
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Date Visited</label>
+                    <input type="date" id="edit-date" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Comments</label>
+                    <textarea id="edit-comment" rows="4" maxlength="500" class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none" oninput="updateCharCount(this)"></textarea>
+                    <div class="text-right text-xs text-stone-400 mt-1"><span id="char-count">0</span>/500</div>
+                </div>
+            </div>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-end gap-3">
+                <button onclick="toggleEditModal(false)" class="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-200 transition">Cancel</button>
+                <button onclick="saveMetaData()" class="px-6 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">Save Details</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal Overlay (Updated Height) -->
+    <div id="settings-modal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[75vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Settings</h2>
+                <button onclick="toggleSettingsModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
+            <div class="p-8 space-y-6 overflow-y-auto">
+                <!-- Family Members Section -->
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Manage Family Members</h3>
+                    <div class="space-y-3 mb-4" id="settings-family-list">
+                        <!-- Dynamic List Generated Here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-member-name" placeholder="Enter name" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600" onkeypress="if(event.key === 'Enter') addFamilyMember()">
+                        <button onclick="addFamilyMember()" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition">Add</button>
+                    </div>
+                </div>
+                
+                <!-- Hometown Section -->
+                <div class="border-t border-stone-100 pt-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Home Town</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="hometown-input" placeholder="e.g. Seattle, WA" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600" onkeypress="if(event.key === 'Enter') searchHometown()">
+                        <button onclick="searchHometown()" class="bg-stone-100 text-stone-700 border border-stone-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-stone-200 transition" id="hometown-btn">Search</button>
+                    </div>
+                    <div id="hometown-display" class="mt-2 text-xs text-stone-500 flex items-center gap-2 hidden">
+                        <span class="font-semibold text-green-700">Current:</span> <span id="hometown-name"></span>
+                        <button onclick="clearHometown()" class="text-red-400 hover:text-red-600 ml-auto" title="Clear">✕</button>
+                    </div>
+                </div>
+
+                <div class="border-t border-stone-100 pt-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Location Visibility</h3>
+                    <div class="space-y-4">
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-usa" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showUSA', this.checked)"><div><span class="block font-semibold text-stone-800">Include USA States</span><span class="text-xs text-stone-500">Show all 50 US States.</span></div></label>
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-canada" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showCanada', this.checked)"><div><span class="block font-semibold text-stone-800">Include Canadian Provinces</span><span class="text-xs text-stone-500">Show 13 Canadian Provinces.</span></div></label>
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-usa-parks" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showUSAParks', this.checked)"><div><span class="block font-semibold text-stone-800">Include USA National Parks</span><span class="text-xs text-stone-500">Include all 63 US National Parks.</span></div></label>
+                        <label class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input type="checkbox" id="setting-canada-parks" class="w-5 h-5 rounded accent-green-700" onchange="updateSetting('showCanadianParks', this.checked)"><div><span class="block font-semibold text-stone-800">Include Canadian National Parks</span><span class="text-xs text-stone-500">Include major National Parks of Canada.</span></div></label>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center flex-shrink-0">
+                <button onclick="toggleSettingsModal(false)" class="bg-green-700 text-white px-8 py-2 rounded-xl font-bold hover:bg-green-800 transition shadow-lg shadow-green-900/20">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export/Import Modal (Updated Height) -->
+    <div id="export-modal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[75vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Data Options</h2>
+                <button onclick="toggleExportModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+            </div>
+            <div class="p-8 space-y-8 overflow-y-auto">
+                
+                <!-- Load Example Data Section (1st) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        Load Example Data
+                    </h3>
+                    <div class="flex gap-2">
+                         <select id="example-select" class="flex-1 text-sm bg-white border border-stone-300 rounded-lg px-3 py-2 outline-none cursor-pointer focus:border-green-600">
+                             <!-- Options populated by JS -->
+                         </select>
+                         <button onclick="loadSelectedExample()" class="px-4 py-2 bg-stone-100 text-stone-700 font-bold text-sm border border-stone-200 rounded-lg hover:bg-stone-200 transition">Load</button>
+                    </div>
+                    <p class="text-[10px] text-stone-400 mt-1">Loads JSON files from the 'examples' folder if present.</p>
+                </div>
+
+                <!-- Backup Section (2nd) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                        Full App Backup (JSON)
+                    </h3>
+                    <div class="flex flex-col gap-4">
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-blue-100 bg-blue-50/30">
+                            <div>
+                                <span class="block font-bold text-stone-700">Backup Everything</span>
+                                <span class="text-xs text-stone-500">Save settings, family members, and all checkmarks.</span>
+                            </div>
+                            <button onclick="saveBackupJSON()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition shadow-sm">Export JSON</button>
+                        </div>
+                        
+                        <label class="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-stone-300 rounded-xl hover:bg-stone-50 hover:border-blue-500 cursor-pointer transition-all group">
+                            <span class="text-sm font-medium text-stone-600 group-hover:text-blue-700">Restore from JSON Backup</span>
+                            <span class="text-xs text-stone-400 mt-1">Select a .json file to restore all data</span>
+                            <input type="file" accept=".json" class="hidden" onchange="handleBackupImport(event)">
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Export Section (3rd) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        Export Spreadsheet (CSV/Excel)
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
+                            <div><span class="block font-bold text-stone-700">National Parks</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
+                        </div>
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
+                            <div><span class="block font-bold text-stone-700">States & Provinces</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Import CSV Section (4th) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                        Import Spreadsheet
+                    </h3>
+                    <label class="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-stone-300 rounded-xl hover:bg-stone-50 hover:border-green-500 cursor-pointer transition-all group">
+                        <span class="text-sm font-medium text-stone-600 group-hover:text-green-700">Import CSV File</span>
+                        <span class="text-xs text-stone-400 mt-1">Detects Parks or States automatically</span>
+                        <input type="file" accept=".csv" class="hidden" onchange="handleImport(event)">
+                    </label>
+                </div>
+            </div>
+            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center flex-shrink-0">
+                <button onclick="toggleExportModal(false)" class="text-stone-500 hover:text-stone-800 font-medium text-sm transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+      SECTION: Scripts
+      This block contains all the application logic. 
+      Data structures are defined first, followed by app state, then functions.
+    -->
+    <script>
+        // --- DATA SECTION: CONSTANTS & ARRAYS ---
+        // These arrays store the static data for Parks and States.
+        // Lat/Lng are used for the Leaflet map.
+
+        const parks = [
+            { name: "Acadia", sub: "ME", country: "USA", lat: 44.3386, lng: -68.2733 }, { name: "American Samoa", sub: "AS", country: "USA", lat: -14.2583, lng: -170.6833 },
+            { name: "Arches", sub: "UT", country: "USA", lat: 38.7331, lng: -109.5925 }, { name: "Badlands", sub: "SD", country: "USA", lat: 43.8554, lng: -102.3397 },
+            { name: "Big Bend", sub: "TX", country: "USA", lat: 29.1275, lng: -103.2425 }, { name: "Biscayne", sub: "FL", country: "USA", lat: 25.4824, lng: -80.1601 },
+            { name: "Black Canyon of the Gunnison", sub: "CO", country: "USA", lat: 38.5754, lng: -107.7416 }, { name: "Bryce Canyon", sub: "UT", country: "USA", lat: 37.5930, lng: -112.1871 },
+            { name: "Canyonlands", sub: "UT", country: "USA", lat: 38.3269, lng: -109.8783 }, { name: "Capitol Reef", sub: "UT", country: "USA", lat: 38.3670, lng: -111.2615 },
+            { name: "Carlsbad Caverns", sub: "NM", country: "USA", lat: 32.1753, lng: -104.4439 }, { name: "Channel Islands", sub: "CA", country: "USA", lat: 34.0069, lng: -119.7785 },
+            { name: "Congaree", sub: "SC", country: "USA", lat: 33.7948, lng: -80.7821 }, { name: "Crater Lake", sub: "OR", country: "USA", lat: 42.8684, lng: -122.1685 },
+            { name: "Cuyahoga Valley", sub: "OH", country: "USA", lat: 41.2808, lng: -81.5678 }, { name: "Death Valley", sub: "CA/NV", country: "USA", lat: 36.5323, lng: -116.9325 },
+            { name: "Denali", sub: "AK", country: "USA", lat: 63.1148, lng: -151.1926 }, { name: "Dry Tortugas", sub: "FL", country: "USA", lat: 24.6285, lng: -82.8733 },
+            { name: "Everglades", sub: "FL", country: "USA", lat: 25.2866, lng: -80.8987 }, { name: "Gates of the Arctic", sub: "AK", country: "USA", lat: 67.7814, lng: -153.2994 },
+            { name: "Gateway Arch", sub: "MO", country: "USA", lat: 38.6247, lng: -90.1848 }, { name: "Glacier", sub: "MT", country: "USA", lat: 48.7596, lng: -113.7870 },
+            { name: "Glacier Bay", sub: "AK", country: "USA", lat: 58.6658, lng: -136.9002 }, { name: "Grand Canyon", sub: "AZ", country: "USA", lat: 36.0544, lng: -112.1401 },
+            { name: "Grand Teton", sub: "WY", country: "USA", lat: 43.7904, lng: -110.6818 }, { name: "Great Basin", sub: "NV", country: "USA", lat: 38.9836, lng: -114.3013 },
+            { name: "Great Sand Dunes", sub: "CO", country: "USA", lat: 37.7916, lng: -105.5123 }, { name: "Great Smoky Mountains", sub: "TN/NC", country: "USA", lat: 35.6131, lng: -83.4895 },
+            { name: "Guadalupe Mountains", sub: "TX", country: "USA", lat: 31.9231, lng: -104.8608 }, { name: "Haleakalā", sub: "HI", country: "USA", lat: 20.7013, lng: -156.1733 },
+            { name: "Hawaiʻi Volcanoes", sub: "HI", country: "USA", lat: 19.4194, lng: -155.2885 }, { name: "Hot Springs", sub: "AR", country: "USA", lat: 34.5199, lng: -93.0550 },
+            { name: "Indiana Dunes", sub: "IN", country: "USA", lat: 41.6533, lng: -87.0524 }, { name: "Isle Royale", sub: "MI", country: "USA", lat: 47.9959, lng: -88.9093 },
+            { name: "Joshua Tree", sub: "CA", country: "USA", lat: 33.8734, lng: -115.9010 }, { name: "Katmai", sub: "AK", country: "USA", lat: 58.5079, lng: -154.9033 },
+            { name: "Kenai Fjords", sub: "AK", country: "USA", lat: 59.9264, lng: -149.6535 }, { name: "Kings Canyon", sub: "CA", country: "USA", lat: 36.8879, lng: -118.5551 },
+            { name: "Kobuk Valley", sub: "AK", country: "USA", lat: 67.5507, lng: -159.1223 }, { name: "Lake Clark", sub: "AK", country: "USA", lat: 60.6144, lng: -154.1545 },
+            { name: "Lassen Volcanic", sub: "CA", country: "USA", lat: 40.4977, lng: -121.4207 }, { name: "Mammoth Cave", sub: "KY", country: "USA", lat: 37.1870, lng: -86.1005 },
+            { name: "Mesa Verde", sub: "CO", country: "USA", lat: 37.2309, lng: -108.4618 }, { name: "Mount Rainier", sub: "WA", country: "USA", lat: 46.8523, lng: -121.7603 },
+            { name: "New River Gorge", sub: "WV", country: "USA", lat: 38.0722, lng: -81.0822 }, { name: "North Cascades", sub: "WA", country: "USA", lat: 48.7718, lng: -121.2985 },
+            { name: "Olympic", sub: "WA", country: "USA", lat: 47.8021, lng: -123.6044 }, { name: "Petrified Forest", sub: "AZ", country: "USA", lat: 34.9100, lng: -109.8068 },
+            { name: "Pinnacles", sub: "CA", country: "USA", lat: 36.4906, lng: -121.1819 }, { name: "Redwood", sub: "CA", country: "USA", lat: 41.2132, lng: -124.0046 },
+            { name: "Rocky Mountain", sub: "CO", country: "USA", lat: 40.3428, lng: -105.6836 }, { name: "Saguaro", sub: "AZ", country: "USA", lat: 32.1471, lng: -110.7005 },
+            { name: "Sequoia", sub: "CA", country: "USA", lat: 36.4864, lng: -118.5658 }, { name: "Shenandoah", sub: "VA", country: "USA", lat: 38.2928, lng: -78.6796 },
+            { name: "Theodore Roosevelt", sub: "ND", country: "USA", lat: 46.9790, lng: -103.5387 }, { name: "Virgin Islands", sub: "VI", country: "USA", lat: 18.3368, lng: -64.7333 },
+            { name: "Voyageurs", sub: "MN", country: "USA", lat: 48.4841, lng: -92.8271 }, { name: "White Sands", sub: "NM", country: "USA", lat: 32.7872, lng: -106.3257 },
+            { name: "Wind Cave", sub: "SD", country: "USA", lat: 43.5700, lng: -103.4794 }, { name: "Wrangell–St. Elias", sub: "AK", country: "USA", lat: 61.7104, lng: -142.9850 },
+            { name: "Yellowstone", sub: "WY/MT/ID", country: "USA", lat: 44.4280, lng: -110.5885 }, { name: "Yosemite", sub: "CA", country: "USA", lat: 37.8651, lng: -119.5383 },
+            { name: "Zion", sub: "UT", country: "USA", lat: 37.2982, lng: -113.0263 },
+            // Major Canadian National Parks
+            { name: "Banff", sub: "AB", country: "Canada", lat: 51.4968, lng: -115.9281 }, { name: "Jasper", sub: "AB", country: "Canada", lat: 52.8737, lng: -118.0813 },
+            { name: "Yoho", sub: "BC", country: "Canada", lat: 51.4633, lng: -116.5861 }, { name: "Kootenay", sub: "BC", country: "Canada", lat: 50.8830, lng: -116.0427 },
+            { name: "Waterton Lakes", sub: "AB", country: "Canada", lat: 49.0503, lng: -113.9160 }, { name: "Pacific Rim", sub: "BC", country: "Canada", lat: 49.0667, lng: -125.7167 },
+            { name: "Glacier (Can)", sub: "BC", country: "Canada", lat: 51.3000, lng: -117.5167 }, { name: "Mount Revelstoke", sub: "BC", country: "Canada", lat: 51.0833, lng: -118.1667 },
+            { name: "Fundy", sub: "NB", country: "Canada", lat: 45.6167, lng: -64.9500 }, { name: "Gros Morne", sub: "NL", country: "Canada", lat: 49.6833, lng: -57.7333 },
+            { name: "Cape Breton Highlands", sub: "NS", country: "Canada", lat: 46.7167, lng: -60.6500 }, { name: "Prince Edward Island", sub: "PE", country: "Canada", lat: 46.4167, lng: -63.0833 },
+            { name: "Bruce Peninsula", sub: "ON", country: "Canada", lat: 45.2167, lng: -81.5333 }, { name: "Point Pelee", sub: "ON", country: "Canada", lat: 41.9667, lng: -82.5167 },
+            { name: "Rouge", sub: "ON", country: "Canada", lat: 43.8290, lng: -79.1760 }, { name: "Grasslands", sub: "SK", country: "Canada", lat: 49.1167, lng: -107.4167 },
+            { name: "Prince Albert", sub: "SK", country: "Canada", lat: 53.9167, lng: -106.3667 }, { name: "Riding Mountain", sub: "MB", country: "Canada", lat: 50.8833, lng: -100.0333 },
+            { name: "Nahanni", sub: "NT", country: "Canada", lat: 61.5833, lng: -125.8333 }, { name: "Wood Buffalo", sub: "AB/NT", country: "Canada", lat: 59.3833, lng: -112.9833 },
+            { name: "Kluane", sub: "YT", country: "Canada", lat: 60.7500, lng: -138.5000 }, { name: "Auyuittuq", sub: "NU", country: "Canada", lat: 66.8833, lng: -65.1667 }
+        ];
+
+        const states = [
+            { name: "Alabama", sub: "USA", capital: "Montgomery", lat: 32.3668, lng: -86.3006 }, { name: "Alaska", sub: "USA", capital: "Juneau", lat: 58.3019, lng: -134.4197 },
+            { name: "Arizona", sub: "USA", capital: "Phoenix", lat: 33.4484, lng: -112.0740 }, { name: "Arkansas", sub: "USA", capital: "Little Rock", lat: 34.7465, lng: -92.2896 },
+            { name: "California", sub: "USA", capital: "Sacramento", lat: 38.5816, lng: -121.4944 }, { name: "Colorado", sub: "USA", capital: "Denver", lat: 39.7392, lng: -104.9903 },
+            { name: "Connecticut", sub: "USA", capital: "Hartford", lat: 41.7637, lng: -72.6851 }, { name: "Delaware", sub: "USA", capital: "Dover", lat: 39.1582, lng: -75.5244 },
+            { name: "Florida", sub: "USA", capital: "Tallahassee", lat: 30.4383, lng: -84.2807 }, { name: "Georgia", sub: "USA", capital: "Atlanta", lat: 33.7490, lng: -84.3880 },
+            { name: "Hawaii", sub: "USA", capital: "Honolulu", lat: 21.3069, lng: -157.8583 }, { name: "Idaho", sub: "USA", capital: "Boise", lat: 43.6150, lng: -116.2023 },
+            { name: "Illinois", sub: "USA", capital: "Springfield", lat: 39.7817, lng: -89.6501 }, { name: "Indiana", sub: "USA", capital: "Indianapolis", lat: 39.7684, lng: -86.1581 },
+            { name: "Iowa", sub: "USA", capital: "Des Moines", lat: 41.5868, lng: -93.6250 }, { name: "Kansas", sub: "USA", capital: "Topeka", lat: 39.0473, lng: -95.6752 },
+            { name: "Kentucky", sub: "USA", capital: "Frankfort", lat: 38.1973, lng: -84.8733 }, { name: "Louisiana", sub: "USA", capital: "Baton Rouge", lat: 30.4515, lng: -91.1871 },
+            { name: "Maine", sub: "USA", capital: "Augusta", lat: 44.3106, lng: -69.7795 }, { name: "Maryland", sub: "USA", capital: "Annapolis", lat: 38.9784, lng: -76.4922 },
+            { name: "Massachusetts", sub: "USA", capital: "Boston", lat: 42.3601, lng: -71.0589 }, { name: "Michigan", sub: "USA", capital: "Lansing", lat: 42.7325, lng: -84.5555 },
+            { name: "Minnesota", sub: "USA", capital: "St. Paul", lat: 44.9537, lng: -93.0900 }, { name: "Mississippi", sub: "USA", capital: "Jackson", lat: 32.2988, lng: -90.1848 },
+            { name: "Missouri", sub: "USA", capital: "Jefferson City", lat: 38.5767, lng: -92.1735 }, { name: "Montana", sub: "USA", capital: "Helena", lat: 46.5891, lng: -112.0391 },
+            { name: "Nebraska", sub: "USA", capital: "Lincoln", lat: 40.8136, lng: -96.7026 }, { name: "Nevada", sub: "USA", capital: "Carson City", lat: 39.1638, lng: -119.7674 },
+            { name: "New Hampshire", sub: "USA", capital: "Concord", lat: 43.2081, lng: -71.5375 }, { name: "New Jersey", sub: "USA", capital: "Trenton", lat: 40.2170, lng: -74.7429 },
+            { name: "New Mexico", sub: "USA", capital: "Santa Fe", lat: 35.6870, lng: -105.9378 }, { name: "New York", sub: "USA", capital: "Albany", lat: 42.6526, lng: -73.7562 },
+            { name: "North Carolina", sub: "USA", capital: "Raleigh", lat: 35.7796, lng: -78.6382 }, { name: "North Dakota", sub: "USA", capital: "Bismarck", lat: 46.8083, lng: -100.7837 },
+            { name: "Ohio", sub: "USA", capital: "Columbus", lat: 39.9612, lng: -82.9988 }, { name: "Oklahoma", sub: "USA", capital: "Oklahoma City", lat: 35.4676, lng: -97.5164 },
+            { name: "Oregon", sub: "USA", capital: "Salem", lat: 44.9429, lng: -123.0351 }, { name: "Pennsylvania", sub: "USA", capital: "Harrisburg", lat: 40.2732, lng: -76.8867 },
+            { name: "Rhode Island", sub: "USA", capital: "Providence", lat: 41.8240, lng: -71.4128 }, { name: "South Carolina", sub: "USA", capital: "Columbia", lat: 34.0007, lng: -81.0348 },
+            { name: "South Dakota", sub: "USA", capital: "Pierre", lat: 44.3668, lng: -100.3538 }, { name: "Tennessee", sub: "USA", capital: "Nashville", lat: 36.1627, lng: -86.7816 },
+            { name: "Texas", sub: "USA", capital: "Austin", lat: 30.2672, lng: -97.7431 }, { name: "Utah", sub: "USA", capital: "Salt Lake City", lat: 40.7608, lng: -111.8910 },
+            { name: "Vermont", sub: "USA", capital: "Montpelier", lat: 44.2601, lng: -72.5754 }, { name: "Virginia", sub: "USA", capital: "Richmond", lat: 37.5407, lng: -77.4360 },
+            { name: "Washington", sub: "USA", capital: "Olympia", lat: 47.0378, lng: -122.9007 }, { name: "West Virginia", sub: "USA", capital: "Charleston", lat: 38.3498, lng: -81.6326 },
+            { name: "Wisconsin", sub: "USA", capital: "Madison", lat: 43.0731, lng: -89.4012 }, { name: "Wyoming", sub: "USA", capital: "Cheyenne", lat: 41.1400, lng: -104.8202 },
+            { name: "Alberta", sub: "Canada", capital: "Edmonton", lat: 53.5461, lng: -113.4938 }, { name: "British Columbia", sub: "Canada", capital: "Victoria", lat: 48.4284, lng: -123.3656 },
+            { name: "Manitoba", sub: "Canada", capital: "Winnipeg", lat: 49.8951, lng: -97.1384 }, { name: "New Brunswick", sub: "Canada", capital: "Fredericton", lat: 45.9636, lng: -66.6431 },
+            { name: "Newfoundland and Labrador", sub: "Canada", capital: "St. John's", lat: 47.5615, lng: -52.7126 }, { name: "Nova Scotia", sub: "Canada", capital: "Halifax", lat: 44.6488, lng: -63.5752 },
+            { name: "Ontario", sub: "Canada", capital: "Toronto", lat: 43.6532, lng: -79.3832 }, { name: "Prince Edward Island", sub: "Canada", capital: "Charlottetown", lat: 46.2382, lng: -63.1311 },
+            { name: "Quebec", sub: "Canada", capital: "Quebec City", lat: 46.8139, lng: -71.2082 }, { name: "Saskatchewan", sub: "Canada", capital: "Regina", lat: 50.4452, lng: -104.6189 },
+            { name: "Northwest Territories", sub: "Canada", capital: "Yellowknife", lat: 62.4540, lng: -114.3718 }, { name: "Nunavut", sub: "Canada", capital: "Iqaluit", lat: 63.7467, lng: -68.5170 },
+            { name: "Yukon", sub: "Canada", capital: "Whitehorse", lat: 60.7212, lng: -135.0568 }
+        ];
+
+        // Palette for dynamic family colors
+        const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'yellow', 'indigo', 'cyan'];
+        
+        // --- APP STATE VARIABLES ---
+        // State variables track the current view and data
+        let currentTab = 'parks';
+        let sortColumn = 1;
+        let sortDirection = 'asc';
+        let worldMap = null;
+        let mapMarkers = [];
+        let hometownMarker = null;
+        let mapMode = 'parks'; 
+        let statsMode = 'parks';
+        let searchTerm = '';
+        let editTarget = null; // Stores the currently editing location key
+        
+        // Load Settings & Data from LocalStorage
+        // Reference: Window.localStorage - https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+        // Settings defaults if no storage exists
+        let settings = JSON.parse(localStorage.getItem('np_travel_settings')) || { 
+            showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true, 
+            familyMembers: ['John', 'Jane', 'Jim', 'Jess'],
+            hometown: null 
+        };
+        
+        // visitData structure: { parks: {}, states: {}, meta: { parks: {}, states: {} } }
+        let visitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));
+
+        // Initialize Defaults if fresh load
+        // This pre-populates some data for demo/testing purposes if no data exists.
+        if (!visitData) {
+            visitData = { parks: {}, states: {}, meta: { parks: {}, states: {} } };
+            const defaults = [
+                { type: 'states', name: 'California', members: settings.familyMembers },
+                { type: 'states', name: 'Ontario', members: settings.familyMembers },
+                { type: 'parks', name: 'Banff', members: settings.familyMembers },
+                { type: 'parks', name: 'Yellowstone', members: settings.familyMembers }
+            ];
+            defaults.forEach(d => {
+                d.members.forEach(m => {
+                    visitData[d.type][`${d.name}_${m}`] = true;
+                });
+            });
+            localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
+        }
+
+        // Migration Check for meta object
+        if (!visitData.meta) {
+            visitData.meta = { parks: {}, states: {} };
+            localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
+        }
+        if (!settings.familyMembers) { 
+            settings.familyMembers = ['John', 'Jane', 'Jim', 'Jess']; 
+            localStorage.setItem('np_travel_settings', JSON.stringify(settings)); 
+        }
+
+        // --- HELPER FUNCTIONS ---
+
+        /** * Returns a color from the palette based on index to ensure variety. 
+         * Used for assigning consistent colors to family member progress bars.
+         */
+        function getMemberColor(index) { return palette[index % palette.length]; }
+
+        /** * Filter list and map based on search input.
+         * Triggered on input event from the search bar.
+         */
+        function handleSearch(val) {
+            searchTerm = val.toLowerCase();
+            if (currentTab === 'world') updateMapMarkers();
+            else if (currentTab !== 'stats') renderData();
+        }
+
+        /** * Shows visual warning if no family members are configured.
+         * Toggles the visibility of the red warning banner.
+         */
+        function checkFamilyStatus() {
+            const warning = document.getElementById('settings-warning');
+            const settingsBtn = document.getElementById('settings-btn');
+            if (settings.familyMembers.length === 0) { warning.classList.remove('hidden'); settingsBtn.classList.add('warning-active'); } 
+            else { warning.classList.add('hidden'); settingsBtn.classList.remove('warning-active'); }
+        }
+
+        /** * Adds a new family member to the list and saves settings.
+         * Triggered from the Settings modal.
+         */
+        function addFamilyMember() {
+            const input = document.getElementById('new-member-name');
+            const name = input.value.trim();
+            if (name && !settings.familyMembers.includes(name)) {
+                settings.familyMembers.push(name);
+                input.value = '';
+                updateSetting('familyMembers', settings.familyMembers);
+            }
+        }
+
+        /** * Removes a family member by index.
+         * Triggered from the Settings modal list.
+         */
+        function removeFamilyMember(index) {
+            settings.familyMembers.splice(index, 1);
+            updateSetting('familyMembers', settings.familyMembers);
+        }
+
+        /**
+         * Helper to generate a valid Wikipedia URL for parks and states.
+         * Handles country-specific disambiguation and common Wikipedia naming patterns.
+         */
+        function getWikiLink(item, type) {
+            let query = item.name.replace(/ /g, '_');
+            if (type === 'parks') {
+                if (item.name === 'Glacier') {
+                    return item.country === 'USA' 
+                        ? 'https://en.wikipedia.org/wiki/Glacier_National_Park_(U.S.)' 
+                        : 'https://en.wikipedia.org/wiki/Glacier_National_Park_(Canada)';
+                }
+                return `https://en.wikipedia.org/wiki/${query}_National_Park`;
+            } else {
+                // States/Provinces
+                if (item.sub === 'USA') {
+                    if (['Georgia', 'Washington', 'New York'].includes(item.name)) {
+                        return `https://en.wikipedia.org/wiki/${query}_(state)`;
+                    }
+                }
+                return `https://en.wikipedia.org/wiki/${query}`;
+            }
+        }
+
+        // --- METADATA EDITING FUNCTIONS ---
+
+        /** Opens the Edit Metadata Modal for a specific location */
+        function openEditModal(name) {
+            editTarget = name;
+            const modal = document.getElementById('edit-modal');
+            const title = document.getElementById('edit-modal-title');
+            const dateInput = document.getElementById('edit-date');
+            const commentInput = document.getElementById('edit-comment');
+            const charCount = document.getElementById('char-count');
+            
+            // Retrieve existing metadata or set defaults
+            // Handle case where meta object might not exist for current tab yet
+            if (!visitData.meta) visitData.meta = { parks: {}, states: {} };
+            if (!visitData.meta[currentTab]) visitData.meta[currentTab] = {};
+
+            const meta = visitData.meta[currentTab][name] || {};
+            
+            title.innerText = `Edit Details: ${name}`;
+            // CHANGED: Removed default date fallback. Now defaults to empty string.
+            dateInput.value = meta.date || ''; 
+            commentInput.value = meta.comment || '';
+            charCount.innerText = commentInput.value.length;
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+        }
+
+        /** Closes the Edit Modal */
+        function toggleEditModal(show) {
+            const modal = document.getElementById('edit-modal');
+            if (show) {
+                // Should use openEditModal for setup, this is just for raw toggle if needed
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+            } else {
+                modal.classList.replace('opacity-100', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            }
+        }
+
+        /** Updates the character counter in the text area */
+        function updateCharCount(textarea) {
+            document.getElementById('char-count').innerText = textarea.value.length;
+        }
+
+        /** Saves the metadata to local storage */
+        function saveMetaData() {
+            if (!editTarget) return;
+            
+            const date = document.getElementById('edit-date').value;
+            const comment = document.getElementById('edit-comment').value;
+            
+            if (!visitData.meta[currentTab]) visitData.meta[currentTab] = {};
+            
+            visitData.meta[currentTab][editTarget] = {
+                date: date,
+                comment: comment
+            };
+            
+            save(); // Persist to local storage
+            toggleEditModal(false);
+            renderData(); // Refresh table to update icon color
+        }
+
+        // --- HOMETOWN FUNCTIONS ---
+
+        /** * Fetches coordinates for a city name using OpenStreetMap Nominatim API.
+         * Docs: https://nominatim.org/release-docs/develop/api/Search/
+         * Updates the map marker and saves location to settings.
+         */
+        async function searchHometown() {
+            const input = document.getElementById('hometown-input');
+            const query = input.value.trim();
+            const btn = document.getElementById('hometown-btn');
+            
+            if (!query) return;
+
+            btn.innerText = '...';
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
+                const data = await response.json();
+                
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    settings.hometown = {
+                        name: result.display_name.split(',')[0], // Use first part of name
+                        lat: parseFloat(result.lat),
+                        lng: parseFloat(result.lon)
+                    };
+                    updateSetting('hometown', settings.hometown);
+                    input.value = '';
+                } else {
+                    alert('Location not found. Please try a different name (e.g., "Seattle, WA")');
+                }
+            } catch (e) {
+                console.error(e);
+                alert('Error searching for location.');
+            } finally {
+                btn.innerText = 'Search';
+            }
+        }
+
+        /** Clears the stored hometown setting. */
+        function clearHometown() {
+            settings.hometown = null;
+            updateSetting('hometown', null);
+            document.getElementById('hometown-input').value = '';
+        }
+
+        /** Renders the UI element showing the current hometown name. */
+        function renderHometownUI() {
+            const display = document.getElementById('hometown-display');
+            const label = document.getElementById('hometown-name');
+            
+            if (settings.hometown) {
+                display.classList.remove('hidden');
+                label.innerText = settings.hometown.name;
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+
+        /** Renders the list of family members inside the Settings modal. */
+        function renderSettingsFamilyList() {
+            const list = document.getElementById('settings-family-list');
+            list.innerHTML = '';
+            settings.familyMembers.forEach((member, i) => {
+                const div = document.createElement('div');
+                div.className = "flex justify-between items-center bg-white p-2 rounded border border-stone-200";
+                div.innerHTML = `<div class="flex items-center gap-2"><div class="w-3 h-3 rounded-full bg-${getMemberColor(i)}-500"></div><span class="text-sm font-medium text-stone-700">${member}</span></div><button onclick="removeFamilyMember(${i})" class="text-stone-400 hover:text-red-600 transition"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>`;
+                list.appendChild(div);
+            });
+        }
+
+        /** Attempt to fetch 'examples/' folder content to populate dropdown. */
+        async function populateExamplesDropdown() {
+            const select = document.getElementById('example-select');
+            select.innerHTML = '`<option value="family1.json">family1.json</option>` ';
+        }
+
+        /** Loads a selected example JSON file. */
+        function loadSelectedExample() {
+            const filename = document.getElementById('example-select').value;
+            if (!filename || filename.includes('Scanning')) return;
+            
+            fetch(`examples/${filename}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.settings && data.visitData) {
+                        if(confirm('Load this example? Current data will be replaced.')) {
+                            localStorage.setItem('np_travel_settings', JSON.stringify(data.settings));
+                            localStorage.setItem('np_travel_tracker_v3', JSON.stringify(data.visitData));
+                            location.reload();
+                        }
+                    } else { alert('Invalid example file format.'); }
+                })
+                .catch(() => alert('Could not load example file.'));
+        }
+
+        /**
+         * Main navigation logic. Switches views, toggles visibility of containers,
+         * updates headers, and triggers data rendering for the selected tab.
+         * @param {string} tab - The ID of the tab to switch to ('parks', 'states', 'world', 'stats').
+         */
+        function switchTab(tab) {
+            let previousTab = currentTab;
+            currentTab = tab;
+            sortColumn = 1;
+            sortDirection = 'asc';
+            
+            // Styling Tabs
+            document.querySelectorAll('nav button').forEach(b => b.className = `px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700`);
+            // SAFEGUARD: Ensure element exists before modifying class
+            const activeTabBtn = document.getElementById(`tab-${tab}`);
+            if (activeTabBtn) {
+                activeTabBtn.className = `px-6 py-3 text-lg transition-all tab-active`;
+            }
+            
+            const tableContainer = document.getElementById('table-container');
+            const mapContainer = document.getElementById('world-map-container');
+            const statsViewContainer = document.getElementById('stats-view-container');
+            const controlsContainer = document.getElementById('controls-container');
+            const regionFilterContainer = document.getElementById('region-filter-container');
+            const filterSelect = document.getElementById('region-filter');
+
+            // Hide all main containers first
+            tableContainer.classList.add('hidden');
+            mapContainer.classList.add('hidden');
+            statsViewContainer.classList.add('hidden');
+            controlsContainer.classList.remove('hidden');
+
+            // Determine if dropdown filter is needed based on settings
+            let options = [];
+            let showDropdown = false;
+            if (tab === 'parks') {
+                if (settings.showUSAParks && settings.showCanadianParks) {
+                    options = [{val: 'all', text: 'All Visible Locations'}, {val: 'USA', text: 'USA Parks'}, {val: 'Canada', text: 'Canada Parks'}];
+                    showDropdown = true;
+                }
+            } else if (tab === 'states') {
+                if (settings.showUSA && settings.showCanada) {
+                    options = [{val: 'all', text: 'All Visible Locations'}, {val: 'USA', text: 'USA States'}, {val: 'Canada', text: 'Canada Provinces'}];
+                    showDropdown = true;
+                }
+            }
+
+            if (showDropdown) {
+                filterSelect.innerHTML = options.map(o => `<option value="${o.val}">${o.text}</option>`).join('');
+                regionFilterContainer.classList.remove('hidden');
+            } else {
+                regionFilterContainer.classList.add('hidden');
+                filterSelect.value = 'all';
+            }
+
+            // Dynamically build table headers based on tab and family members
+            const headerRow = document.getElementById('table-header-row');
+            if (headerRow) { // Safety check
+                if (tab === 'parks') {
+                    headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th><th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${4+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${4+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
+                } else {
+                    headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${3+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${3+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
+                }
+                updateSortIndicators();
+            }
+
+            if (tab === 'world') {
+                mapContainer.classList.remove('hidden');
+                // Ensure default map mode is Parks unless explicitly set otherwise
+                if (previousTab === 'states') setMapMode('states');
+                else setMapMode('parks');
+                initWorldMap();
+            } else if (tab === 'stats') {
+                statsViewContainer.classList.remove('hidden');
+                controlsContainer.classList.add('hidden');
+                if (previousTab === 'states') setStatsMode('states');
+                else setStatsMode('parks');
+                updateStats();
+            } else {
+                tableContainer.classList.remove('hidden');
+                renderData();
+            }
+        }
+
+        /** Shows/Hides the Settings Modal. */
+        function toggleSettingsModal(show) {
+            const modal = document.getElementById('settings-modal');
+            if (show) {
+                renderSettingsFamilyList();
+                renderHometownUI();
+                document.getElementById('setting-usa').checked = settings.showUSA;
+                document.getElementById('setting-canada').checked = settings.showCanada;
+                document.getElementById('setting-usa-parks').checked = settings.showUSAParks;
+                document.getElementById('setting-canada-parks').checked = settings.showCanadianParks;
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+            } else {
+                modal.classList.replace('opacity-100', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            }
+        }
+
+        /** Shows/Hides the Export/Import Modal. */
+        function toggleExportModal(show) {
+            const modal = document.getElementById('export-modal');
+            if (show) {
+                populateExamplesDropdown();
+                modal.classList.remove('hidden');
+                setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+            } else {
+                modal.classList.replace('opacity-100', 'opacity-0');
+                setTimeout(() => modal.classList.add('hidden'), 200);
+            }
+        }
+
+        /** * Updates a specific setting key in LocalStorage and refreshes the UI.
+         */
+        function updateSetting(key, value) {
+            settings[key] = value;
+            localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+            checkFamilyStatus();
+            
+            if (key === 'hometown') {
+                renderHometownUI();
+                if (currentTab === 'world') updateMapMarkers();
+            } else if (key === 'familyMembers') {
+                renderSettingsFamilyList();
+                switchTab(currentTab);
+            } else {
+                if (currentTab === 'world') updateMapMarkers();
+                else if (currentTab === 'stats') updateStats();
+                else switchTab(currentTab);
+            }
+        }
+
+        // --- MAP LOGIC ---
+
+        /** Initializes the World Map Leaflet instance if not already created. */
+        function initWorldMap() {
+            if (!worldMap) {
+                worldMap = L.map('world-map').setView([48, -100], 3);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(worldMap);
+            }
+            setTimeout(() => { worldMap.invalidateSize(); updateMapMarkers(); }, 100);
+        }
+
+        /** Toggles map mode between 'parks' and 'states' via buttons. */
+        function setMapMode(mode) {
+            mapMode = mode;
+            const btnParks = document.getElementById('btn-map-parks');
+            const btnStates = document.getElementById('btn-map-states');
+            btnParks.className = mode === 'parks' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
+            btnStates.className = mode === 'states' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
+            updateMapMarkers();
+        }
+
+        /**
+         * Clears and redraws markers on the map based on current data/filters.
+         * Handles logic for styling markers (visited/not visited/selected).
+         */
+        function updateMapMarkers() {
+            if (!worldMap) return;
+            mapMarkers.forEach(m => worldMap.removeLayer(m));
+            if (hometownMarker) { worldMap.removeLayer(hometownMarker); hometownMarker = null; }
+            mapMarkers = [];
+            
+            // Icon Factory
+            const createIcon = (color, type, isSelected, hasVisits) => {
+                let borderColor = 'white';
+                if (isSelected) borderColor = '#2563eb'; // Blue for selected
+                else if (hasVisits) borderColor = '#f97316'; // Orange if visited at all
+                
+                const border = `border: ${isSelected ? '3px' : '2px'} solid ${borderColor};`;
+                const scale = isSelected ? 'transform: scale(1.15);' : 'transform: scale(1);';
+                const shadow = isSelected ? 'box-shadow: 0 0 12px rgba(37, 99, 235, 0.6);' : 'box-shadow: 0 2px 4px rgba(0,0,0,0.3);';
+                const zIdx = isSelected ? 'z-index: 1000;' : ''; 
+
+                let content = '';
+                if (type === 'parks') content = '🌲';
+                else if (type === 'home') content = '🏠';
+                else content = `<svg viewBox="0 0 24 24" fill="white" style="width:16px;height:16px;"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>`;
+
+                return L.divIcon({
+                    html: `<div class="flex items-center justify-center transition-all duration-300" style="width:32px; height:32px; background-color:${color}; border-radius:50%; ${border} ${scale} ${shadow} ${zIdx} font-size:18px;">${content}</div>`,
+                    className: 'bg-transparent border-none',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 16],
+                    popupAnchor: [0, -20]
+                });
+            };
+
+            // Plot Hometown
+            if (settings.hometown) {
+                const homeIcon = createIcon('#3b82f6', 'home', false, false);
+                const homeIconSelected = createIcon('#3b82f6', 'home', true, false);
+                
+                hometownMarker = L.marker([settings.hometown.lat, settings.hometown.lng], { icon: homeIcon, zIndexOffset: 500 }).addTo(worldMap);
+                hometownMarker.bindPopup(`<strong class="text-sm font-sans">${settings.hometown.name}</strong><br><span class="text-xs text-stone-500">Home Sweet Home</span>`);
+                
+                hometownMarker.on('popupopen', () => { hometownMarker.setIcon(homeIconSelected); hometownMarker.setZIndexOffset(1000); });
+                hometownMarker.on('popupclose', () => { hometownMarker.setIcon(homeIcon); hometownMarker.setZIndexOffset(500); });
+            }
+
+            let dataset = mapMode === 'parks' ? [...parks] : [...states];
+            const dataStore = mapMode === 'parks' ? visitData.parks : visitData.states;
+            // CHANGED: Access metadata store based on current map mode
+            const metaStore = (visitData.meta && visitData.meta[mapMode]) ? visitData.meta[mapMode] : {};
+            
+            // Search Filtering
+            if (searchTerm) {
+                dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
+            }
+
+            // Apply Visibility Settings
+            if (mapMode === 'states') {
+                dataset = dataset.filter(item => {
+                    if (item.sub === 'USA') return settings.showUSA;
+                    if (item.sub === 'Canada') return settings.showCanada;
+                    return true;
+                });
+            }
+            if (mapMode === 'parks') {
+                dataset = dataset.filter(item => {
+                    if (item.country === 'USA') return settings.showUSAParks;
+                    if (item.country === 'Canada') return settings.showCanadianParks;
+                    return true;
+                });
+            }
+
+            dataset.forEach(item => {
+                let visitedCount = settings.familyMembers.filter(m => dataStore[`${item.name}_${m}`]).length;
+                let color = (settings.familyMembers.length > 0 && visitedCount === settings.familyMembers.length) ? "#16a34a" : (visitedCount > 0 ? "#eab308" : "#9ca3af");
+                
+                const hasVisits = visitedCount > 0;
+                const normalIcon = createIcon(color, mapMode, false, hasVisits);
+                const selectedIcon = createIcon(color, mapMode, true, hasVisits);
+
+                const marker = L.marker([item.lat, item.lng], { icon: normalIcon }).addTo(worldMap);
+                const subtitle = mapMode === 'parks' ? 'National Park' : `Capital: ${item.capital}`;
+                const wikiUrl = getWikiLink(item, mapMode);
+
+                // CHANGED: Build Meta HTML (Date and Comments)
+                const itemMeta = metaStore[item.name];
+                let metaHtml = '';
+                if (itemMeta) {
+                    if (itemMeta.date) {
+                        metaHtml += `<div class="mt-2 pt-2 border-t border-stone-100 flex items-center gap-1 text-stone-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                            <span class="text-xs font-semibold">${itemMeta.date}</span>
+                        </div>`;
+                    }
+                    if (itemMeta.comment) {
+                        metaHtml += `<div class="mt-1 text-xs text-stone-500 italic border-l-2 border-stone-200 pl-2 ml-0.5">"${itemMeta.comment}"</div>`;
+                    }
+                }
+
+                const popupContent = `
+                    <div class="font-sans min-w-[160px] p-1">
+                        <strong class="text-sm block text-stone-800">${item.name}</strong>
+                        <span class="text-xs text-stone-500 block border-b pb-1 mb-1">${subtitle}</span>
+                        
+                        <div class="space-y-0.5 text-xs">
+                            ${settings.familyMembers.map(m => `<div class="flex justify-between items-center"><span class="text-stone-600">${m}</span><span class="${dataStore[`${item.name}_${m}`] ? 'text-green-600 font-bold' : 'text-stone-300'}">${dataStore[`${item.name}_${m}`] ? 'Visited' : 'No'}</span></div>`).join('')}
+                        </div>
+
+                        ${metaHtml}
+
+                        <div class="mt-2 pt-2 border-t border-stone-100">
+                            <a href="${wikiUrl}" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
+                                Wikipedia Article
+                            </a>
+                        </div>
+                    </div>`;
+                marker.bindPopup(popupContent);
+                
+                marker.on('popupopen', () => { marker.setIcon(selectedIcon); marker.setZIndexOffset(1000); });
+                marker.on('popupclose', () => { marker.setIcon(normalIcon); marker.setZIndexOffset(0); });
+                
+                mapMarkers.push(marker);
+            });
+        }
+
+        // --- STATS LOGIC ---
+        function setStatsMode(mode) {
+            statsMode = mode;
+            const btnParks = document.getElementById('btn-stats-parks');
+            const btnStates = document.getElementById('btn-stats-states');
+            btnParks.className = mode === 'parks' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
+            btnStates.className = mode === 'states' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
+            updateStats();
+        }
+
+        function updateStats() {
+            let target = currentTab === 'stats' ? statsMode : currentTab;
+            if (target !== 'parks' && target !== 'states') target = 'parks';
+            let dataset = target === 'parks' ? [...parks] : [...states];
+            const dataStore = visitData[target];
+
+            if (target === 'states') dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
+            if (target === 'parks') {
+                dataset = dataset.filter(i => {
+                    if (i.country === 'USA') return settings.showUSAParks;
+                    if (i.country === 'Canada') return settings.showCanadianParks;
+                    return true;
+                });
+            }
+
+            const unique = new Set();
+            Object.keys(dataStore).forEach(k => { const name = k.split('_')[0]; if(dataStore[k] && dataset.find(i => i.name === name)) unique.add(name); });
+
+            document.getElementById('stats-label').innerText = target === 'parks' ? 'Parks Visited' : 'Total Visited';
+            document.getElementById('total-visited').innerText = `${unique.size} / ${dataset.length}`;
+            document.getElementById('total-remaining').innerText = dataset.length - unique.size;
+            document.getElementById('progress-bar').style.width = `${dataset.length ? (unique.size / dataset.length) * 100 : 0}%`;
+            document.getElementById('group-percent').innerText = `${Math.round(dataset.length ? (unique.size / dataset.length) * 100 : 0)}%`;
+
+            const showSplit = (target === 'states' && settings.showUSA && settings.showCanada) || 
+                              (target === 'parks' && settings.showUSAParks && settings.showCanadianParks);
+                              
+            if (showSplit) {
+                const usTotal = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
+                const caTotal = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
+                let usV = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
+                let caV = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
+                document.getElementById('regional-stats').classList.remove('hidden');
+                document.getElementById('us-stat-label').innerText = target === 'parks' ? 'US Parks' : 'US States';
+                document.getElementById('us-stat-count').innerText = `${usV}/${usTotal}`;
+                document.getElementById('us-stat-bar').style.width = `${usTotal ? (usV/usTotal)*100 : 0}%`;
+                document.getElementById('ca-stat-label').innerText = target === 'parks' ? 'CA Parks' : 'CA Provinces';
+                document.getElementById('ca-stat-count').innerText = `${caV}/${caTotal}`;
+                document.getElementById('ca-stat-bar').style.width = `${caTotal ? (caV/caTotal)*100 : 0}%`;
+            } else {
+                document.getElementById('regional-stats').classList.add('hidden');
+            }
+
+            const grid = document.getElementById('family-progress-grid'); grid.innerHTML = '';
+            settings.familyMembers.forEach((m, i) => {
+                let mTotal = 0, mUs = 0, mCa = 0;
+                dataset.forEach(item => { if (dataStore[`${item.name}_${m}`]) { mTotal++; if (item.sub === 'USA' || item.country === 'USA') mUs++; else mCa++; } });
+                const totalCap = dataset.length;
+                let html = `<div class="bg-stone-50/50 p-2 rounded-lg border border-stone-100"><div class="flex justify-between text-xs font-bold"><span>${m}</span><span class="text-stone-500">${mTotal}/${totalCap}</span></div>`;
+                if (showSplit) {
+                    const usCap = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
+                    const caCap = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
+                    html += `<div class="space-y-1.5 mt-2">`;
+                    if ((target === 'states' && settings.showUSA) || (target === 'parks' && settings.showUSAParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>USA</span><span>${mUs}/${usCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-blue-500 h-full" style="width:${usCap ? (mUs/usCap)*100 : 0}%"></div></div></div>`;
+                    if ((target === 'states' && settings.showCanada) || (target === 'parks' && settings.showCanadianParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>CAN</span><span>${mCa}/${caCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-red-500 h-full" style="width:${caCap ? (mCa/caCap)*100 : 0}%"></div></div></div>`;
+                    html += `</div>`;
+                } else {
+                    html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${getMemberColor(i)}-500 h-full" style="width:${totalCap ? (mTotal/totalCap)*100 : 0}%"></div></div>`;
+                }
+                grid.innerHTML += html + `</div>`;
+            });
+        }
+
+        // --- TABLE LOGIC ---
+        function sortTable(n) {
+            if (sortColumn === n) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+            else { sortColumn = n; sortDirection = 'asc'; }
+            updateSortIndicators(); renderData();
+        }
+
+        function updateSortIndicators() {
+            document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+            const active = document.querySelector(`th[onclick="sortTable(${sortColumn})"]`);
+            if (active) active.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+        }
+
+        function renderData() {
+            if (currentTab === 'world' || currentTab === 'stats') return;
+            const list = document.getElementById('data-list');
+            let dataset = [...(currentTab === 'parks' ? parks : states)];
+            const dataStore = visitData[currentTab];
+            const metaStore = visitData.meta[currentTab] || {};
+
+            // Search Filter
+            if (searchTerm) {
+                dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
+            }
+
+            // Apply Settings Filters
+            if (currentTab === 'states') dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
+            if (currentTab === 'parks') {
+                dataset = dataset.filter(i => {
+                    if (i.country === 'USA') return settings.showUSAParks;
+                    if (i.country === 'Canada') return settings.showCanadianParks;
+                    return true;
+                });
+            }
+
+            // Apply Dropdown Filter
+            const f = document.getElementById('region-filter').value;
+            if (currentTab === 'parks') {
+                if (f === 'USA') dataset = dataset.filter(i => i.country === 'USA');
+                if (f === 'Canada') dataset = dataset.filter(i => i.country === 'Canada');
+            } else if (currentTab === 'states') {
+                if (f === 'USA') dataset = dataset.filter(i => i.sub === 'USA');
+                if (f === 'Canada') dataset = dataset.filter(i => i.sub === 'Canada');
+            }
+
+            dataset.sort((a, b) => {
+                let vA, vB;
+                const offset = currentTab === 'parks' ? 4 : 3; 
+                if (sortColumn === 1) { vA = a.name.toLowerCase(); vB = b.name.toLowerCase(); }
+                else if (sortColumn === 2) { vA = a.sub.toLowerCase(); vB = b.sub.toLowerCase(); }
+                else if (currentTab === 'parks' && sortColumn === 3) { vA = a.country.toLowerCase(); vB = b.country.toLowerCase(); }
+                else if (sortColumn >= offset && sortColumn < offset + settings.familyMembers.length) { let m = settings.familyMembers[sortColumn - offset]; vA = dataStore[`${a.name}_${m}`] ? 1 : 0; vB = dataStore[`${b.name}_${m}`] ? 1 : 0; }
+                else if (sortColumn === offset + settings.familyMembers.length) { vA = settings.familyMembers.filter(m => dataStore[`${a.name}_${m}`]).length; vB = settings.familyMembers.filter(m => dataStore[`${b.name}_${m}`]).length; }
+                return sortDirection === 'asc' ? (vA < vB ? -1 : 1) : (vA > vB ? -1 : 1);
+            });
+
+            list.innerHTML = '';
+            dataset.forEach(i => {
+                let vCount = settings.familyMembers.filter(m => dataStore[`${i.name}_${m}`]).length;
+                let tr = document.createElement('tr');
+                tr.className = "hover:bg-stone-50 border-b border-stone-100 " + (vCount > 0 ? "checked-row" : "");
+                
+                // Check if metadata exists for this location to style the wrench
+                const hasMeta = metaStore[i.name] && (metaStore[i.name].comment || metaStore[i.name].date);
+                const wrenchColor = hasMeta ? "text-blue-500 hover:text-blue-700" : "text-stone-300 hover:text-stone-500";
+
+                let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked)" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
+                <td class="p-4 font-medium flex items-center justify-between group">
+                    <a href="${getWikiLink(i, currentTab)}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
+                        ${i.name}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-30"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+                    </a>
+                    <button onclick="openEditModal('${i.name}')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    </button>
+                </td>
+                <td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
+                
+                if (currentTab === 'parks') cells += `<td class="p-4 text-sm text-stone-500">${i.country}</td>`;
+                settings.familyMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
+                cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'text-green-600' : 'text-stone-400'}">${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? '✓' : vCount + '/' + settings.familyMembers.length}</td>`;
+                tr.innerHTML = cells; list.appendChild(tr);
+            });
+            updateStats();
+        }
+
+        /** Toggles a single visit record. */
+        function toggleVisit(n, m) { visitData[currentTab][`${n}_${m}`] = !visitData[currentTab][`${n}_${m}`]; save(); renderData(); }
+        
+        /** Toggles visit status for all family members for a location. */
+        function toggleAllRow(n, val) { settings.familyMembers.forEach(m => visitData[currentTab][`${n}_${m}`] = val); save(); renderData(); }
+        
+        /** Persists visit data to LocalStorage. */
+        function save() { localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData)); }
+
+        // --- EXPORT/IMPORT/BACKUP ---
+        
+        /** Saves Full Backup as JSON. */
+        function saveBackupJSON() {
+            const backup = { settings: settings, visitData: visitData, meta: { version: 'v3', date: new Date().toISOString() } };
+            const url = window.URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' }));
+            const a = document.createElement('a'); a.href = url; a.download = `Travel_Tracker_Backup_${new Date().toISOString().split('T')[0]}.json`; a.click();
+        }
+
+        /** Handles restoring from a JSON backup file. */
+        function handleBackupImport(e) {
+            const f = e.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                try {
+                    const data = JSON.parse(ev.target.result);
+                    if (data.settings && data.visitData) {
+                        if(confirm('Overwrite current data?')) {
+                            localStorage.setItem('np_travel_settings', JSON.stringify(data.settings));
+                            localStorage.setItem('np_travel_tracker_v3', JSON.stringify(data.visitData));
+                            location.reload();
+                        }
+                    } else alert('Invalid backup file.');
+                } catch (err) { alert('Error parsing JSON.'); }
+                e.target.value = '';
+            };
+            reader.readAsText(f);
+        }
+
+        /** Prepares data for CSV/Excel export. */
+        function getExportData(targetTab) {
+            let ds = targetTab === 'parks' ? [...parks] : [...states];
+            const store = visitData[targetTab];
+            if (targetTab === 'states') ds = ds.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
+            if (targetTab === 'parks') ds = ds.filter(i => (i.country === 'USA' && settings.showUSAParks) || (i.country === 'Canada' && settings.showCanadianParks));
+            return ds.map(i => { const r = { [targetTab==='parks'?'Park':'State']: i.name, Region: i.sub }; if (targetTab === 'parks') r.Country = i.country; settings.familyMembers.forEach(m => r[m] = store[`${i.name}_${m}`]?'Visited':''); return r; });
+        }
+        
+        /** Saves data as a CSV file. */
+        function saveToCSV(targetTab) {
+            const d = getExportData(targetTab); if(!d.length) return;
+            const k = Object.keys(d[0]); let csv = k.join(',') + '\n'; d.forEach(r => csv += k.map(x => `"${r[x]}"`).join(',') + '\n');
+            const url = window.URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); const a = document.createElement('a'); a.href = url; a.download = `Travel_Tracker_${targetTab}.csv`; a.click();
+        }
+        
+        /** Saves data as an Excel file using SheetJS. */
+        function saveToExcel(targetTab) {
+            const d = getExportData(targetTab); if(!d.length) return;
+            const ws = XLSX.utils.json_to_sheet(d); const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, targetTab); XLSX.writeFile(wb, `Family_Travel_${targetTab}.xlsx`);
+        }
+        
+        /** Handles CSV file import (Legacy Support). */
+        function handleImport(e) {
+            const f = e.target.files[0]; if (!f) return;
+            const reader = new FileReader(); reader.onload = function(ev) {
+                const lines = ev.target.result.split('\n').filter(l => l.trim() !== '');
+                const target = lines[0].includes('Park') ? 'parks' : 'states';
+                visitData[target] = {};
+                for (let i = 1; i < lines.length; i++) {
+                    const v = lines[i].split(',').map(s => s.replace(/"/g, ''));
+                    const offset = target === 'parks' ? 3 : 2; 
+                    settings.familyMembers.forEach((m, idx) => { if (v[idx+offset] === 'Visited') visitData[target][`${v[0]}_${m}`] = true; });
+                }
+                save(); switchTab(target); e.target.value = ''; toggleExportModal(false);
+            }; reader.readAsText(f);
+        }
+
+        // Initialize App
+        // Reference: Window: load event - https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event
+        window.onload = () => {
+            checkFamilyStatus();
+            fetch(`examples/family1.json`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.settings && data.visitData) {                        
+                        localStorage.setItem('np_travel_settings', JSON.stringify(data.settings));
+                        localStorage.setItem('np_travel_tracker_v3', JSON.stringify(data.visitData));
+                        location.reload();
+                    } else { alert('Invalid example file format.'); }
+                })
+                .catch(() => alert('Could not load example file.'));          
+            switchTab('parks');
+        };
+    </script>
+</body>
+</html>
