@@ -83,13 +83,15 @@
             Please Update Settings: Add Family Members
         </div>
 
-        <!-- 
-          Element: <button> - A clickable button.
-          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button
-        -->
-        <button id="settings-btn" onclick="toggleSettingsModal(true)" class="absolute top-4 right-4 md:top-8 md:right-8 p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all no-print" title="Settings">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+        <!-- Top Right Actions: Export & Settings -->
+        <div class="absolute top-4 right-4 md:top-8 md:right-8 flex gap-2 no-print">
+            <button onclick="toggleExportModal(true)" class="p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all" title="Export / Import Data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            </button>
+            <button id="settings-btn" onclick="toggleSettingsModal(true)" class="p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all" title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+        </div>
 
         <!-- 
           Element: <header> - Introductory content or navigational aids.
@@ -153,29 +155,25 @@
 
         <!-- Controls Row -->
         <div id="controls-container" class="flex flex-wrap gap-3 items-center mb-4 no-print">
-            <button onclick="toggleExportModal(true)" class="bg-stone-100 hover:bg-stone-200 text-stone-700 px-4 py-2 rounded-lg text-sm transition flex items-center gap-2 font-medium border border-stone-200 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                Export / Import Data
-            </button>
-            <div class="ml-auto flex items-center gap-4">
-                <!-- Search Input -->
-                <!-- 
-                  Element: <input> - An interactive control for user input.
-                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
-                -->
-                <div class="relative">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
-                    <input type="text" id="search-input" placeholder="Search..." oninput="handleSearch(this.value)" class="pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all w-32 focus:w-56 bg-white">
-                </div>
-                <div id="region-filter-container" class="hidden">
-                    <!-- 
-                      Element: <select> - A control that provides a menu of options.
-                      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select
-                    -->
-                    <select id="region-filter" onchange="renderData()" class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors"></select>
-                </div>
-                <div class="text-sm text-stone-500 italic">Auto-saves to browser</div>
+            <!-- Search Input -->
+            <!-- 
+                Element: <input> - An interactive control for user input.
+                Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input
+            -->
+            <div class="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+                <input type="text" id="search-input" placeholder="Search..." oninput="handleSearch(this.value)" class="pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all w-32 focus:w-56 bg-white">
             </div>
+            
+            <div id="region-filter-container" class="hidden">
+                <!-- 
+                    Element: <select> - A control that provides a menu of options.
+                    Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/select
+                -->
+                <select id="region-filter" onchange="renderData()" class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors"></select>
+            </div>
+            
+            <div class="ml-auto text-sm text-stone-500 italic">Auto-saves to browser</div>
         </div>
 
         <!-- Table View -->
@@ -253,14 +251,14 @@
         </div>
     </div>
 
-    <!-- Settings Modal Overlay -->
+    <!-- Settings Modal Overlay (Updated Height) -->
     <div id="settings-modal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
-        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[75vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
                 <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Settings</h2>
                 <button onclick="toggleSettingsModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
             </div>
-            <div class="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
+            <div class="p-8 space-y-6 overflow-y-auto">
                 <!-- Family Members Section -->
                 <div>
                     <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Manage Family Members</h3>
@@ -296,39 +294,37 @@
                     </div>
                 </div>
             </div>
-            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center">
+            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center flex-shrink-0">
                 <button onclick="toggleSettingsModal(false)" class="bg-green-700 text-white px-8 py-2 rounded-xl font-bold hover:bg-green-800 transition shadow-lg shadow-green-900/20">Close</button>
             </div>
         </div>
     </div>
 
-    <!-- Export/Import Modal -->
+    <!-- Export/Import Modal (Updated Height) -->
     <div id="export-modal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
-        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[75vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
                 <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Data Options</h2>
                 <button onclick="toggleExportModal(false)" class="text-stone-400 hover:text-stone-600"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
             </div>
-            <div class="p-8 space-y-8">
-                <!-- Export Section -->
+            <div class="p-8 space-y-8 overflow-y-auto">
+                
+                <!-- Load Example Data Section (1st) -->
                 <div>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                        Export Spreadsheet (CSV/Excel)
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        Load Example Data
                     </h3>
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
-                            <div><span class="block font-bold text-stone-700">National Parks</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
-                            <div class="flex gap-2"><button onclick="saveToCSV('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
-                        </div>
-                        <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
-                            <div><span class="block font-bold text-stone-700">States & Provinces</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
-                            <div class="flex gap-2"><button onclick="saveToCSV('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
-                        </div>
+                    <div class="flex gap-2">
+                         <select id="example-select" class="flex-1 text-sm bg-white border border-stone-300 rounded-lg px-3 py-2 outline-none cursor-pointer focus:border-green-600">
+                             <!-- Options populated by JS -->
+                         </select>
+                         <button onclick="loadSelectedExample()" class="px-4 py-2 bg-stone-100 text-stone-700 font-bold text-sm border border-stone-200 rounded-lg hover:bg-stone-200 transition">Load</button>
                     </div>
+                    <p class="text-[10px] text-stone-400 mt-1">Loads JSON files from the 'examples' folder if present.</p>
                 </div>
 
-                <!-- Backup Section (NEW) -->
+                <!-- Backup Section (2nd) -->
                 <div>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
@@ -350,23 +346,26 @@
                         </label>
                     </div>
                 </div>
-                
-                <!-- Load Example Data Section -->
+
+                <!-- Export Section (3rd) -->
                 <div>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-                        Load Example Data
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                        Export Spreadsheet (CSV/Excel)
                     </h3>
-                    <div class="flex gap-2">
-                         <select id="example-select" class="flex-1 text-sm bg-white border border-stone-300 rounded-lg px-3 py-2 outline-none cursor-pointer focus:border-green-600">
-                             <!-- Options populated by JS -->
-                         </select>
-                         <button onclick="loadSelectedExample()" class="px-4 py-2 bg-stone-100 text-stone-700 font-bold text-sm border border-stone-200 rounded-lg hover:bg-stone-200 transition">Load</button>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
+                            <div><span class="block font-bold text-stone-700">National Parks</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('parks')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
+                        </div>
+                        <div class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
+                            <div><span class="block font-bold text-stone-700">States & Provinces</span><span class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button onclick="saveToExcel('states')" class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button></div>
+                        </div>
                     </div>
-                    <p class="text-[10px] text-stone-400 mt-1">Loads JSON files from the 'examples' folder if present.</p>
                 </div>
 
-                <!-- Import CSV Section (Unified) -->
+                <!-- Import CSV Section (4th) -->
                 <div>
                     <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
@@ -379,7 +378,7 @@
                     </label>
                 </div>
             </div>
-            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center">
+            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center flex-shrink-0">
                 <button onclick="toggleExportModal(false)" class="text-stone-500 hover:text-stone-800 font-medium text-sm transition">Close</button>
             </div>
         </div>
@@ -533,10 +532,6 @@
             localStorage.setItem('np_travel_settings', JSON.stringify(settings)); 
         }
 
-        // Example file list config
-        // NOTE: This requires actual files in an /examples folder relative to this HTML file.
-        // Since we cannot scan directories client-side without server support, this function fetches the directory index if available.
-        
         // --- HELPER FUNCTIONS ---
 
         /** * Returns a color from the palette based on index to ensure variety. 
@@ -746,7 +741,39 @@
         /** Attempt to fetch 'examples/' folder content to populate dropdown. */
         async function populateExamplesDropdown() {
             const select = document.getElementById('example-select');
-            select.innerHTML = '`<option value="family1.json">family1.json</option>` ';
+            select.innerHTML = '<option>Scanning examples...</option>';
+            
+            try {
+                // Fetch directory listing
+                const response = await fetch('examples/');
+                if (response.ok) {
+                    const html = await response.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const links = Array.from(doc.querySelectorAll('a'));
+                    
+                    // Extract .json files
+                    const files = links
+                        .map(link => link.getAttribute('href'))
+                        .filter(href => href && href.toLowerCase().endsWith('.json'))
+                        .map(href => decodeURIComponent(href.split('/').pop())); // Handle URL encoding
+
+                    const uniqueFiles = [...new Set(files)];
+
+                    if (uniqueFiles.length > 0) {
+                        select.innerHTML = uniqueFiles.map(file => 
+                            `<option value="${file}">${file.replace('.json', '').replace(/_/g, ' ')}</option>`
+                        ).join('');
+                    } else {
+                        select.innerHTML = '<option disabled>No JSON files found</option>';
+                    }
+                } else {
+                    select.innerHTML = '<option disabled>Examples folder not found</option>';
+                }
+            } catch (err) {
+                console.error("Error loading examples:", err);
+                select.innerHTML = '<option disabled>Error loading examples</option>';
+            }
         }
 
         /** Loads a selected example JSON file. */
@@ -779,8 +806,13 @@
             sortColumn = 1;
             sortDirection = 'asc';
             
+            // Styling Tabs
             document.querySelectorAll('nav button').forEach(b => b.className = `px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700`);
-            document.getElementById(`tab-${tab}`).className = `px-6 py-3 text-lg transition-all tab-active`;
+            // SAFEGUARD: Ensure element exists before modifying class
+            const activeTabBtn = document.getElementById(`tab-${tab}`);
+            if (activeTabBtn) {
+                activeTabBtn.className = `px-6 py-3 text-lg transition-all tab-active`;
+            }
             
             const tableContainer = document.getElementById('table-container');
             const mapContainer = document.getElementById('world-map-container');
@@ -820,12 +852,14 @@
 
             // Dynamically build table headers based on tab and family members
             const headerRow = document.getElementById('table-header-row');
-            if (tab === 'parks') {
-                headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th><th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${4+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${4+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
-            } else {
-                headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${3+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${3+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
+            if (headerRow) { // Safety check
+                if (tab === 'parks') {
+                    headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th><th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${4+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${4+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
+                } else {
+                    headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${3+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${3+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
+                }
+                updateSortIndicators();
             }
-            updateSortIndicators();
 
             if (tab === 'world') {
                 mapContainer.classList.remove('hidden');
@@ -1045,8 +1079,6 @@
         }
 
         // --- STATS LOGIC ---
-        
-        /** Switches the Stats Tab mode between 'parks' and 'states'. */
         function setStatsMode(mode) {
             statsMode = mode;
             const btnParks = document.getElementById('btn-stats-parks');
@@ -1056,7 +1088,6 @@
             updateStats();
         }
 
-        /** Calculates statistics and updates the charts and labels in the Stats tab. */
         function updateStats() {
             let target = currentTab === 'stats' ? statsMode : currentTab;
             if (target !== 'parks' && target !== 'states') target = 'parks';
@@ -1121,22 +1152,18 @@
         }
 
         // --- TABLE LOGIC ---
-        
-        /** Sorts the table by a given column index `n` and redraws. */
         function sortTable(n) {
             if (sortColumn === n) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
             else { sortColumn = n; sortDirection = 'asc'; }
             updateSortIndicators(); renderData();
         }
 
-        /** Updates sort arrow visuals on table headers. */
         function updateSortIndicators() {
             document.querySelectorAll('th.sortable').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
             const active = document.querySelector(`th[onclick="sortTable(${sortColumn})"]`);
             if (active) active.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
         }
 
-        /** Renders the main data table based on filters and sorting. */
         function renderData() {
             if (currentTab === 'world' || currentTab === 'stats') return;
             const list = document.getElementById('data-list');
