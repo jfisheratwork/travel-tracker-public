@@ -350,6 +350,21 @@
                         </label>
                     </div>
                 </div>
+                
+                <!-- Load Example Data Section -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        Load Example Data
+                    </h3>
+                    <div class="flex gap-2">
+                         <select id="example-select" class="flex-1 text-sm bg-white border border-stone-300 rounded-lg px-3 py-2 outline-none cursor-pointer focus:border-green-600">
+                             <!-- Options populated by JS -->
+                         </select>
+                         <button onclick="loadSelectedExample()" class="px-4 py-2 bg-stone-100 text-stone-700 font-bold text-sm border border-stone-200 rounded-lg hover:bg-stone-200 transition">Load</button>
+                    </div>
+                    <p class="text-[10px] text-stone-400 mt-1">Loads JSON files from the 'examples' folder if present.</p>
+                </div>
 
                 <!-- Import CSV Section (Unified) -->
                 <div>
@@ -515,6 +530,9 @@
             localStorage.setItem('np_travel_settings', JSON.stringify(settings)); 
         }
 
+        // Example file list config
+        const exampleFiles = ['demo_data.json', 'extended_family.json'];
+
         // --- HELPER FUNCTIONS ---
 
         function getMemberColor(index) { return palette[index % palette.length]; }
@@ -598,7 +616,6 @@
         function toggleEditModal(show) {
             const modal = document.getElementById('edit-modal');
             if (show) {
-                // Should use openEditModal for setup, this is just for raw toggle if needed
                 modal.classList.remove('hidden');
                 setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
             } else {
@@ -694,6 +711,30 @@
             });
         }
 
+        function populateExamplesDropdown() {
+            const select = document.getElementById('example-select');
+            select.innerHTML = exampleFiles.map(file => `<option value="${file}">${file.replace('.json', '')}</option>`).join('');
+        }
+
+        function loadSelectedExample() {
+            const filename = document.getElementById('example-select').value;
+            // Since we can't truly scan a local folder, this simulates fetching known files
+            // In a real server environment, this would fetch the actual file.
+            // For now, we'll try to fetch, and if it fails, alert (since we don't have the files hosted here).
+            fetch(`examples/${filename}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.settings && data.visitData) {
+                        if(confirm('Load this example? Current data will be replaced.')) {
+                            localStorage.setItem('np_travel_settings', JSON.stringify(data.settings));
+                            localStorage.setItem('np_travel_tracker_v3', JSON.stringify(data.visitData));
+                            location.reload();
+                        }
+                    } else { alert('Invalid example file format.'); }
+                })
+                .catch(() => alert('Could not load example file. (Note: This requires the file to exist in an "examples" subfolder relative to this HTML file)'));
+        }
+
         function switchTab(tab) {
             let previousTab = currentTab;
             currentTab = tab;
@@ -710,11 +751,13 @@
             const regionFilterContainer = document.getElementById('region-filter-container');
             const filterSelect = document.getElementById('region-filter');
 
+            // Hide all main containers first
             tableContainer.classList.add('hidden');
             mapContainer.classList.add('hidden');
             statsViewContainer.classList.add('hidden');
             controlsContainer.classList.remove('hidden');
 
+            // Determine if dropdown filter is needed based on settings
             let options = [];
             let showDropdown = false;
             if (tab === 'parks') {
@@ -737,6 +780,7 @@
                 filterSelect.value = 'all';
             }
 
+            // Dynamically build table headers based on tab and family members
             const headerRow = document.getElementById('table-header-row');
             if (tab === 'parks') {
                 headerRow.innerHTML = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th><th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th><th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th><th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>${settings.familyMembers.map((m, i) => `<th onclick="sortTable(${4+i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`).join('')}<th onclick="sortTable(${4+settings.familyMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
@@ -747,6 +791,7 @@
 
             if (tab === 'world') {
                 mapContainer.classList.remove('hidden');
+                // Ensure default map mode is Parks unless explicitly set otherwise
                 if (previousTab === 'states') setMapMode('states');
                 else setMapMode('parks');
                 initWorldMap();
@@ -782,6 +827,7 @@
         function toggleExportModal(show) {
             const modal = document.getElementById('export-modal');
             if (show) {
+                populateExamplesDropdown();
                 modal.classList.remove('hidden');
                 setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
             } else {
@@ -1110,8 +1156,10 @@
         }
 
         function handleBackupImport(e) {
-            const f = e.target.files[0]; if (!f) return;
-            const reader = new FileReader(); reader.onload = function(ev) {
+            const f = e.target.files[0];
+            if (!f) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
                 try {
                     const data = JSON.parse(ev.target.result);
                     if (data.settings && data.visitData) {
@@ -1123,7 +1171,8 @@
                     } else alert('Invalid backup file.');
                 } catch (err) { alert('Error parsing JSON.'); }
                 e.target.value = '';
-            }; reader.readAsText(f);
+            };
+            reader.readAsText(f);
         }
 
         function getExportData(targetTab) {
