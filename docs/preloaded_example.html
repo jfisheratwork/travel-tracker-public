@@ -1292,12 +1292,22 @@
                     if (data.settings && data.visitData) {                        
                         localStorage.setItem('np_travel_settings', JSON.stringify(data.settings));
                         localStorage.setItem('np_travel_tracker_v3', JSON.stringify(data.visitData));
-                        location.reload();
                     } else { alert('Invalid example file format.'); }
                 })
-                .catch(() => alert('Could not load example file.'));          
-            switchTab('parks');
-        };
+                .catch(() => alert('Could not load example file.'));
+            // Load Settings & Data from LocalStorage
+            // Reference: Window.localStorage - https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
+            // Settings defaults if no storage exists
+            settings = JSON.parse(localStorage.getItem('np_travel_settings')) || { 
+                showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true, 
+                familyMembers: ['John', 'Jane', 'Jim', 'Jess'],
+                hometown: null 
+            };
+            
+            // visitData structure: { parks: {}, states: {}, meta: { parks: {}, states: {} } }
+            visitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));          
+                switchTab('parks');
+            };
     </script>
 </body>
 </html>
