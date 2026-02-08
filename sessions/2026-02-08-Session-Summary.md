@@ -13,7 +13,10 @@ Refactor the Travel Tracker application to improve code organization, enhance da
     - Updated `index.html` to reference these external scripts.
 - **Cleanup**: Removed redundant `parks.js` and `states.js` files.
 
-### 2. Data Management Features
+### 2. Project Governance
+- **New Rules Documented**: Added `PROJECT_RULES.md` outlining external command approval, AI attribution, session tracking, and file system boundaries.
+
+### 3. Data Management Features
 - **Reset Functionality**: Added a "Danger Zone" in the Settings modal allowing users to wipe all local data and settings.
     - **UI Polish**: Fixed a visual issue where the reset prompt and confirmation overlapped. Now they toggle cleanly.
 - **Documentation**: Updated `README.md` to clearly explain:
