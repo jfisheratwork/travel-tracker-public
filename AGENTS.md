@@ -1,4 +1,4 @@
-# Project Rules & Governance
+# AI Agent Rules & Governance
 
 This document outlines the global rules for contributing to the Travel Tracker project, specifically for AI assistance.
 
