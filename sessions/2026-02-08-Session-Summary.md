@@ -14,50 +14,33 @@ Refactor the Travel Tracker application to improve code organization, enhance da
 - **Cleanup**: Removed redundant `parks.js` and `states.js` files.
 
 ### 2. Project Governance
-- **New Rules Documented**: Added `PROJECT_RULES.md` outlining external command approval, AI attribution, session tracking, and file system boundaries.
+- **AI Agent Guidelines**: Added `AGENTS.md` (originally `PROJECT_RULES.md`) outlining external command approval, AI attribution, session tracking, and file system boundaries.
 
 ### 3. Data Management Features
 - **Reset Functionality**: Added a "Danger Zone" in the Settings modal allowing users to wipe all local data and settings.
     - **UI Polish**: Fixed a visual issue where the reset prompt and confirmation overlapped. Now they toggle cleanly.
-- **Documentation**: Updated `README.md` to clearly explain:
-    - How data is stored locally (`localStorage`).
-    - Privacy implications (no external servers).
-    - Instructions for backing up and restoring data.
-    - Instructions for resetting data.
+- **Sample Data**: Added `docs/examples/Travel_Tracker_Backup_2026-02-08.json` as a reusable sample dataset.
+- **Documentation**: Updated `README.md` to clearly explain storage, privacy, and reset instructions.
 
-### 3. UI/UX Improvements
+### 4. UI/UX Improvements
 - **Startup Logic**: Removed automatic seeding of dummy data. The app now starts empty.
-- **Onboarding**: Added a "Welcome" modal for new users (or after reset) prompting them to either:
-    - **Configure Family**: Open settings to add members manually.
-    - **Load Sample Data**: Instantly populate the app with demo members and visits.
-- **Controls Layout**: Moved the search bar and filter controls from default position to a global header above navigation.
-- **Settings Modal**: 
-    - Moved "Danger Zone" inside the scrollable area.
-    - Removed the redundant "Close" button footer, relying on the top-right 'X' for cleaner UI.
-- **Info Modal**: Added an "About & Data Privacy" modal (triggered by an 'i' icon) explaining local storage, data privacy, and attribution, matching the README content.
+- **Onboarding**: Added a "Welcome" modal for new users or after reset.
+- **Controls Layout**: Moved search and filters to a global header above navigation.
+- **Settings Modal**: Moved "Danger Zone" inside the scrollable area and removed redundant buttons.
+- **Info Modal**: Added an "About & Data Privacy" modal matching README content.
 - **Member Filtering**: Added a new dropdown to filter the view by individual family member.
-    - When a specific member is selected, the table only shows columns relevant to that member.
-    - When "All Members" is selected, the "Family" summary column is displayed.
 
 ## Code Changes
-- **`docs/index.html`**:
-    - Removed inline scripts.
-    - Relocated `#controls-container` above the `<nav>`.
-    - Added `#member-filter-container`.
-    - Added `#setup-prompt` (Welcome Modal) and `#reset-initial-prompt`.
-- **`docs/js/app.js`**:
-    - Implemented `confirmReset`, `cancelReset`, `performReset` with improved UI toggling.
-    - Implemented `updateMemberFilter`, `renderMemberFilterOptions`.
-    - Implemented `checkFamilyStatus` to control the new Welcome modal.
-    - Implemented `loadSampleData` to seed demo data.
-    - Updated `renderData` and `switchTab` to support dynamic column rendering based on member filter.
-- **`docs/js/data_constants.js`**: New file containing consolidated static data.
+- **`docs/index.html`**: Removed inline scripts, moved controls, added modals.
+- **`docs/js/app.js`**: Core logic for reset, member filtering, onboarding, and manual data loading.
+- **`docs/js/data_constants.js`**: Consolidated static dataset.
+- **`docs/examples/Travel_Tracker_Backup_2026-02-08.json`**: New sample backup file.
+- **`AGENTS.md`**: New AI governance rules.
 
-## Dependencies
-- No new external dependencies added.
-- Continues to use Tailwind CSS (CDN), Leaflet (CDN), and SheetJS (CDN).
+## Decisions and Rationale
+- **Modularization**: Decided to split logic to improve readability and AI context management.
+- **Strict Governance**: Implemented `AGENTS.md` to prevent unintended external command execution and ensure transparency in AI contributions.
+- **Data Privacy**: Prioritized local-first storage and added explicit anti-bot directives (`robots.txt`).
 
-## Next Steps
-- **Validation**: User should verify the new member filter works as expected across different tabs.
-- **Testing**: Test the "Reset" flow to ensure it reliably clears all `localStorage` keys.
-- **Styling**: Further refine the responsive layout of the new controls header if needed.
+---
+*Written with the assistance of Google Gemini*
