@@ -6,7 +6,7 @@ let sortColumn = 1;
 let sortDirection = 'asc';
 let worldMap = null;
 let mapMarkers = [];
-let hometownMarker = null;
+let hometownMarkers = [];
 let mapMode = 'parks';
 let statsMode = 'parks';
 let searchTerm = '';
@@ -22,7 +22,7 @@ const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'ye
 let settings = JSON.parse(localStorage.getItem('np_travel_settings')) || {
     showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true,
     familyMembers: [], // Start empty
-    hometown: null
+    hometowns: []
 };
 
 // visitData structure: { parks: {}, states: {}, meta: { parks: {}, states: {} } }
@@ -43,6 +43,16 @@ if (!settings.familyMembers) {
     settings.familyMembers = [];
     localStorage.setItem('np_travel_settings', JSON.stringify(settings));
 }
+
+// Migrate old hometown object to array if it exists
+if (settings.hometown !== undefined) {
+    if (settings.hometown) {
+        settings.hometowns = [settings.hometown];
+    }
+    delete settings.hometown;
+    localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+}
+if (!settings.hometowns) settings.hometowns = [];
 
 // --- HELPER FUNCTIONS ---
 
@@ -266,12 +276,12 @@ async function searchHometown() {
 
         if (data && data.length > 0) {
             const result = data[0];
-            settings.hometown = {
+            settings.hometowns.push({
                 name: result.display_name.split(',')[0], // Use first part of name
                 lat: parseFloat(result.lat),
                 lng: parseFloat(result.lon)
-            };
-            updateSetting('hometown', settings.hometown);
+            });
+            updateSetting('hometowns', settings.hometowns);
             input.value = '';
         } else {
             alert('Location not found. Please try a different name (e.g., "Seattle, WA")');
@@ -284,21 +294,33 @@ async function searchHometown() {
     }
 }
 
-/** Clears the stored hometown setting. */
-function clearHometown() {
-    settings.hometown = null;
-    updateSetting('hometown', null);
-    document.getElementById('hometown-input').value = '';
+/** Removes a stored hometown. */
+function removeHometown(index) {
+    settings.hometowns.splice(index, 1);
+    updateSetting('hometowns', settings.hometowns);
 }
 
-/** Renders the UI element showing the current hometown name. */
+/** Renders the UI element showing the list of hometowns. */
 function renderHometownUI() {
     const display = document.getElementById('hometown-display');
-    const label = document.getElementById('hometown-name');
-
-    if (settings.hometown) {
+    display.innerHTML = '';
+    
+    if (settings.hometowns && settings.hometowns.length > 0) {
         display.classList.remove('hidden');
-        label.innerText = settings.hometown.name;
+        settings.hometowns.forEach((home, index) => {
+            const isLast = index === settings.hometowns.length - 1;
+            const label = isLast ? 'Current' : 'Previous';
+            const html = `
+                <div class="flex items-center justify-between bg-white px-2 py-1.5 rounded border border-stone-200">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold ${isLast ? 'text-green-700' : 'text-stone-400'}">${label}:</span> 
+                        <span class="text-stone-700">${home.name}</span>
+                    </div>
+                    <button onclick="removeHometown(${index})" class="text-stone-400 hover:text-red-600 transition ml-2" title="Remove">✕</button>
+                </div>
+            `;
+            display.innerHTML += html;
+        });
     } else {
         display.classList.add('hidden');
     }
@@ -519,7 +541,7 @@ function updateSetting(key, value) {
     localStorage.setItem('np_travel_settings', JSON.stringify(settings));
     checkFamilyStatus();
 
-    if (key === 'hometown') {
+    if (key === 'hometowns') {
         renderHometownUI();
         if (currentTab === 'world') updateMapMarkers();
     } else if (key === 'familyMembers') {
@@ -561,7 +583,8 @@ function setMapMode(mode) {
 function updateMapMarkers() {
     if (!worldMap) return;
     mapMarkers.forEach(m => worldMap.removeLayer(m));
-    if (hometownMarker) { worldMap.removeLayer(hometownMarker); hometownMarker = null; }
+    hometownMarkers.forEach(m => worldMap.removeLayer(m));
+    hometownMarkers = [];
     mapMarkers = [];
 
     // Icon Factory
@@ -589,16 +612,23 @@ function updateMapMarkers() {
         });
     };
 
-    // Plot Hometown
-    if (settings.hometown) {
-        const homeIcon = createIcon('#3b82f6', 'home', false, false);
-        const homeIconSelected = createIcon('#3b82f6', 'home', true, false);
+    // Plot Hometowns
+    if (settings.hometowns && settings.hometowns.length > 0) {
+        settings.hometowns.forEach((home, index) => {
+            const isLast = index === settings.hometowns.length - 1;
+            const color = isLast ? '#3b82f6' : '#9ca3af';
+            
+            const homeIcon = createIcon(color, 'home', false, false);
+            const homeIconSelected = createIcon(color, 'home', true, false);
 
-        hometownMarker = L.marker([settings.hometown.lat, settings.hometown.lng], { icon: homeIcon, zIndexOffset: 500 }).addTo(worldMap);
-        hometownMarker.bindPopup(`<strong class="text-sm font-sans">${settings.hometown.name}</strong><br><span class="text-xs text-stone-500">Home Sweet Home</span>`);
+            const marker = L.marker([home.lat, home.lng], { icon: homeIcon, zIndexOffset: isLast ? 500 : 400 }).addTo(worldMap);
+            marker.bindPopup(`<strong class="text-sm font-sans">${home.name}</strong><br><span class="text-xs text-stone-500">${isLast ? 'Home Sweet Home' : 'Previous Home'}</span>`);
 
-        hometownMarker.on('popupopen', () => { hometownMarker.setIcon(homeIconSelected); hometownMarker.setZIndexOffset(1000); });
-        hometownMarker.on('popupclose', () => { hometownMarker.setIcon(homeIcon); hometownMarker.setZIndexOffset(500); });
+            marker.on('popupopen', () => { marker.setIcon(homeIconSelected); marker.setZIndexOffset(1000); });
+            marker.on('popupclose', () => { marker.setIcon(homeIcon); marker.setZIndexOffset(isLast ? 500 : 400); });
+            
+            hometownMarkers.push(marker);
+        });
     }
 
     let dataset = mapMode === 'parks' ? [...parks] : [...states];
