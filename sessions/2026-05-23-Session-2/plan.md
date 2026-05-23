@@ -105,3 +105,11 @@ if (typeof module !== 'undefined' && module.exports) {
 
 ### Manual Verification
 - Verify in browser that tabs, map markers, settings configuration, and road trip calculations continue to operate correctly with the split files.
+
+---
+
+# Addendum - High-Level Documentation (Added 2026-05-23)
+
+## Proposed Changes
+- Create `architecture.md` to document components flow, initialization sequencing, routing point simplification details, and Node.js testing setup.
+- Update `README.md` to list file structural splits, instructions on testing runner setup, and a link to the architecture guide.

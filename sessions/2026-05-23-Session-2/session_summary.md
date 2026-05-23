@@ -1,8 +1,8 @@
 # Session Summary - Monolithic Code Refactoring & Modularization
-**Date:** 2026-05-23 (Time: 09:25:00)
+**Date:** 2026-05-23 (Time: 09:36:00)
 
 ## Executive Summary
-This session focuses on refactoring the monolithic 1,562-line `docs/js/app.js` into five distinct logical files (`helpers.js`, `state.js`, `map.js`, `ui.js`, and `app.js` as the main entry point and test orchestrator) to allow concurrent work and cleaner testing. We created the `feature/refactor-modules` feature branch to isolate the work. All changes were fully validated via `node tests/app.test.js` (20/20 passing) and local browser manual testing.
+This session focuses on refactoring the monolithic 1,562-line `docs/js/app.js` into five distinct logical files (`helpers.js`, `state.js`, `map.js`, `ui.js`, and `app.js` as the main entry point and test orchestrator) to allow concurrent work and cleaner testing. We created the `feature/refactor-modules` feature branch to isolate the work. We also created a comprehensive system `architecture.md` file detailing the component architecture, sequence flows, and Node.js testing setup, and updated the `README.md` to describe the new codebase structure and test runner instructions. All changes were fully validated via `node tests/app.test.js` (20/20 passing) and local browser manual testing.
 
 ## Outcomes
 - **Git Refactoring Branch Created:** Checked out `feature/refactor-modules` locally to isolate the code splitting changes.
@@ -13,6 +13,7 @@ This session focuses on refactoring the monolithic 1,562-line `docs/js/app.js` i
   - `docs/js/ui.js` (DOM drawings, modal configurations, table handlers)
   - `docs/js/app.js` (main entry point, backups, routing, search)
 - **Node.js Compatibility Maintained:** Implemented dynamic imports and global scope mapping inside `docs/js/app.js` when executed in Node environments, maintaining 100% compatibility with `tests/app.test.js` without rewriting the test runner.
+- **High-Level Documentation Created:** Created `architecture.md` containing visual Mermaid sequence and dependency diagrams, and updated `README.md` with structured codebase instructions and test runner execution setup.
 - **Unit Testing Expanded:** Confirmed that all 20 tests pass.
 
 ## Fine-grained Details
@@ -27,6 +28,8 @@ This session focuses on refactoring the monolithic 1,562-line `docs/js/app.js` i
 - [x] Modified `docs/js/app.js` to act as orchestrator and export modules to Node.js tests.
 - [x] Modified `docs/index.html` to include script elements for all modular files in correct order.
 - [x] Re-run unit tests via `node tests/app.test.js` to verify zero logic regressions after refactoring.
+- [x] Created high-level `architecture.md` outlining project layers and sequences.
+- [x] Updated `README.md` to add file mappings, test execution setup, and link to architecture.md.
 
 ### Tasks Not Done
 *None. All session objectives completed.*
@@ -34,6 +37,8 @@ This session focuses on refactoring the monolithic 1,562-line `docs/js/app.js` i
 ## Prompt Log
 1. **User Request:** "Time for some refactoring... split our single app.js into multiple logical js files... MAKE ME A PLAN"
    - *Action:* Created implementation plan for splitting app.js, wrote helpers.js, state.js, map.js, ui.js, modified app.js to act as orchestrator with Node.js emulation bindings, updated script loading order in index.html, and verified tests.
+2. **User Request:** "Time to update the Readme.md and create a high level architecture.md / In another subagent..."
+   - *Action:* Created `architecture.md` with system layers and sequence flows, updated `README.md` with modular directory structure details and test runner setup, and updated session logs.
 
 ---
 *Written with the assistance of Google Gemini*

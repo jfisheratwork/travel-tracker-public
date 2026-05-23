@@ -6,4 +6,6 @@
 - [x] Modify `docs/index.html` to include script elements for all modular files in correct order
 - [x] Run unit tests via `node tests/app.test.js` to verify zero logic regressions
 - [x] Update session files (`plan.md`, `tasks.md`, `session_summary.md`, `walkthrough.md`) inside the session folder
-- [ ] Commit all changes locally on a new feature branch and request push approval
+- [x] Create high-level `architecture.md` outlining project layers and sequences
+- [x] Update `README.md` to add file mappings, test execution setup, and link to architecture.md
+- [ ] Commit all changes locally on a new feature branch and request push approval (Pending user approval)

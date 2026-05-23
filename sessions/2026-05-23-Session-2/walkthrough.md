@@ -1,6 +1,6 @@
 # Walkthrough - Monolithic Code Refactoring & Modularization
 
-We have successfully refactored the monolithic `docs/js/app.js` into modular sub-files.
+We have successfully refactored the monolithic `docs/js/app.js` into modular sub-files and created high-level system architecture documentation.
 
 ## Changes Made
 
@@ -20,6 +20,10 @@ We have successfully refactored the monolithic `docs/js/app.js` into modular sub
 
 ### 4. HTML script Loading
 - Modified [docs/index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html) script tags to load the new modules sequentially.
+
+### 5. High-Level Documentation
+- Created **[architecture.md](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture.md)** containing visual Mermaid diagrams detailing the component dependencies, data lifecycle initialization, and Nominatim geocoding & point-reduction routing sequences.
+- Updated **[README.md](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/README.md)** with detailed file listings, testing instructions, and a link to the architecture guide.
 
 ---
 
