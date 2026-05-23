@@ -13,7 +13,7 @@ if (typeof require !== 'undefined') {
 let currentTab = 'world';
 try {
     currentTab = localStorage.getItem('np_travel_active_tab') || 'world';
-} catch(e) {}
+} catch(loadTabError) {}
 
 let sortColumn = 1;
 let sortDirection = 'asc';
@@ -36,7 +36,7 @@ let statesMemberFilter = 'all';
 let collapsedYears = {};
 try {
     collapsedYears = JSON.parse(localStorage.getItem('np_travel_collapsed_years')) || {};
-} catch(e) {}
+} catch(loadCollapsedError) {}
 
 // Palette for family progress color variety
 const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'yellow', 'indigo', 'cyan'];
@@ -45,7 +45,7 @@ const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'ye
 let rawSettings = null;
 try {
     rawSettings = JSON.parse(localStorage.getItem('np_travel_settings'));
-} catch(e) {}
+} catch(loadSettingsError) {}
 if (!rawSettings) {
     rawSettings = {
         showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true,
@@ -57,7 +57,7 @@ if (!rawSettings) {
 let rawVisitData = null;
 try {
     rawVisitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));
-} catch(e) {}
+} catch(loadVisitError) {}
 
 const migrated = migrateData(rawSettings, rawVisitData);
 let settings = migrated.settings;
@@ -66,18 +66,18 @@ let visitData = migrated.visitData;
 try {
     localStorage.setItem('np_travel_settings', JSON.stringify(settings));
     localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
-} catch(e) {}
+} catch(saveSettingsError) {}
 
 function save() {
     try {
         localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
-    } catch(e) {}
+    } catch(saveVisitError) {}
 }
 
 function saveCollapsedYears() {
     try {
         localStorage.setItem('np_travel_collapsed_years', JSON.stringify(collapsedYears));
-    } catch(e) {}
+    } catch(saveCollapsedError) {}
 }
 
 // Node.js testing environment getters, setters, and exports
@@ -92,11 +92,11 @@ if (typeof module !== 'undefined' && module.exports) {
         parksSearchTerm, statesSearchTerm, parksMemberFilter, statesMemberFilter, collapsedYears
     };
 
-    Object.keys(stateVars).forEach(key => {
-        let internalVal = stateVars[key];
-        Object.defineProperty(global, key, {
+    Object.keys(stateVars).forEach(stateKey => {
+        let internalVal = stateVars[stateKey];
+        Object.defineProperty(global, stateKey, {
             get() { return internalVal; },
-            set(val) { internalVal = val; },
+            set(stateValue) { internalVal = stateValue; },
             configurable: true
         });
     });

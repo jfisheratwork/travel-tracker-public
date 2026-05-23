@@ -64,7 +64,7 @@ function groupRoutesByYearOrStatus(routes, groupBy = 'year') {
             } else if (route.timestamp) {
                 try {
                     key = String(new Date(route.timestamp).getFullYear());
-                } catch (e) {
+                } catch (parseDateError) {
                     key = 'Unknown';
                 }
             } else {
@@ -76,19 +76,19 @@ function groupRoutesByYearOrStatus(routes, groupBy = 'year') {
     });
 
     const sortedGroups = {};
-    const sortedKeys = Object.keys(groups).sort((a, b) => {
+    const sortedKeys = Object.keys(groups).sort((keyA, keyB) => {
         if (groupBy === 'year') {
-            if (a === 'Unknown') return 1;
-            if (b === 'Unknown') return -1;
-            return b.localeCompare(a); // descending
+            if (keyA === 'Unknown') return 1;
+            if (keyB === 'Unknown') return -1;
+            return keyB.localeCompare(keyA); // descending
         }
-        return a.localeCompare(b); // alphabetical (completed, then planned)
+        return keyA.localeCompare(keyB); // alphabetical (completed, then planned)
     });
 
     sortedKeys.forEach(key => {
-        sortedGroups[key] = groups[key].sort((a, b) => {
-            const timeA = a.timestamp || 0;
-            const timeB = b.timestamp || 0;
+        sortedGroups[key] = groups[key].sort((routeA, routeB) => {
+            const timeA = routeA.timestamp || 0;
+            const timeB = routeB.timestamp || 0;
             return timeB - timeA; // newer first
         });
     });
@@ -126,8 +126,8 @@ function migrateData(settingsObj, visitDataObj) {
     if (migratedSettings.hometown !== undefined) {
         if (migratedSettings.hometown) {
             if (!migratedSettings.hometowns) migratedSettings.hometowns = [];
-            const alreadyExists = migratedSettings.hometowns.some(h => 
-                h.lat === migratedSettings.hometown.lat && h.lng === migratedSettings.hometown.lng
+            const alreadyExists = migratedSettings.hometowns.some(hometownItem => 
+                hometownItem.lat === migratedSettings.hometown.lat && hometownItem.lng === migratedSettings.hometown.lng
             );
             if (!alreadyExists) {
                 migratedSettings.hometowns.push(migratedSettings.hometown);
@@ -151,6 +151,8 @@ function migrateData(settingsObj, visitDataObj) {
                 engine: route.engine || 'osrm',
                 timestamp: route.timestamp || Date.now(),
                 date: route.date !== undefined ? route.date : '',
+                startDate: route.startDate !== undefined ? route.startDate : (route.date !== undefined ? route.date : ''),
+                endDate: route.endDate !== undefined ? route.endDate : '',
                 members: Array.isArray(route.members) ? route.members : [],
                 description: route.description !== undefined ? route.description : '',
                 distance: typeof route.distance === 'number' ? route.distance : 0,

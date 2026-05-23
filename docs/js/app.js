@@ -80,6 +80,38 @@ function checkFamilyStatus() {
     }
 }
 
+/**
+ * Updates a specific setting key in LocalStorage and refreshes the UI.
+ */
+function updateSetting(settingKey, settingValue) {
+    settings[settingKey] = settingValue;
+    try {
+        localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+    } catch (saveSettingsError) {
+        // Silent catch for LocalStorage write failures
+    }
+
+    checkFamilyStatus();
+
+    if (settingKey === 'hometowns') {
+        renderHometownUI();
+        if (currentTab === 'world') {
+            updateMapMarkers();
+        }
+    } else if (settingKey === 'familyMembers') {
+        renderSettingsFamilyList();
+        switchTab(currentTab);
+    } else {
+        if (currentTab === 'world') {
+            updateMapMarkers();
+        } else if (currentTab === 'stats') {
+            updateStats();
+        } else {
+            switchTab(currentTab);
+        }
+    }
+}
+
 /** Loads static sample data for quick setup. */
 function loadSampleData() {
     const sampleMembers = ['John', 'Jane', 'Jim', 'Jess'];
@@ -93,10 +125,14 @@ function loadSampleData() {
         { type: 'parks', name: 'Yellowstone' }
     ];
 
-    sampleVisits.forEach(v => {
-        settings.familyMembers.forEach((m) => {
+    sampleVisits.forEach(visitRecord => {
+        settings.familyMembers.forEach((familyMember) => {
             if (Math.random() > 0.3) {
-                visitData[v.type][`${v.name}_${m}`] = true;
+                if (visitRecord.type === 'parks') {
+                    visitData.parks[`${visitRecord.name}_${familyMember}`] = true;
+                } else if (visitRecord.type === 'states') {
+                    visitData.states[`${visitRecord.name}_${familyMember}`] = true;
+                }
             }
         });
     });
@@ -154,8 +190,8 @@ async function searchHometown() {
         } else {
             alert('Location not found. Please try a different name (e.g., "Seattle, WA")');
         }
-    } catch (e) {
-        console.error(e);
+    } catch (geocodingError) {
+        console.error(geocodingError);
         alert('Error searching for location.');
     } finally {
         btn.innerText = 'Search';
@@ -171,7 +207,12 @@ function removeHometown(index) {
 /** Attempt to fetch 'examples/' folder content to populate dropdown. */
 async function populateExamplesDropdown() {
     const select = document.getElementById('example-select');
-    if (select) select.innerHTML = '<option value="family1.json">family1.json</option>';
+    if (select) {
+        select.innerHTML = `
+            <option value="travel_tracker_backup_2026-05-23.json">travel_tracker_backup_2026-05-23.json</option>
+            <option value="family1.json">family1.json</option>
+        `;
+    }
 }
 
 let selectedExampleFile = '';
@@ -197,7 +238,7 @@ function performLoad() {
     if (!selectedExampleFile) return;
 
     fetch(`examples/${selectedExampleFile}`)
-        .then(r => r.json())
+        .then(response => response.json())
         .then(data => {
             if (data.settings && data.visitData) {
                 localStorage.setItem('np_travel_settings', JSON.stringify(data.settings));
@@ -231,27 +272,28 @@ function performReset() {
     location.reload();
 }
 
-// --- EXPORT/IMPORT/BACKUP ---
 function saveBackupJSON() {
-    const data = { settings, visitData };
+    const settingsCopy = JSON.parse(JSON.stringify(settings));
+    delete settingsCopy.mapboxKey;
+    const data = { settings: settingsCopy, visitData };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `travel_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
+    const downloadAnchor = document.createElement('a');
+    downloadAnchor.href = url;
+    downloadAnchor.download = `travel_tracker_backup_${new Date().toISOString().split('T')[0]}.json`;
+    downloadAnchor.click();
     URL.revokeObjectURL(url);
 }
 
 let importedData = null;
 
-function handleBackupImport(e) {
-    const f = e.target.files[0];
-    if (!f) return;
+function handleBackupImport(passedEvent) {
+    const selectedFile = passedEvent.target.files[0];
+    if (!selectedFile) return;
     const reader = new FileReader();
-    reader.onload = function (ev) {
+    reader.onload = function (eventParam) {
         try {
-            importedData = JSON.parse(ev.target.result);
+            importedData = JSON.parse(eventParam.target.result);
             if (importedData.settings && importedData.visitData) {
                 document.getElementById('backup-import-prompt').classList.add('hidden');
                 document.getElementById('backup-import-confirm').classList.remove('hidden');
@@ -259,11 +301,11 @@ function handleBackupImport(e) {
                 alert('Invalid backup file structure.');
                 importedData = null;
             }
-        } catch (err) {
+        } catch (backupParseError) {
             alert('Could not parse backup file.');
         }
     };
-    reader.readAsText(f);
+    reader.readAsText(selectedFile);
 }
 
 function cancelRestore() {
@@ -275,6 +317,10 @@ function cancelRestore() {
 
 function performRestore() {
     if (!importedData) return;
+    const currentKey = settings.mapboxKey;
+    if (currentKey) {
+        importedData.settings.mapboxKey = currentKey;
+    }
     localStorage.setItem('np_travel_settings', JSON.stringify(importedData.settings));
     localStorage.setItem('np_travel_tracker_v3', JSON.stringify(importedData.visitData));
     location.reload();
@@ -282,8 +328,8 @@ function performRestore() {
 
 function getExportData(targetTab) {
     const dataset = targetTab === 'parks' ? parks : states;
-    const dataStore = visitData[targetTab];
-    const metaStore = visitData.meta[targetTab] || {};
+    const dataStore = targetTab === 'parks' ? visitData.parks : visitData.states;
+    const metaStore = targetTab === 'parks' ? (visitData.meta.parks || {}) : (visitData.meta.states || {});
     
     return dataset.map(item => {
         const row = { Name: item.name };
@@ -294,8 +340,10 @@ function getExportData(targetTab) {
             row['Country'] = item.sub;
         }
         
-        settings.familyMembers.forEach(m => {
-            row[m] = dataStore[`${item.name}_${m}`] ? 'Visited' : 'No';
+        settings.familyMembers.forEach(familyMember => {
+            if (familyMember !== '__proto__' && familyMember !== 'constructor' && familyMember !== 'prototype') {
+                row[familyMember] = dataStore[`${item.name}_${familyMember}`] ? 'Visited' : 'No';
+            }
         });
         
         const mData = metaStore[item.name] || {};
@@ -306,45 +354,67 @@ function getExportData(targetTab) {
 }
 
 function saveToCSV(targetTab) {
-    const d = getExportData(targetTab);
-    if (!d.length) return;
-    const headers = Object.keys(d[0]);
-    const csv = [headers.join(','), ...d.map(row => headers.map(h => `"${String(row[h]).replace(/"/g, '""')}"`).join(','))].join('\n');
+    const exportData = getExportData(targetTab);
+    if (!exportData.length) return;
+    const headers = Object.keys(exportData[0]);
+    const csv = [headers.join(','), ...exportData.map(rowValue => headers.map(headerKey => {
+        const cellVal = (headerKey !== '__proto__' && headerKey !== 'constructor') ? rowValue[headerKey] : '';
+        return `"${String(cellVal).replace(/"/g, '""')}"`;
+    }).join(','))].join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `Family_Travel_${targetTab}.csv`; a.click(); URL.revokeObjectURL(url);
+    const downloadAnchor = document.createElement('a'); 
+    downloadAnchor.href = url; 
+    downloadAnchor.download = `Family_Travel_${targetTab}.csv`; 
+    downloadAnchor.click(); 
+    URL.revokeObjectURL(url);
 }
 
 function saveToExcel(targetTab) {
-    const d = getExportData(targetTab);
-    if (!d.length) return;
-    const ws = XLSX.utils.json_to_sheet(d);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, targetTab);
-    XLSX.writeFile(wb, `Family_Travel_${targetTab}.xlsx`);
+    const exportData = getExportData(targetTab);
+    if (!exportData.length) return;
+    // SheetJS Spreadsheet Library (xlsx): https://sheetjs.com/
+    // Used for parsing uploaded spreadsheet files and generating Excel-compatible formats.
+    const excelWorksheet = XLSX.utils.json_to_sheet(exportData);
+    const excelWorkbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(excelWorkbook, excelWorksheet, targetTab);
+    XLSX.writeFile(excelWorkbook, `Family_Travel_${targetTab}.xlsx`);
 }
 
-function handleImport(e) {
-    const f = e.target.files[0];
-    if (!f) return;
+function handleImport(passedEvent) {
+    const selectedFile = passedEvent.target.files[0];
+    if (!selectedFile) return;
     const reader = new FileReader();
-    reader.onload = function (ev) {
-        const lines = ev.target.result.split('\n').filter(l => l.trim() !== '');
+    reader.onload = function (eventParam) {
+        const lines = eventParam.target.result.split('\n').filter(lineContent => lineContent.trim() !== '');
         const target = lines[0].includes('Park') ? 'parks' : 'states';
-        visitData[target] = {};
-        for (let i = 1; i < lines.length; i++) {
-            const v = lines[i].split(',').map(s => s.replace(/"/g, ''));
+        if (target === 'parks') {
+            visitData.parks = {};
+        } else {
+            visitData.states = {};
+        }
+        for (let lineIndex = 1; lineIndex < lines.length; lineIndex++) {
+            const rowValues = lines[lineIndex].split(',').map(valueStr => valueStr.replace(/"/g, ''));
             const offset = target === 'parks' ? 3 : 2;
-            settings.familyMembers.forEach((m, idx) => {
-                if (v[idx + offset] === 'Visited') visitData[target][`${v[0]}_${m}`] = true;
+            settings.familyMembers.forEach((familyMember, memberIdx) => {
+                if (rowValues[memberIdx + offset] === 'Visited') {
+                    const key = `${rowValues[0]}_${familyMember}`;
+                    if (key !== '__proto__' && key !== 'constructor') {
+                        if (target === 'parks') {
+                            visitData.parks[key] = true;
+                        } else {
+                            visitData.states[key] = true;
+                        }
+                    }
+                }
             });
         }
         save();
         switchTab(target);
-        e.target.value = '';
+        passedEvent.target.value = '';
         toggleExportModal(false);
     };
-    reader.readAsText(f);
+    reader.readAsText(selectedFile);
 }
 
 // --- ROUTING / GPX LOGIC ---
@@ -372,16 +442,18 @@ let tempAltPolylines = [];
 
 async function fetchOSRM(waypoints) {
     const now = Date.now();
-    if (now - lastOSRMCall < 30000) {
-        throw new Error("OSRM Public Server limited to 1 request every 30 seconds. Please wait.");
+    if (now - lastOSRMCall < 15000) {
+        throw new Error("OSRM Public Server limited to 1 request every 15 seconds. Please wait or consider switching to the Mapbox API in Settings for faster, unthrottled routing.");
     }
     lastOSRMCall = now;
-    const coordsStr = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?geometries=geojson&overview=full&alternatives=true`);
+    const coordsStr = waypoints.map(waypointNode => `${waypointNode.lng},${waypointNode.lat}`).join(';');
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?geometries=geojson&overview=full&alternatives=3`);
     const data = await res.json();
-    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) throw new Error("OSRM routing failed.");
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+        throw new Error("OSRM routing failed (you may have been throttled). Consider switching to the Mapbox API in Settings for faster, unthrottled routing.");
+    }
     return data.routes.map((route, index) => ({
-        coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]),
+        coordinates: route.geometry.coordinates.map(coordinatePair => [coordinatePair[1], coordinatePair[0]]),
         distance: route.distance,
         duration: route.duration,
         index: index
@@ -390,12 +462,12 @@ async function fetchOSRM(waypoints) {
 
 async function fetchMapbox(waypoints) {
     if (!settings.mapboxKey) throw new Error("Mapbox API Key is required.");
-    const coordsStr = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
-    const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${coordsStr}?geometries=geojson&overview=full&alternatives=true&access_token=${settings.mapboxKey}`);
+    const coordsStr = waypoints.map(waypointNode => `${waypointNode.lng},${waypointNode.lat}`).join(';');
+    const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${coordsStr}?geometries=geojson&overview=full&access_token=${settings.mapboxKey}`);
     const data = await res.json();
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) throw new Error("Mapbox routing failed.");
     return data.routes.map((route, index) => ({
-        coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]),
+        coordinates: route.geometry.coordinates.map(coordinatePair => [coordinatePair[1], coordinatePair[0]]),
         distance: route.distance,
         duration: route.duration,
         index: index
@@ -445,27 +517,30 @@ async function requestRoute() {
             routes = await fetchMapbox(waypoints);
         }
 
-        tempAlternatives = routes.map(r => {
-            let reduced = r.coordinates;
+        tempAlternatives = routes.map(altRoute => {
+            let reduced = altRoute.coordinates;
             const tolerance = parseFloat(settings.routeReduction);
             if (tolerance > 0 && worldMap) {
-                const rawPoints = r.coordinates.map(c => ({x: c[0], y: c[1]}));
+                const rawPoints = altRoute.coordinates.map(coordinatePair => ({x: coordinatePair[0], y: coordinatePair[1]}));
                 const simpleRaw = L.LineUtil.simplify(rawPoints, tolerance);
-                reduced = simpleRaw.map(p => [p.x, p.y]);
+                reduced = simpleRaw.map(pointItem => [pointItem.x, pointItem.y]);
             }
             return {
-                ...r,
+                ...altRoute,
                 coordinates: reduced,
-                originalCoords: r.coordinates,
-                waypoints: waypoints
+                originalCoords: altRoute.coordinates,
+                waypoints: waypoints,
+                startQuery: startStr,
+                endQuery: endStr,
+                stopsQueries: stopQueries
             };
         });
 
         showAltRouteSelectionUI();
-    } catch (e) {
+    } catch (routeFetchError) {
         if (status) {
             status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
-            status.innerText = `Error: ${e.message}`;
+            status.innerText = `Error: ${routeFetchError.message}`;
         }
     }
 }
@@ -515,7 +590,7 @@ function showAltRouteSelectionUI() {
 
     if (worldMap && tempAltPolylines.length > 0) {
         const bounds = tempAltPolylines[0].getBounds();
-        tempAltPolylines.forEach(l => bounds.extend(l.getBounds()));
+        tempAltPolylines.forEach(roadPolyline => bounds.extend(roadPolyline.getBounds()));
         worldMap.fitBounds(bounds);
     }
 }
@@ -524,8 +599,8 @@ function selectAltRoute(idx) {
     selectedAltRouteIdx = idx;
 
     const radios = document.getElementsByName('alt-route-radio');
-    radios.forEach((r, i) => {
-        r.checked = (i === idx);
+    radios.forEach((radioElement, indexIdx) => {
+        radioElement.checked = (indexIdx === idx);
         const card = document.getElementById(`alt-route-card-${i}`);
         if (card) {
             if (i === idx) {
@@ -574,6 +649,11 @@ function cancelAltRouteSelection() {
     if (selector) selector.classList.add('hidden');
     const status = document.getElementById('route-status');
     if (status) status.innerText = '';
+
+    // Reset edit target if cancelled
+    routeEditTargetIndex = null;
+    const title = document.getElementById('route-builder-title');
+    if (title) title.innerText = "Add New Road Trip";
 }
 
 function saveSelectedRoute() {
@@ -584,18 +664,35 @@ function saveSelectedRoute() {
     const waypoints = selectedRoute.waypoints;
     const name = `${waypoints[0].name} to ${waypoints[waypoints.length - 1].name}`;
 
-    settings.savedRoutes.push({
-        name: name,
-        route: selectedRoute.coordinates,
-        engine: settings.routingEngine,
-        timestamp: Date.now(),
-        date: '',
-        members: [],
-        description: '',
-        distance: selectedRoute.distance,
-        duration: selectedRoute.duration,
-        status: 'completed'
-    });
+    if (routeEditTargetIndex !== null) {
+        const existing = settings.savedRoutes[routeEditTargetIndex];
+        if (existing) {
+            existing.route = selectedRoute.coordinates;
+            existing.distance = selectedRoute.distance;
+            existing.duration = selectedRoute.duration;
+            existing.startQuery = selectedRoute.startQuery;
+            existing.endQuery = selectedRoute.endQuery;
+            existing.stopsQueries = selectedRoute.stopsQueries;
+            existing.engine = settings.routingEngine;
+            existing.name = name;
+        }
+    } else {
+        settings.savedRoutes.push({
+            name: name,
+            route: selectedRoute.coordinates,
+            engine: settings.routingEngine,
+            timestamp: Date.now(),
+            date: '',
+            members: [],
+            description: '',
+            distance: selectedRoute.distance,
+            duration: selectedRoute.duration,
+            status: 'completed',
+            startQuery: selectedRoute.startQuery,
+            endQuery: selectedRoute.endQuery,
+            stopsQueries: selectedRoute.stopsQueries
+        });
+    }
 
     localStorage.setItem('np_travel_settings', JSON.stringify(settings));
 
@@ -648,6 +745,7 @@ function removeStopInput(index) {
 }
 
 function toggleYearCollapse(year) {
+    if (year === '__proto__' || year === 'constructor') return;
     collapsedYears[year] = !collapsedYears[year];
     saveCollapsedYears();
     renderSavedRoutes();
@@ -662,13 +760,13 @@ function renderSavedRoutes() {
     }
 
     // Apply search filtering
-    let filteredRoutes = settings.savedRoutes.map((r, idx) => ({ ...r, originalIndex: idx }));
+    let filteredRoutes = settings.savedRoutes.map((savedRoute, routeIdx) => ({ ...savedRoute, originalIndex: routeIdx }));
     if (searchTerm) {
-        filteredRoutes = filteredRoutes.filter(r => {
-            if (r.name && r.name.toLowerCase().includes(searchTerm)) return true;
-            if (r.date && r.date.includes(searchTerm)) return true;
-            if (r.members && r.members.some(m => m.toLowerCase().includes(searchTerm))) return true;
-            if (r.description && r.description.toLowerCase().includes(searchTerm)) return true;
+        filteredRoutes = filteredRoutes.filter(savedRoute => {
+            if (savedRoute.name && savedRoute.name.toLowerCase().includes(searchTerm)) return true;
+            if (savedRoute.date && savedRoute.date.includes(searchTerm)) return true;
+            if (savedRoute.members && savedRoute.members.some(familyMember => familyMember.toLowerCase().includes(searchTerm))) return true;
+            if (savedRoute.description && savedRoute.description.toLowerCase().includes(searchTerm)) return true;
             return false;
         });
     }
@@ -698,55 +796,57 @@ function renderSavedRoutes() {
         }
     });
 
-    planned.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    completedUndated.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    planned.sort((routeA, routeB) => (routeB.timestamp || 0) - (routeA.timestamp || 0));
+    completedUndated.sort((routeA, routeB) => (routeB.timestamp || 0) - (routeA.timestamp || 0));
 
-    const sortedYears = Object.keys(completedByYear).sort((a, b) => b - a);
+    const sortedYears = Object.keys(completedByYear).sort((yearA, yearB) => yearB - yearA);
     sortedYears.forEach(year => {
-        completedByYear[year].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+        if (year !== '__proto__' && year !== 'constructor' && completedByYear[year]) {
+            completedByYear[year].sort((routeA, routeB) => (routeB.timestamp || 0) - (routeA.timestamp || 0));
+        }
     });
 
     let html = '';
 
-    const renderRouteItem = (r) => {
-        const distStr = formatDistance(r.distance);
-        const durStr = formatDuration(r.duration);
-        const membersBadges = r.members && r.members.length > 0 
-            ? r.members.map(m => `<span class="px-1.5 py-0.5 bg-stone-100 border border-stone-200 rounded-full text-[10px] text-stone-600 font-medium">${escapeHTML(m)}</span>`).join(' ')
+    const renderRouteItem = (savedRoute) => {
+        const distStr = formatDistance(savedRoute.distance);
+        const durStr = formatDuration(savedRoute.duration);
+        const membersBadges = savedRoute.members && savedRoute.members.length > 0 
+            ? savedRoute.members.map(familyMember => `<span class="px-1.5 py-0.5 bg-stone-100 border border-stone-200 rounded-full text-[10px] text-stone-600 font-medium">${escapeHTML(familyMember)}</span>`).join(' ')
             : '<span class="text-[10px] text-stone-400 italic">No members added</span>';
 
-        const badgeClass = r.status === 'planned' 
+        const badgeClass = savedRoute.status === 'planned' 
             ? 'bg-blue-100 text-blue-700 border-blue-200' 
             : 'bg-green-100 text-green-700 border-green-200';
 
-        const isSelected = selectedRouteIndex === r.originalIndex;
+        const isSelected = selectedRouteIndex === savedRoute.originalIndex;
         const bgClass = isSelected ? 'bg-blue-50/30 border-2 border-blue-500' : 'bg-white border border-stone-200 hover:bg-stone-50';
         const shadowClass = isSelected ? 'shadow-md' : 'shadow-sm';
 
-        return `<div class="p-3 ${bgClass} rounded-lg flex justify-between items-start cursor-pointer transition ${shadowClass}" onclick="focusRoute(${r.originalIndex})">
+        return `<div class="p-3 ${bgClass} rounded-lg flex justify-between items-start cursor-pointer transition ${shadowClass}" onclick="focusRoute(${savedRoute.originalIndex})">
             <div class="space-y-1.5 flex-1 min-w-0 pr-2">
                 <div class="flex items-center gap-2 flex-wrap">
-                    <strong class="text-stone-800 text-sm font-semibold truncate max-w-[180px]">${escapeHTML(r.name)}</strong>
-                    <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">${escapeHTML(r.status)}</span>
+                    <strong class="text-stone-800 text-sm font-semibold truncate max-w-[180px]">${escapeHTML(savedRoute.name)}</strong>
+                    <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">${escapeHTML(savedRoute.status)}</span>
                 </div>
                 <div class="text-xs text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span>${distStr}</span>
                     <span class="text-stone-300">•</span>
                     <span>${durStr}</span>
                     <span class="text-stone-300">•</span>
-                    <span class="uppercase font-semibold text-[10px]">${escapeHTML(r.engine)}</span>
-                    ${r.date ? `<span class="text-stone-300">•</span><span class="text-stone-500 font-medium">${escapeHTML(r.date)}</span>` : ''}
+                    <span class="uppercase font-semibold text-[10px]">${escapeHTML(savedRoute.engine)}</span>
+                    ${savedRoute.startDate ? `<span class="text-stone-300">•</span><span class="text-stone-500 font-medium">${escapeHTML(savedRoute.startDate)}${savedRoute.endDate ? ` to ${escapeHTML(savedRoute.endDate)}` : ''}</span>` : (savedRoute.date ? `<span class="text-stone-300">•</span><span class="text-stone-500 font-medium">${escapeHTML(savedRoute.date)}</span>` : '')}
                 </div>
                 <div class="flex flex-wrap gap-1 items-center pt-0.5">
                     ${membersBadges}
                 </div>
-                ${r.description ? `<p class="text-xs text-stone-400 italic mt-1 line-clamp-2">${escapeHTML(r.description)}</p>` : ''}
+                ${savedRoute.description ? `<p class="text-xs text-stone-400 italic mt-1 line-clamp-2">${escapeHTML(savedRoute.description)}</p>` : ''}
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
-                <button onclick="event.stopPropagation(); openRouteEditModal(${r.originalIndex})" class="text-stone-400 hover:text-stone-600 p-1 rounded hover:bg-stone-100 transition" title="Edit trip details">
+                <button onclick="event.stopPropagation(); openRouteEditChoice(${savedRoute.originalIndex})" class="text-stone-400 hover:text-stone-600 p-1 rounded hover:bg-stone-100 transition" title="Edit trip details">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                 </button>
-                <button onclick="event.stopPropagation(); deleteSavedRoute(${r.originalIndex})" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-stone-100 transition" title="Delete route">✕</button>
+                <button onclick="event.stopPropagation(); deleteSavedRoute(${savedRoute.originalIndex})" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-stone-100 transition" title="Delete route">✕</button>
             </div>
         </div>`;
     };
@@ -761,7 +861,9 @@ function renderSavedRoutes() {
     const currentYear = new Date().getFullYear();
 
     sortedYears.forEach(year => {
+        if (year === '__proto__' || year === 'constructor') return;
         const routes = completedByYear[year];
+        if (!routes) return;
         
         if (collapsedYears[year] === undefined) {
             try {
@@ -771,7 +873,7 @@ function renderSavedRoutes() {
                 } else {
                     collapsedYears[year] = false;
                 }
-            } catch(e) {
+            } catch(parseYearError) {
                 collapsedYears[year] = false;
             }
         }
@@ -830,7 +932,7 @@ function focusRoute(idx) {
         }
     } else {
         if (worldMap && settings.savedRoutes && settings.savedRoutes.length > 0) {
-            const allCoords = settings.savedRoutes.flatMap(r => r.route);
+            const allCoords = settings.savedRoutes.flatMap(savedRoute => savedRoute.route);
             if (allCoords.length > 0) {
                 const polyline = L.polyline(allCoords);
                 worldMap.fitBounds(polyline.getBounds());
@@ -850,6 +952,8 @@ window.onload = () => {
 // Node.js test environment exports mapping
 if (typeof module !== 'undefined' && module.exports) {
     global.focusRoute = focusRoute;
+    global.handleSearch = handleSearch;
+    global.clearSearch = clearSearch;
     global.renderSavedRoutes = renderSavedRoutes;
     global.removeHometown = removeHometown;
     global.removeFamilyMember = removeFamilyMember;
@@ -861,6 +965,16 @@ if (typeof module !== 'undefined' && module.exports) {
     global.cancelAltRouteSelection = cancelAltRouteSelection;
     global.saveSelectedRoute = saveSelectedRoute;
     global.selectAltRoute = selectAltRoute;
+    global.updateSearchResultCount = updateSearchResultCount;
+    global.getTempAlternatives = () => tempAlternatives;
+    global.setTempAlternatives = (passedAlternatives) => { tempAlternatives = passedAlternatives; };
+    global.updateSetting = updateSetting;
+    global.toggleMapboxSettings = toggleMapboxSettings;
+    global.saveBackupJSON = saveBackupJSON;
+    global.performRestore = performRestore;
+    global.getImportedData = () => importedData;
+    global.setImportedData = (passedImportedData) => { importedData = passedImportedData; };
+    global.populateExamplesDropdown = populateExamplesDropdown;
 
     module.exports = {
         formatDistance: global.formatDistance,
@@ -870,6 +984,18 @@ if (typeof module !== 'undefined' && module.exports) {
         escapeHTML: global.escapeHTML,
         focusRoute: focusRoute,
         getSelectedRouteIndex: () => global.selectedRouteIndex,
-        setSelectedRouteIndex: (val) => { global.selectedRouteIndex = val; }
+        setSelectedRouteIndex: (passedVal) => { global.selectedRouteIndex = passedVal; },
+        handleSearch: handleSearch,
+        clearSearch: clearSearch,
+        updateSearchResultCount: updateSearchResultCount,
+        getTempAlternatives: () => tempAlternatives,
+        setTempAlternatives: (passedAlternatives) => { tempAlternatives = passedAlternatives; },
+        updateSetting: updateSetting,
+        toggleMapboxSettings: toggleMapboxSettings,
+        saveBackupJSON: saveBackupJSON,
+        performRestore: performRestore,
+        getImportedData: () => importedData,
+        setImportedData: (passedImportedData) => { importedData = passedImportedData; },
+        populateExamplesDropdown: populateExamplesDropdown
     };
 }

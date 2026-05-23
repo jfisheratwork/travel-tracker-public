@@ -22,8 +22,8 @@ function renderMemberFilterOptions() {
     const current = select.value || 'all';
 
     let html = '<option value="all">All Members</option>';
-    settings.familyMembers.forEach(m => {
-        html += `<option value="${m}">${m}</option>`;
+    settings.familyMembers.forEach(familyMember => {
+        html += `<option value="${familyMember}">${familyMember}</option>`;
     });
     select.innerHTML = html;
 
@@ -299,17 +299,17 @@ function updateStats() {
     let dataset = target === 'parks' ? [...parks] : [...states];
     const dataStore = visitData[target];
 
-    if (target === 'states') dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
+    if (target === 'states') dataset = dataset.filter(locationItem => (locationItem.sub === 'USA' && settings.showUSA) || (locationItem.sub === 'Canada' && settings.showCanada));
     if (target === 'parks') {
-        dataset = dataset.filter(i => {
-            if (i.country === 'USA') return settings.showUSAParks;
-            if (i.country === 'Canada') return settings.showCanadianParks;
+        dataset = dataset.filter(locationItem => {
+            if (locationItem.country === 'USA') return settings.showUSAParks;
+            if (locationItem.country === 'Canada') return settings.showCanadianParks;
             return true;
         });
     }
 
     const unique = new Set();
-    Object.keys(dataStore).forEach(k => { const name = k.split('_')[0]; if (dataStore[k] && dataset.find(i => i.name === name)) unique.add(name); });
+    Object.keys(dataStore).forEach(storageKey => { const name = storageKey.split('_')[0]; if (dataStore[storageKey] && dataset.find(locationItem => locationItem.name === name)) unique.add(name); });
 
     const statsLabel = document.getElementById('stats-label');
     const totalVisited = document.getElementById('total-visited');
@@ -334,10 +334,10 @@ function updateStats() {
     const regionalStats = document.getElementById('regional-stats');
     if (regionalStats) {
         if (showSplit) {
-            const usTotal = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
-            const caTotal = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
-            let usV = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
-            let caV = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
+            const usTotal = dataset.filter(locationItem => (locationItem.sub === 'USA' || locationItem.country === 'USA')).length;
+            const caTotal = dataset.filter(locationItem => (locationItem.sub === 'Canada' || locationItem.country === 'Canada')).length;
+            let usVisitedCount = dataset.filter(locationItem => (locationItem.sub === 'USA' || locationItem.country === 'USA') && settings.familyMembers.some(familyMember => dataStore[`${locationItem.name}_${familyMember}`])).length;
+            let caVisitedCount = dataset.filter(locationItem => (locationItem.sub === 'Canada' || locationItem.country === 'Canada') && settings.familyMembers.some(familyMember => dataStore[`${locationItem.name}_${familyMember}`])).length;
             regionalStats.classList.remove('hidden');
             
             const usStatLabel = document.getElementById('us-stat-label');
@@ -348,11 +348,11 @@ function updateStats() {
             const caStatBar = document.getElementById('ca-stat-bar');
 
             if (usStatLabel) usStatLabel.innerText = target === 'parks' ? 'US Parks' : 'US States';
-            if (usStatCount) usStatCount.innerText = `${usV}/${usTotal}`;
-            if (usStatBar) usStatBar.style.width = `${usTotal ? (usV / usTotal) * 100 : 0}%`;
+            if (usStatCount) usStatCount.innerText = `${usVisitedCount}/${usTotal}`;
+            if (usStatBar) usStatBar.style.width = `${usTotal ? (usVisitedCount / usTotal) * 100 : 0}%`;
             if (caStatLabel) caStatLabel.innerText = target === 'parks' ? 'CA Parks' : 'CA Provinces';
-            if (caStatCount) caStatCount.innerText = `${caV}/${caTotal}`;
-            if (caStatBar) caStatBar.style.width = `${caTotal ? (caV / caTotal) * 100 : 0}%`;
+            if (caStatCount) caStatCount.innerText = `${caVisitedCount}/${caTotal}`;
+            if (caStatBar) caStatBar.style.width = `${caTotal ? (caVisitedCount / caTotal) * 100 : 0}%`;
         } else {
             regionalStats.classList.add('hidden');
         }
@@ -361,20 +361,20 @@ function updateStats() {
     const grid = document.getElementById('family-progress-grid'); 
     if (grid) {
         grid.innerHTML = '';
-        settings.familyMembers.forEach((m, i) => {
+        settings.familyMembers.forEach((familyMember, memberIdx) => {
             let mTotal = 0, mUs = 0, mCa = 0;
-            dataset.forEach(item => { if (dataStore[`${item.name}_${m}`]) { mTotal++; if (item.sub === 'USA' || item.country === 'USA') mUs++; else mCa++; } });
+            dataset.forEach(item => { if (dataStore[`${item.name}_${familyMember}`]) { mTotal++; if (item.sub === 'USA' || item.country === 'USA') mUs++; else mCa++; } });
             const totalCap = dataset.length;
-            let html = `<div class="bg-stone-50/50 p-2 rounded-lg border border-stone-100"><div class="flex justify-between text-xs font-bold"><span>${m}</span><span class="text-stone-500">${mTotal}/${totalCap}</span></div>`;
+            let html = `<div class="bg-stone-50/50 p-2 rounded-lg border border-stone-100"><div class="flex justify-between text-xs font-bold"><span>${familyMember}</span><span class="text-stone-500">${mTotal}/${totalCap}</span></div>`;
             if (showSplit) {
-                const usCap = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
-                const caCap = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
+                const usTotalCount = dataset.filter(locationItem => (locationItem.sub === 'USA' || locationItem.country === 'USA')).length;
+                const caTotalCount = dataset.filter(locationItem => (locationItem.sub === 'Canada' || locationItem.country === 'Canada')).length;
                 html += `<div class="space-y-1.5 mt-2">`;
-                if ((target === 'states' && settings.showUSA) || (target === 'parks' && settings.showUSAParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>USA</span><span>${mUs}/${usCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-blue-500 h-full" style="width:${usCap ? (mUs / usCap) * 100 : 0}%"></div></div></div>`;
-                if ((target === 'states' && settings.showCanada) || (target === 'parks' && settings.showCanadianParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>CAN</span><span>${mCa}/${caCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-red-500 h-full" style="width:${caCap ? (mCa / caCap) * 100 : 0}%"></div></div></div>`;
+                if ((target === 'states' && settings.showUSA) || (target === 'parks' && settings.showUSAParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>USA</span><span>${mUs}/${usTotalCount}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-blue-500 h-full" style="width:${usTotalCount ? (mUs / usTotalCount) * 100 : 0}%"></div></div></div>`;
+                if ((target === 'states' && settings.showCanada) || (target === 'parks' && settings.showCanadianParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>CAN</span><span>${mCa}/${caTotalCount}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-red-500 h-full" style="width:${caTotalCount ? (mCa / caTotalCount) * 100 : 0}%"></div></div></div>`;
                 html += `</div>`;
             } else {
-                html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${getMemberColor(i)}-500 h-full" style="width:${totalCap ? (mTotal / totalCap) * 100 : 0}%"></div></div>`;
+                html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${getMemberColor(memberIdx)}-500 h-full" style="width:${totalCap ? (mTotal / totalCap) * 100 : 0}%"></div></div>`;
             }
             grid.innerHTML += html + `</div>`;
         });
@@ -388,11 +388,11 @@ function updateStats() {
  */
 function updateRoadTripStats() {
     const routes = settings.savedRoutes || [];
-    const completed = routes.filter(r => r.status !== 'planned');
-    const planned = routes.filter(r => r.status === 'planned');
+    const completed = routes.filter(savedRoute => savedRoute.status !== 'planned');
+    const planned = routes.filter(savedRoute => savedRoute.status === 'planned');
 
-    const totalDistance = completed.reduce((sum, r) => sum + (r.distance || 0), 0);
-    const totalDuration = completed.reduce((sum, r) => sum + (r.duration || 0), 0);
+    const totalDistance = completed.reduce((sum, savedRoute) => sum + (savedRoute.distance || 0), 0);
+    const totalDuration = completed.reduce((sum, savedRoute) => sum + (savedRoute.duration || 0), 0);
 
     const statsLabel = document.getElementById('stats-label');
     const totalVisited = document.getElementById('total-visited');
@@ -440,17 +440,17 @@ function updateRoadTripStats() {
     const grid = document.getElementById('family-progress-grid');
     if (grid) {
         grid.innerHTML = '';
-        settings.familyMembers.forEach((m, i) => {
-            const memberTrips = completed.filter(r => r.members && r.members.includes(m));
-            const memberDistance = memberTrips.reduce((sum, r) => sum + (r.distance || 0), 0);
+        settings.familyMembers.forEach((familyMember, memberIdx) => {
+            const memberTrips = completed.filter(savedRoute => savedRoute.members && savedRoute.members.includes(familyMember));
+            const memberDistance = memberTrips.reduce((sum, savedRoute) => sum + (savedRoute.distance || 0), 0);
 
             let html = `<div class="bg-stone-50/50 p-2 rounded-lg border border-stone-100">
                 <div class="flex justify-between text-xs font-bold">
-                    <span>${escapeHTML(m)}</span>
+                    <span>${escapeHTML(familyMember)}</span>
                     <span class="text-stone-500">${memberTrips.length}/${completed.length} trips</span>
                 </div>
                 <div class="w-full bg-stone-200 rounded-full h-2 mt-1">
-                    <div class="bg-${getMemberColor(i)}-500 h-full rounded-full transition-all" style="width:${completed.length ? (memberTrips.length / completed.length) * 100 : 0}%"></div>
+                    <div class="bg-${getMemberColor(memberIdx)}-500 h-full rounded-full transition-all" style="width:${completed.length ? (memberTrips.length / completed.length) * 100 : 0}%"></div>
                 </div>
                 <div class="text-[10px] text-stone-400 mt-1">${formatDistance(memberDistance)}</div>
             </div>`;
@@ -475,7 +475,7 @@ function renderVisitedList(type) {
 
     // Filter to only visited locations
     let visited = dataset.filter(item => {
-        return settings.familyMembers.some(m => dataStore[`${item.name}_${m}`]);
+        return settings.familyMembers.some(familyMember => dataStore[`${item.name}_${familyMember}`]);
     });
 
     // Apply visibility settings
@@ -496,7 +496,7 @@ function renderVisitedList(type) {
 
     // Apply search filter
     if (searchTerm) {
-        const matchedMember = settings.familyMembers.find(m => m.toLowerCase().includes(searchTerm));
+        const matchedMember = settings.familyMembers.find(familyMember => familyMember.toLowerCase().includes(searchTerm));
         if (matchedMember) {
             visited = visited.filter(item => dataStore[`${item.name}_${matchedMember}`]);
         } else {
@@ -505,7 +505,7 @@ function renderVisitedList(type) {
     }
 
     // Sort alphabetically
-    visited.sort((a, b) => a.name.localeCompare(b.name));
+    visited.sort((itemA, itemB) => itemA.name.localeCompare(itemB.name));
 
     if (visited.length === 0) {
         const emptyMsg = searchTerm
@@ -517,12 +517,12 @@ function renderVisitedList(type) {
 
     let html = '';
     visited.forEach(item => {
-        const visitedMembers = settings.familyMembers.filter(m => dataStore[`${item.name}_${m}`]);
+        const visitedMembers = settings.familyMembers.filter(familyMember => dataStore[`${item.name}_${familyMember}`]);
         const allVisited = visitedMembers.length === settings.familyMembers.length;
         const meta = metaStore[item.name] || {};
 
-        const memberBadges = visitedMembers.map(m =>
-            `<span class="px-1.5 py-0.5 bg-green-50 border border-green-200 rounded-full text-[10px] text-green-700 font-medium">${escapeHTML(m)}</span>`
+        const memberBadges = visitedMembers.map(familyMember =>
+            `<span class="px-1.5 py-0.5 bg-green-50 border border-green-200 rounded-full text-[10px] text-green-700 font-medium">${escapeHTML(familyMember)}</span>`
         ).join(' ');
 
         const subtitle = type === 'parks'
@@ -628,8 +628,8 @@ function renderParksMemberFilterOptions() {
     if (!select) return;
     const current = select.value || 'all';
     let html = '<option value="all">All Members</option>';
-    settings.familyMembers.forEach(m => {
-        html += `<option value="${m}">${m}</option>`;
+    settings.familyMembers.forEach(familyMember => {
+        html += `<option value="${familyMember}">${familyMember}</option>`;
     });
     select.innerHTML = html;
     if (settings.familyMembers.includes(current) || current === 'all') {
@@ -645,8 +645,8 @@ function renderStatesMemberFilterOptions() {
     if (!select) return;
     const current = select.value || 'all';
     let html = '<option value="all">All Members</option>';
-    settings.familyMembers.forEach(m => {
-        html += `<option value="${m}">${m}</option>`;
+    settings.familyMembers.forEach(familyMember => {
+        html += `<option value="${familyMember}">${familyMember}</option>`;
     });
     select.innerHTML = html;
     if (settings.familyMembers.includes(current) || current === 'all') {
@@ -758,60 +758,60 @@ function renderParksTable() {
         dataset = dataset.filter(item => item.name.toLowerCase().includes(parksSearchTerm));
     }
 
-    dataset = dataset.filter(i => {
-        if (i.country === 'USA') return settings.showUSAParks;
-        if (i.country === 'Canada') return settings.showCanadianParks;
+    dataset = dataset.filter(locationItem => {
+        if (locationItem.country === 'USA') return settings.showUSAParks;
+        if (locationItem.country === 'Canada') return settings.showCanadianParks;
         return true;
     });
 
-    const f = document.getElementById('parks-region-filter').value;
-    if (f === 'USA') dataset = dataset.filter(i => i.country === 'USA');
-    if (f === 'Canada') dataset = dataset.filter(i => i.country === 'Canada');
+    const regFilter = document.getElementById('parks-region-filter').value;
+    if (regFilter === 'USA') dataset = dataset.filter(locationItem => locationItem.country === 'USA');
+    if (regFilter === 'Canada') dataset = dataset.filter(locationItem => locationItem.country === 'Canada');
 
     const showAll = parksMemberFilter === 'all';
     const activeMembers = showAll ? settings.familyMembers : [parksMemberFilter];
 
-    dataset.sort((a, b) => {
+    dataset.sort((itemA, itemB) => {
         let vA, vB;
-        if (sortColumn === 1) { vA = a.name.toLowerCase(); vB = b.name.toLowerCase(); }
-        else if (sortColumn === 2) { vA = a.sub.toLowerCase(); vB = b.sub.toLowerCase(); }
-        else if (sortColumn === 3) { vA = a.country.toLowerCase(); vB = b.country.toLowerCase(); }
+        if (sortColumn === 1) { vA = itemA.name.toLowerCase(); vB = itemB.name.toLowerCase(); }
+        else if (sortColumn === 2) { vA = itemA.sub.toLowerCase(); vB = itemB.sub.toLowerCase(); }
+        else if (sortColumn === 3) { vA = itemA.country.toLowerCase(); vB = itemB.country.toLowerCase(); }
         else if (sortColumn >= 4 && sortColumn < 4 + activeMembers.length) { 
-            let m = activeMembers[sortColumn - 4]; 
-            vA = dataStore[`${a.name}_${m}`] ? 1 : 0; 
-            vB = dataStore[`${b.name}_${m}`] ? 1 : 0; 
+            let activeMember = activeMembers[sortColumn - 4]; 
+            vA = dataStore[`${itemA.name}_${activeMember}`] ? 1 : 0; 
+            vB = dataStore[`${itemB.name}_${activeMember}`] ? 1 : 0; 
         }
         else if (showAll && sortColumn === 4 + activeMembers.length) { 
-            vA = settings.familyMembers.filter(m => dataStore[`${a.name}_${m}`]).length; 
-            vB = settings.familyMembers.filter(m => dataStore[`${b.name}_${m}`]).length; 
+            vA = settings.familyMembers.filter(familyMember => dataStore[`${itemA.name}_${familyMember}`]).length; 
+            vB = settings.familyMembers.filter(familyMember => dataStore[`${itemB.name}_${familyMember}`]).length; 
         }
         return sortDirection === 'asc' ? (vA < vB ? -1 : 1) : (vA > vB ? -1 : 1);
     });
 
     list.innerHTML = '';
 
-    dataset.forEach(i => {
-        let vCount = settings.familyMembers.filter(m => dataStore[`${i.name}_${m}`]).length;
+    dataset.forEach(locationItem => {
+        let vCount = settings.familyMembers.filter(familyMember => dataStore[`${locationItem.name}_${familyMember}`]).length;
         let tr = document.createElement('tr');
         tr.className = "hover:bg-stone-50 border-b border-stone-100 " + (vCount > 0 ? "checked-row" : "");
 
-        const hasMeta = metaStore[i.name] && (metaStore[i.name].comment || metaStore[i.name].date);
+        const hasMeta = metaStore[locationItem.name] && (metaStore[locationItem.name].comment || metaStore[locationItem.name].date);
         const wrenchColor = hasMeta ? "text-blue-500 hover:text-blue-700" : "text-stone-300 hover:text-stone-500";
 
-        let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked, 'parks')" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
+        let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${locationItem.name}', this.checked, 'parks')" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
         <td class="p-4 font-medium flex items-center justify-between group">
-            <a href="${getWikiLink(i, 'parks')}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
-                ${i.name}
+            <a href="${getWikiLink(locationItem, 'parks')}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
+                ${locationItem.name}
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-30"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
             </a>
-            <button onclick="openEditModal('${i.name}', 'parks')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
+            <button onclick="openEditModal('${locationItem.name}', 'parks')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
             </button>
         </td>
-        <td class="p-4 text-sm text-stone-500">${i.sub}</td>
-        <td class="p-4 text-sm text-stone-500">${i.country}</td>`;
+        <td class="p-4 text-sm text-stone-500">${locationItem.sub}</td>
+        <td class="p-4 text-sm text-stone-500">${locationItem.country}</td>`;
 
-        activeMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}', 'parks')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
+        activeMembers.forEach(familyMember => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${locationItem.name}', '${familyMember}', 'parks')" ${dataStore[`${locationItem.name}_${familyMember}`] ? 'checked' : ''}></td>`);
 
         if (showAll) {
             cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'text-green-600' : 'text-stone-400'}">${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? '✓' : vCount + '/' + settings.familyMembers.length}</td>`;
@@ -830,57 +830,57 @@ function renderStatesTable() {
     const metaStore = visitData.meta.states || {};
 
     if (statesSearchTerm) {
-        dataset = dataset.filter(item => item.name.toLowerCase().includes(statesSearchTerm));
+        dataset = dataset.filter(locationItem => locationItem.name.toLowerCase().includes(statesSearchTerm));
     }
 
-    dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
+    dataset = dataset.filter(locationItem => (locationItem.sub === 'USA' && settings.showUSA) || (locationItem.sub === 'Canada' && settings.showCanada));
 
-    const f = document.getElementById('states-region-filter').value;
-    if (f === 'USA') dataset = dataset.filter(i => i.sub === 'USA');
-    if (f === 'Canada') dataset = dataset.filter(i => i.sub === 'Canada');
+    const regFilter = document.getElementById('states-region-filter').value;
+    if (regFilter === 'USA') dataset = dataset.filter(locationItem => locationItem.sub === 'USA');
+    if (regFilter === 'Canada') dataset = dataset.filter(locationItem => locationItem.sub === 'Canada');
 
     const showAll = statesMemberFilter === 'all';
     const activeMembers = showAll ? settings.familyMembers : [statesMemberFilter];
 
-    dataset.sort((a, b) => {
+    dataset.sort((itemA, itemB) => {
         let vA, vB;
-        if (sortColumn === 1) { vA = a.name.toLowerCase(); vB = b.name.toLowerCase(); }
-        else if (sortColumn === 2) { vA = a.sub.toLowerCase(); vB = b.sub.toLowerCase(); }
+        if (sortColumn === 1) { vA = itemA.name.toLowerCase(); vB = itemB.name.toLowerCase(); }
+        else if (sortColumn === 2) { vA = itemA.sub.toLowerCase(); vB = itemB.sub.toLowerCase(); }
         else if (sortColumn >= 3 && sortColumn < 3 + activeMembers.length) { 
-            let m = activeMembers[sortColumn - 3]; 
-            vA = dataStore[`${a.name}_${m}`] ? 1 : 0; 
-            vB = dataStore[`${b.name}_${m}`] ? 1 : 0; 
+            let activeMember = activeMembers[sortColumn - 3]; 
+            vA = dataStore[`${itemA.name}_${activeMember}`] ? 1 : 0; 
+            vB = dataStore[`${itemB.name}_${activeMember}`] ? 1 : 0; 
         }
         else if (showAll && sortColumn === 3 + activeMembers.length) { 
-            vA = settings.familyMembers.filter(m => dataStore[`${a.name}_${m}`]).length; 
-            vB = settings.familyMembers.filter(m => dataStore[`${b.name}_${m}`]).length; 
+            vA = settings.familyMembers.filter(familyMember => dataStore[`${itemA.name}_${familyMember}`]).length; 
+            vB = settings.familyMembers.filter(familyMember => dataStore[`${itemB.name}_${familyMember}`]).length; 
         }
         return sortDirection === 'asc' ? (vA < vB ? -1 : 1) : (vA > vB ? -1 : 1);
     });
 
     list.innerHTML = '';
 
-    dataset.forEach(i => {
-        let vCount = settings.familyMembers.filter(m => dataStore[`${i.name}_${m}`]).length;
+    dataset.forEach(locationItem => {
+        let vCount = settings.familyMembers.filter(familyMember => dataStore[`${locationItem.name}_${familyMember}`]).length;
         let tr = document.createElement('tr');
         tr.className = "hover:bg-stone-50 border-b border-stone-100 " + (vCount > 0 ? "checked-row" : "");
 
-        const hasMeta = metaStore[i.name] && (metaStore[i.name].comment || metaStore[i.name].date);
+        const hasMeta = metaStore[locationItem.name] && (metaStore[locationItem.name].comment || metaStore[locationItem.name].date);
         const wrenchColor = hasMeta ? "text-blue-500 hover:text-blue-700" : "text-stone-300 hover:text-stone-500";
 
-        let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked, 'states')" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
+        let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${locationItem.name}', this.checked, 'states')" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
         <td class="p-4 font-medium flex items-center justify-between group">
-            <a href="${getWikiLink(i, 'states')}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
-                ${i.name}
+            <a href="${getWikiLink(locationItem, 'states')}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
+                ${locationItem.name}
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-30"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
             </a>
-            <button onclick="openEditModal('${i.name}', 'states')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
+            <button onclick="openEditModal('${locationItem.name}', 'states')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
             </button>
         </td>
-        <td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
+        <td class="p-4 text-sm text-stone-500">${locationItem.sub}</td>`;
 
-        activeMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}', 'states')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
+        activeMembers.forEach(familyMember => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${locationItem.name}', '${familyMember}', 'states')" ${dataStore[`${locationItem.name}_${familyMember}`] ? 'checked' : ''}></td>`);
 
         if (showAll) {
             cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'text-green-600' : 'text-stone-400'}">${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? '✓' : vCount + '/' + settings.familyMembers.length}</td>`;
@@ -891,20 +891,20 @@ function renderStatesTable() {
     updateStats();
 }
 
-function toggleVisit(n, m, type) { 
-    visitData[type][`${n}_${m}`] = !visitData[type][`${n}_${m}`]; 
+function toggleVisit(locationName, familyMember, visitType) { 
+    visitData[visitType][`${locationName}_${familyMember}`] = !visitData[visitType][`${locationName}_${familyMember}`]; 
     save(); 
-    if (type === 'parks') renderParksTable();
+    if (visitType === 'parks') renderParksTable();
     else renderStatesTable();
-    renderVisitedList(type);
+    renderVisitedList(visitType);
 }
 
-function toggleAllRow(n, val, type) { 
-    settings.familyMembers.forEach(m => visitData[type][`${n}_${m}`] = val); 
+function toggleAllRow(locationName, isVisited, visitType) { 
+    settings.familyMembers.forEach(familyMember => visitData[visitType][`${locationName}_${familyMember}`] = isVisited); 
     save(); 
-    if (type === 'parks') renderParksTable();
+    if (visitType === 'parks') renderParksTable();
     else renderStatesTable();
-    renderVisitedList(type);
+    renderVisitedList(visitType);
 }
 
 function toggleRouteEditModal(show) {
@@ -924,22 +924,23 @@ function toggleRouteEditModal(show) {
 
 function openRouteEditModal(idx) {
     routeEditTargetIndex = idx;
-    const r = settings.savedRoutes[idx];
-    if (!r) return;
+    const savedRoute = settings.savedRoutes[idx];
+    if (!savedRoute) return;
 
-    document.getElementById('route-edit-distance').innerText = formatDistance(r.distance);
-    document.getElementById('route-edit-duration').innerText = formatDuration(r.duration);
-    document.getElementById('route-edit-name').value = r.name || '';
-    document.getElementById('route-edit-date').value = r.date || '';
-    document.getElementById('route-edit-status').value = r.status || 'completed';
-    document.getElementById('route-edit-description').value = r.description || '';
-    document.getElementById('route-char-count').innerText = (r.description || '').length;
+    document.getElementById('route-edit-distance').innerText = formatDistance(savedRoute.distance);
+    document.getElementById('route-edit-duration').innerText = formatDuration(savedRoute.duration);
+    document.getElementById('route-edit-name').value = savedRoute.name || '';
+    document.getElementById('route-edit-start-date').value = savedRoute.startDate || savedRoute.date || '';
+    document.getElementById('route-edit-end-date').value = savedRoute.endDate || '';
+    document.getElementById('route-edit-status').value = savedRoute.status || 'completed';
+    document.getElementById('route-edit-description').value = savedRoute.description || '';
+    document.getElementById('route-char-count').innerText = (savedRoute.description || '').length;
 
     const container = document.getElementById('route-edit-members');
     if (container) {
         let html = '';
         settings.familyMembers.forEach((member) => {
-            const checked = (r.members && r.members.includes(member)) ? 'checked' : '';
+            const checked = (savedRoute.members && savedRoute.members.includes(member)) ? 'checked' : '';
             const escapedMember = escapeHTML(member);
             html += `<label class="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer text-sm text-stone-700">
                 <input type="checkbox" value="${escapedMember}" ${checked} class="w-4 h-4 rounded accent-green-700">
@@ -957,8 +958,8 @@ function openRouteEditModal(idx) {
 
 function saveRouteEditDetails() {
     if (routeEditTargetIndex === null) return;
-    const r = settings.savedRoutes[routeEditTargetIndex];
-    if (!r) return;
+    const savedRoute = settings.savedRoutes[routeEditTargetIndex];
+    if (!savedRoute) return;
 
     const name = document.getElementById('route-edit-name').value.trim();
     if (!name) {
@@ -966,28 +967,41 @@ function saveRouteEditDetails() {
         return;
     }
 
-    const date = document.getElementById('route-edit-date').value;
+    const startDate = document.getElementById('route-edit-start-date').value;
+    const endDate = document.getElementById('route-edit-end-date').value;
     const status = document.getElementById('route-edit-status').value;
     const description = document.getElementById('route-edit-description').value.trim();
 
     const members = [];
     const checkboxes = document.querySelectorAll('#route-edit-members input[type="checkbox"]');
-    checkboxes.forEach(cb => {
-        if (cb.checked) {
-            members.push(cb.value);
+    checkboxes.forEach(checkboxItem => {
+        if (checkboxItem.checked) {
+            members.push(checkboxItem.value);
         }
     });
 
-    r.name = name;
-    r.date = date;
-    r.status = status;
-    r.description = description;
-    r.members = members;
+    savedRoute.name = name;
+    savedRoute.startDate = startDate;
+    savedRoute.endDate = endDate;
+    savedRoute.date = startDate; // Maintain for backward compatibility
+    savedRoute.status = status;
+    savedRoute.description = description;
+    savedRoute.members = members;
 
     localStorage.setItem('np_travel_settings', JSON.stringify(settings));
     toggleRouteEditModal(false);
     renderSavedRoutes();
     updateMapMarkers();
+}
+
+/**
+ * Selects all family members in the route edit modal checkboxes.
+ */
+function selectAllRouteMembers() {
+    const checkboxes = document.querySelectorAll('#route-edit-members input[type="checkbox"]');
+    for (const checkboxItem of checkboxes) {
+        checkboxItem.checked = true;
+    }
 }
 
 function deleteRouteFromEditModal() {
@@ -1000,6 +1014,85 @@ function deleteRouteFromEditModal() {
         renderSavedRoutes();
         updateMapMarkers();
     }
+}
+
+function toggleRouteEditChoiceModal(show) {
+    const modal = document.getElementById('route-edit-choice-modal');
+    if (!modal) return;
+    if (show) {
+        modal.classList.remove('hidden');
+        requestAnimationFrame(() => modal.classList.remove('opacity-0'));
+    } else {
+        modal.classList.add('opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+        }, 200);
+    }
+}
+
+function openRouteEditChoice(idx) {
+    routeEditTargetIndex = idx;
+    toggleRouteEditChoiceModal(true);
+}
+
+function handleEditChoice(choice) {
+    toggleRouteEditChoiceModal(false);
+    if (routeEditTargetIndex === null) return;
+
+    if (choice === 'data') {
+        openRouteEditModal(routeEditTargetIndex);
+    } else if (choice === 'route') {
+        editSavedRouteOnMap(routeEditTargetIndex);
+    }
+}
+
+function editSavedRouteOnMap(idx) {
+    const savedRoute = settings.savedRoutes[idx];
+    if (!savedRoute) return;
+
+    routeEditTargetIndex = idx;
+
+    // Switch to roads tab to make the route builder visible
+    switchTab('roads');
+
+    // Populate start and end points
+    const startQuery = savedRoute.startQuery || (savedRoute.route && savedRoute.route.length > 0 ? `${savedRoute.route[0][0]},${savedRoute.route[0][1]}` : '');
+    const endQuery = savedRoute.endQuery || (savedRoute.route && savedRoute.route.length > 0 ? `${savedRoute.route[savedRoute.route.length - 1][0]},${savedRoute.route[savedRoute.route.length - 1][1]}` : '');
+    const stopsQueries = savedRoute.stopsQueries || [];
+
+    const startInput = document.getElementById('route-start');
+    const endInput = document.getElementById('route-end');
+    if (startInput) startInput.value = startQuery;
+    if (endInput) endInput.value = endQuery;
+
+    // Populate stop inputs
+    const container = document.getElementById('route-stops-container');
+    if (container) {
+        container.innerHTML = '';
+        stopsQueries.forEach((stopVal, stopIdx) => {
+            const div = document.createElement('div');
+            div.className = "flex gap-2 items-center animate-in fade-in slide-in-from-top-1 duration-150";
+            div.id = `stop-input-wrapper-${stopIdx}`;
+            div.innerHTML = `
+                <input type="text" class="route-stop-input flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white" value="${escapeHTML(stopVal)}">
+                <button onclick="removeStopInput(${stopIdx})" class="text-stone-400 hover:text-red-600 transition font-bold px-2 py-1">✕</button>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Update Route Builder header text
+    const title = document.getElementById('route-builder-title');
+    if (title) title.innerText = `Edit Road Trip: ${savedRoute.name}`;
+
+    // Scroll Route Builder into view
+    const builderUi = document.getElementById('route-builder-ui');
+    if (builderUi) {
+        builderUi.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // Automatically trigger route calculation
+    requestRoute();
 }
 
 // Node.js environment export support
@@ -1036,6 +1129,11 @@ if (typeof module !== 'undefined' && module.exports) {
         saveRouteEditDetails,
         deleteRouteFromEditModal,
         updateRoadTripStats,
-        renderVisitedList
+        renderVisitedList,
+        toggleRouteEditChoiceModal,
+        openRouteEditChoice,
+        handleEditChoice,
+        editSavedRouteOnMap,
+        selectAllRouteMembers
     };
 }

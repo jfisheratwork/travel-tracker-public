@@ -1,0 +1,45 @@
+# Task Checklist - Session 6
+
+- [x] Code Refactoring: Semantic Naming
+  - [x] Update `docs/js/state.js`
+  - [x] Update `docs/js/helpers.js`
+  - [x] Update `docs/js/map.js`
+  - [x] Update `docs/js/app.js`
+  - [x] Update `docs/js/ui.js`
+- [x] Comment Cleanup & Annotations
+  - [x] Add Tailwind, Leaflet, and SheetJS double comments in `docs/index.html`
+  - [x] Add Leaflet first-use comments in `docs/js/map.js`
+  - [x] Add SheetJS first-use comments in `docs/js/app.js`
+  - [x] Lightly comment all JavaScript files
+- [x] Rule & Instruction Files
+  - [x] Create `developer.md` in root
+  - [x] Create `.agents/rules/javascript-conventions.md`
+  - [x] Create `.agents/rules/git-pre-commit.md`
+- [x] Break out Test Suites
+  - [x] Create `tests/helpers.test.js`
+  - [x] Create `tests/state.test.js`
+  - [x] Create `tests/app.test.js`
+  - [x] Create `tests/ui.test.js`
+  - [x] Create `tests/map.test.js`
+  - [x] Create `tests/component.test.js` (E2E component test)
+  - [x] Remove old consolidated `tests/app.test.js` code
+- [x] Verification
+  - [x] Run all test suites: `node --test tests/*.test.js`
+  - [x] Manually verify UI functionality in browser
+- [x] Road Trip Enhancements
+  - [x] Increase OSRM alternatives to 3 options
+  - [x] Implement dual editing flow (metadata vs route builder)
+  - [x] Overwrite route on saving instead of appending new route
+  - [x] Mock and test dual edit transition flow in E2E tests
+- [x] Settings & Backup Security
+  - [x] Shorten OSRM rate-limiter to 15s and update error messages
+  - [x] Provide detailed Mapbox API instructions
+  - [x] Hide mapboxKey during backup JSON export
+  - [x] Restore local mapboxKey during JSON import
+  - [x] Expose updateSetting helper to prevent dropdown select ReferenceError
+  - [x] Add settings & backup security unit tests
+- [x] Date & Participants Metadata
+  - [x] Support trip start and end dates (end date optional)
+  - [x] Add "Select All" button to participant checkboxes
+  - [x] Add metadata date range and select all tests
+
