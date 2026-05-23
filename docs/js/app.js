@@ -7,11 +7,14 @@ let sortDirection = 'asc';
 let worldMap = null;
 let mapMarkers = [];
 let hometownMarkers = [];
+let roadPolylines = [];
 let mapMode = 'parks';
 let statsMode = 'parks';
 let searchTerm = '';
 let currentMemberFilter = 'all'; // New filter state
 let editTarget = null; // Stores the currently editing location key
+let routeEditTargetIndex = null; // Stores the currently editing route index
+let selectedRouteIndex = null; // Stores the currently selected route index for map isolation
 
 // Palette for dynamic family colors
 const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'yellow', 'indigo', 'cyan'];
@@ -19,42 +22,184 @@ const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'ye
 // Load Settings & Data from LocalStorage
 // Reference: Window.localStorage - https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
 // Settings defaults if no storage exists
-let settings = JSON.parse(localStorage.getItem('np_travel_settings')) || {
+let rawSettings = JSON.parse(localStorage.getItem('np_travel_settings')) || {
     showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true,
     familyMembers: [], // Start empty
     hometowns: []
 };
 
 // visitData structure: { parks: {}, states: {}, meta: { parks: {}, states: {} } }
-let visitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));
+let rawVisitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));
 
-// Initialize Defaults if fresh load
-if (!visitData) {
-    visitData = { parks: {}, states: {}, meta: { parks: {}, states: {} } };
-    localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
-}
+const migrated = migrateData(rawSettings, rawVisitData);
+let settings = migrated.settings;
+let visitData = migrated.visitData;
 
-// Migration Check for meta object
-if (!visitData.meta) {
-    visitData.meta = { parks: {}, states: {} };
-    localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
-}
-if (!settings.familyMembers) {
-    settings.familyMembers = [];
-    localStorage.setItem('np_travel_settings', JSON.stringify(settings));
-}
-
-// Migrate old hometown object to array if it exists
-if (settings.hometown !== undefined) {
-    if (settings.hometown) {
-        settings.hometowns = [settings.hometown];
-    }
-    delete settings.hometown;
-    localStorage.setItem('np_travel_settings', JSON.stringify(settings));
-}
-if (!settings.hometowns) settings.hometowns = [];
+localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
 
 // --- HELPER FUNCTIONS ---
+
+/**
+ * Escapes characters in a string to prevent XSS in HTML contexts.
+ */
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
+ * Converts meters to miles.
+ */
+function formatDistance(meters) {
+    if (typeof meters !== 'number' || isNaN(meters) || meters < 0) {
+        return '0.00 mi';
+    }
+    const miles = meters * 0.000621371;
+    return `${miles.toFixed(2)} mi`;
+}
+
+/**
+ * Converts seconds to readable duration.
+ */
+function formatDuration(seconds) {
+    if (typeof seconds !== 'number' || isNaN(seconds) || seconds < 0) {
+        return '0m';
+    }
+    const days = Math.floor(seconds / (24 * 3600));
+    let remaining = seconds % (24 * 3600);
+    const hours = Math.floor(remaining / 3600);
+    remaining %= 3600;
+    const minutes = Math.floor(remaining / 60);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0 || (days === 0 && hours === 0)) parts.push(`${minutes}m`);
+
+    return parts.join(' ');
+}
+
+/**
+ * Groups and sorts saved routes by year or status (planned vs completed).
+ */
+function groupRoutesByYearOrStatus(routes, groupBy = 'year') {
+    if (!Array.isArray(routes)) return {};
+    const groups = {};
+    routes.forEach(route => {
+        let key;
+        if (groupBy === 'status') {
+            key = route.status || 'planned';
+        } else {
+            if (route.year) {
+                key = String(route.year);
+            } else if (route.timestamp) {
+                try {
+                    key = String(new Date(route.timestamp).getFullYear());
+                } catch (e) {
+                    key = 'Unknown';
+                }
+            } else {
+                key = 'Unknown';
+            }
+        }
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(route);
+    });
+
+    const sortedGroups = {};
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+        if (groupBy === 'year') {
+            if (a === 'Unknown') return 1;
+            if (b === 'Unknown') return -1;
+            return b.localeCompare(a); // descending
+        }
+        return a.localeCompare(b); // alphabetical (completed, then planned)
+    });
+
+    sortedKeys.forEach(key => {
+        sortedGroups[key] = groups[key].sort((a, b) => {
+            const timeA = a.timestamp || 0;
+            const timeB = b.timestamp || 0;
+            return timeB - timeA; // newer first
+        });
+    });
+
+    return sortedGroups;
+}
+
+/**
+ * Migration helper function to clean and validate settings and visit data.
+ */
+function migrateData(settingsObj, visitDataObj) {
+    const migratedSettings = settingsObj ? JSON.parse(JSON.stringify(settingsObj)) : {
+        showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true,
+        familyMembers: [],
+        hometowns: []
+    };
+
+    const migratedVisitData = visitDataObj ? JSON.parse(JSON.stringify(visitDataObj)) : {
+        parks: {}, states: {}, meta: { parks: {}, states: {} }
+    };
+
+    if (!migratedVisitData.parks) migratedVisitData.parks = {};
+    if (!migratedVisitData.states) migratedVisitData.states = {};
+    if (!migratedVisitData.meta) {
+        migratedVisitData.meta = { parks: {}, states: {} };
+    } else {
+        if (!migratedVisitData.meta.parks) migratedVisitData.meta.parks = {};
+        if (!migratedVisitData.meta.states) migratedVisitData.meta.states = {};
+    }
+
+    if (!migratedSettings.familyMembers) {
+        migratedSettings.familyMembers = [];
+    }
+
+    if (migratedSettings.hometown !== undefined) {
+        if (migratedSettings.hometown) {
+            if (!migratedSettings.hometowns) migratedSettings.hometowns = [];
+            const alreadyExists = migratedSettings.hometowns.some(h => 
+                h.lat === migratedSettings.hometown.lat && h.lng === migratedSettings.hometown.lng
+            );
+            if (!alreadyExists) {
+                migratedSettings.hometowns.push(migratedSettings.hometown);
+            }
+        }
+        delete migratedSettings.hometown;
+    }
+
+    if (!migratedSettings.hometowns) migratedSettings.hometowns = [];
+    if (migratedSettings.routingEngine === undefined) migratedSettings.routingEngine = 'osrm';
+    if (migratedSettings.mapboxKey === undefined) migratedSettings.mapboxKey = '';
+    if (migratedSettings.routeReduction === undefined) migratedSettings.routeReduction = '0.001';
+    
+    if (!migratedSettings.savedRoutes) {
+        migratedSettings.savedRoutes = [];
+    } else {
+        migratedSettings.savedRoutes = migratedSettings.savedRoutes.map(route => {
+            return {
+                name: route.name || '',
+                route: route.route || [],
+                engine: route.engine || 'osrm',
+                timestamp: route.timestamp || Date.now(),
+                date: route.date !== undefined ? route.date : '',
+                members: Array.isArray(route.members) ? route.members : [],
+                description: route.description !== undefined ? route.description : '',
+                distance: typeof route.distance === 'number' ? route.distance : 0,
+                duration: typeof route.duration === 'number' ? route.duration : 0,
+                status: route.status || 'completed'
+            };
+        });
+    }
+
+    return { settings: migratedSettings, visitData: migratedVisitData };
+}
+
 
 function updateMemberFilter() {
     currentMemberFilter = document.getElementById('member-filter').value;
@@ -512,6 +657,10 @@ function toggleSettingsModal(show) {
         document.getElementById('setting-canada').checked = settings.showCanada;
         document.getElementById('setting-usa-parks').checked = settings.showUSAParks;
         document.getElementById('setting-canada-parks').checked = settings.showCanadianParks;
+        document.getElementById('setting-routing-engine').value = settings.routingEngine;
+        document.getElementById('setting-mapbox-key').value = settings.mapboxKey;
+        document.getElementById('setting-route-reduction').value = settings.routeReduction;
+        toggleMapboxSettings();
         modal.classList.remove('hidden');
         setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
     } else {
@@ -571,8 +720,21 @@ function setMapMode(mode) {
     mapMode = mode;
     const btnParks = document.getElementById('btn-map-parks');
     const btnStates = document.getElementById('btn-map-states');
+    const btnRoads = document.getElementById('btn-map-roads');
+    const builderUi = document.getElementById('route-builder-ui');
+    
     btnParks.className = mode === 'parks' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
     btnStates.className = mode === 'states' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
+    if (btnRoads) btnRoads.className = mode === 'roads' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
+    
+    if (builderUi) {
+        if (mode === 'roads') {
+            builderUi.classList.remove('hidden');
+            renderSavedRoutes();
+        } else {
+            builderUi.classList.add('hidden');
+        }
+    }
     updateMapMarkers();
 }
 
@@ -584,8 +746,10 @@ function updateMapMarkers() {
     if (!worldMap) return;
     mapMarkers.forEach(m => worldMap.removeLayer(m));
     hometownMarkers.forEach(m => worldMap.removeLayer(m));
+    roadPolylines.forEach(l => worldMap.removeLayer(l));
     hometownMarkers = [];
     mapMarkers = [];
+    roadPolylines = [];
 
     // Icon Factory
     const createIcon = (color, type, isSelected, hasVisits) => {
@@ -629,6 +793,29 @@ function updateMapMarkers() {
             
             hometownMarkers.push(marker);
         });
+    }
+
+    if (mapMode === 'roads') {
+        if (settings.savedRoutes) {
+            settings.savedRoutes.forEach((routeData, idx) => {
+                if (selectedRouteIndex !== null && selectedRouteIndex !== idx) {
+                    return;
+                }
+                const line = L.polyline(routeData.route, {
+                    color: palette[idx % palette.length], 
+                    weight: 5,
+                    opacity: 0.8,
+                    smoothFactor: 1,
+                    className: 'cursor-pointer'
+                }).addTo(worldMap);
+                line.bindPopup(`<strong>${routeData.name}</strong><br><span class="text-xs text-stone-500">${routeData.engine} engine</span>`);
+                line.on('click', () => {
+                    openRouteEditModal(idx);
+                });
+                roadPolylines.push(line);
+            });
+        }
+        return;
     }
 
     let dataset = mapMode === 'parks' ? [...parks] : [...states];
@@ -993,6 +1180,364 @@ function handleImport(e) {
     }; reader.readAsText(f);
 }
 
+// --- ROUTING / GPX LOGIC ---
+
+let lastOSRMCall = 0;
+
+function toggleMapboxSettings() {
+    const engine = document.getElementById('setting-routing-engine').value;
+    const container = document.getElementById('mapbox-settings-container');
+    if (container) {
+        if (engine === 'mapbox') container.classList.remove('hidden');
+        else container.classList.add('hidden');
+    }
+}
+
+async function getGeocode(query) {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
+    const data = await response.json();
+    if (!data || data.length === 0) throw new Error(`Could not find location: ${query}`);
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
+}
+
+async function fetchOSRM(start, end) {
+    const now = Date.now();
+    if (now - lastOSRMCall < 30000) {
+        throw new Error("OSRM Public Server limited to 1 request every 30 seconds. Please wait.");
+    }
+    lastOSRMCall = now;
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson&overview=full`);
+    const data = await res.json();
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) throw new Error("OSRM routing failed.");
+    const route = data.routes[0];
+    return {
+        coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]), // Swap lng,lat to lat,lng
+        distance: route.distance,
+        duration: route.duration
+    };
+}
+
+async function fetchMapbox(start, end) {
+    if (!settings.mapboxKey) throw new Error("Mapbox API Key is required.");
+    const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson&overview=full&access_token=${settings.mapboxKey}`);
+    const data = await res.json();
+    if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) throw new Error("Mapbox routing failed.");
+    const route = data.routes[0];
+    return {
+        coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]),
+        distance: route.distance,
+        duration: route.duration
+    };
+}
+
+async function requestRoute() {
+    const startStr = document.getElementById('route-start').value.trim();
+    const endStr = document.getElementById('route-end').value.trim();
+    const status = document.getElementById('route-status');
+    status.className = "text-xs text-stone-500 mt-2 font-medium empty:hidden";
+    status.innerText = "Geocoding endpoints...";
+    
+    if (!startStr || !endStr) {
+        status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
+        status.innerText = "Please provide both start and end locations.";
+        return;
+    }
+
+    try {
+        const start = await getGeocode(startStr);
+        const end = await getGeocode(endStr);
+        status.innerText = `Routing ${start.name} to ${end.name}...`;
+
+        let routeResult = null;
+        if (settings.routingEngine === 'osrm') routeResult = await fetchOSRM(start, end);
+        else routeResult = await fetchMapbox(start, end);
+
+        const rawCoords = routeResult.coordinates;
+        const distance = routeResult.distance;
+        const duration = routeResult.duration;
+
+        // Apply Reduction
+        let reducedCoords = rawCoords;
+        const tolerance = parseFloat(settings.routeReduction);
+        if (tolerance > 0 && worldMap) {
+            status.innerText = `Simplifying geometry...`;
+            const points = rawCoords.map(c => worldMap.project(L.latLng(c[0], c[1]), worldMap.getZoom()));
+            const simplified = L.LineUtil.simplify(points, Math.floor(worldMap.getZoom() * tolerance * 50)); 
+            // the pixel tolerance is based on zoom level usually, mapping coords is tricky, so let's simplify naive
+            // wait L.LineUtil.simplify uses screen pixels, using lat/lng points directly works loosely but scaling is weird.
+            // Since we do it on raw lat/lng arrays:
+            const rawPoints = rawCoords.map(c => ({x: c[0], y: c[1]}));
+            const simpleRaw = L.LineUtil.simplify(rawPoints, tolerance);
+            reducedCoords = simpleRaw.map(p => [p.x, p.y]);
+        }
+
+        settings.savedRoutes.push({
+            name: `${start.name} to ${end.name}`,
+            route: reducedCoords,
+            engine: settings.routingEngine,
+            timestamp: Date.now(),
+            date: '',
+            members: [],
+            description: '',
+            distance: distance,
+            duration: duration,
+            status: 'completed'
+        });
+        localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+        
+        status.innerText = `Success! Saved route with ${reducedCoords.length} points (down from ${rawCoords.length}).`;
+        document.getElementById('route-start').value = ''; document.getElementById('route-end').value = '';
+        renderSavedRoutes();
+        updateMapMarkers();
+
+        if (worldMap && reducedCoords.length > 0) {
+            const tempLine = L.polyline(reducedCoords);
+            worldMap.fitBounds(tempLine.getBounds());
+        }
+    } catch (e) {
+        status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
+        status.innerText = `Error: ${e.message}`;
+    }
+}
+
+function renderSavedRoutes() {
+    const list = document.getElementById('saved-routes-list');
+    if (!list) return;
+    if (!settings.savedRoutes || settings.savedRoutes.length === 0) {
+        list.innerHTML = `<div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No saved road trips yet.</div>`;
+        return;
+    }
+
+    const planned = [];
+    const completedByYear = {}; 
+    const completedUndated = [];
+
+    settings.savedRoutes.forEach((r, idx) => {
+        const routeWithIdx = { ...r, originalIndex: idx };
+        if (r.status === 'planned') {
+            planned.push(routeWithIdx);
+        } else {
+            if (r.date && r.date.trim() !== '') {
+                const year = new Date(r.date).getFullYear();
+                if (!completedByYear[year]) {
+                    completedByYear[year] = [];
+                }
+                completedByYear[year].push(routeWithIdx);
+            } else {
+                completedUndated.push(routeWithIdx);
+            }
+        }
+    });
+
+    planned.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    completedUndated.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+    const sortedYears = Object.keys(completedByYear).sort((a, b) => b - a);
+    sortedYears.forEach(year => {
+        completedByYear[year].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    });
+
+    let html = '';
+
+    const renderRouteItem = (r) => {
+        const distStr = formatDistance(r.distance);
+        const durStr = formatDuration(r.duration);
+        const membersBadges = r.members && r.members.length > 0 
+            ? r.members.map(m => `<span class="px-1.5 py-0.5 bg-stone-100 border border-stone-200 rounded-full text-[10px] text-stone-600 font-medium">${escapeHTML(m)}</span>`).join(' ')
+            : '<span class="text-[10px] text-stone-400 italic">No members added</span>';
+
+        const badgeClass = r.status === 'planned' 
+            ? 'bg-blue-100 text-blue-700 border-blue-200' 
+            : 'bg-green-100 text-green-700 border-green-200';
+
+        const isSelected = selectedRouteIndex === r.originalIndex;
+        const bgClass = isSelected ? 'bg-blue-50/30 border-2 border-blue-500' : 'bg-white border border-stone-200 hover:bg-stone-50';
+        const shadowClass = isSelected ? 'shadow-md' : 'shadow-sm';
+
+        return `<div class="p-3 ${bgClass} rounded-lg flex justify-between items-start cursor-pointer transition ${shadowClass}" onclick="focusRoute(${r.originalIndex})">
+            <div class="space-y-1.5 flex-1 min-w-0 pr-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <strong class="text-stone-800 text-sm font-semibold truncate max-w-[180px]">${escapeHTML(r.name)}</strong>
+                    <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">${escapeHTML(r.status)}</span>
+                </div>
+                <div class="text-xs text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span>${distStr}</span>
+                    <span class="text-stone-300">•</span>
+                    <span>${durStr}</span>
+                    <span class="text-stone-300">•</span>
+                    <span class="uppercase font-semibold text-[10px]">${escapeHTML(r.engine)}</span>
+                    ${r.date ? `<span class="text-stone-300">•</span><span class="text-stone-500 font-medium">${escapeHTML(r.date)}</span>` : ''}
+                </div>
+                <div class="flex flex-wrap gap-1 items-center pt-0.5">
+                    ${membersBadges}
+                </div>
+                ${r.description ? `<p class="text-xs text-stone-400 italic mt-1 line-clamp-2">${escapeHTML(r.description)}</p>` : ''}
+            </div>
+            <div class="flex items-center gap-1.5 flex-shrink-0">
+                <button onclick="event.stopPropagation(); openRouteEditModal(${r.originalIndex})" class="text-stone-400 hover:text-stone-600 p-1 rounded hover:bg-stone-100 transition" title="Edit trip details">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
+                <button onclick="event.stopPropagation(); deleteSavedRoute(${r.originalIndex})" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-stone-100 transition" title="Delete route">✕</button>
+            </div>
+        </div>`;
+    };
+
+    if (planned.length > 0) {
+        html += `<div class="mb-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-2 mt-1">Planned Trips (${planned.length})</h4>
+            <div class="flex flex-col gap-2">${planned.map(renderRouteItem).join('')}</div>
+        </div>`;
+    }
+
+    sortedYears.forEach(year => {
+        const routes = completedByYear[year];
+        html += `<div class="mb-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-green-700 mb-2 mt-1">Completed Trips - ${year} (${routes.length})</h4>
+            <div class="flex flex-col gap-2">${routes.map(renderRouteItem).join('')}</div>
+        </div>`;
+    });
+
+    if (completedUndated.length > 0) {
+        html += `<div class="mb-4">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2 mt-1">Completed Trips - Undated (${completedUndated.length})</h4>
+            <div class="flex flex-col gap-2">${completedUndated.map(renderRouteItem).join('')}</div>
+        </div>`;
+    }
+
+    list.innerHTML = html;
+}
+
+function deleteSavedRoute(idx) {
+    if (confirm("Delete this road trip?")) {
+        settings.savedRoutes.splice(idx, 1);
+        selectedRouteIndex = null;
+        localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+        renderSavedRoutes();
+        updateMapMarkers();
+    }
+}
+
+function focusRoute(idx) {
+    if (selectedRouteIndex === idx) {
+        selectedRouteIndex = null;
+    } else {
+        selectedRouteIndex = idx;
+    }
+    renderSavedRoutes();
+    updateMapMarkers();
+
+    if (selectedRouteIndex !== null) {
+        const routeData = settings.savedRoutes[selectedRouteIndex];
+        if (routeData && worldMap && routeData.route && routeData.route.length > 0) {
+            const polyline = L.polyline(routeData.route);
+            worldMap.fitBounds(polyline.getBounds());
+        }
+    } else {
+        if (worldMap && settings.savedRoutes && settings.savedRoutes.length > 0) {
+            const allCoords = settings.savedRoutes.flatMap(r => r.route);
+            if (allCoords.length > 0) {
+                const polyline = L.polyline(allCoords);
+                worldMap.fitBounds(polyline.getBounds());
+            }
+        }
+    }
+}
+
+function toggleRouteEditModal(show) {
+    const modal = document.getElementById('route-edit-modal');
+    if (!modal) return;
+    if (show) {
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+    } else {
+        modal.classList.replace('opacity-100', 'opacity-0');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            routeEditTargetIndex = null;
+        }, 200);
+    }
+}
+
+function openRouteEditModal(idx) {
+    routeEditTargetIndex = idx;
+    const r = settings.savedRoutes[idx];
+    if (!r) return;
+
+    document.getElementById('route-edit-distance').innerText = formatDistance(r.distance);
+    document.getElementById('route-edit-duration').innerText = formatDuration(r.duration);
+    document.getElementById('route-edit-name').value = r.name || '';
+    document.getElementById('route-edit-date').value = r.date || '';
+    document.getElementById('route-edit-status').value = r.status || 'completed';
+    document.getElementById('route-edit-description').value = r.description || '';
+    document.getElementById('route-char-count').innerText = (r.description || '').length;
+
+    const container = document.getElementById('route-edit-members');
+    if (container) {
+        let html = '';
+        settings.familyMembers.forEach((member) => {
+            const checked = (r.members && r.members.includes(member)) ? 'checked' : '';
+            const escapedMember = escapeHTML(member);
+            html += `<label class="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer text-sm text-stone-700">
+                <input type="checkbox" value="${escapedMember}" ${checked} class="w-4 h-4 rounded accent-green-700">
+                <span class="truncate">${escapedMember}</span>
+            </label>`;
+        });
+        if (settings.familyMembers.length === 0) {
+            html = `<div class="col-span-2 text-stone-400 italic text-xs p-2 text-center">No family members configured.</div>`;
+        }
+        container.innerHTML = html;
+    }
+
+    toggleRouteEditModal(true);
+}
+
+function saveRouteEditDetails() {
+    if (routeEditTargetIndex === null) return;
+    const r = settings.savedRoutes[routeEditTargetIndex];
+    if (!r) return;
+
+    const name = document.getElementById('route-edit-name').value.trim();
+    if (!name) {
+        alert("Route name is required.");
+        return;
+    }
+
+    const date = document.getElementById('route-edit-date').value;
+    const status = document.getElementById('route-edit-status').value;
+    const description = document.getElementById('route-edit-description').value.trim();
+
+    const members = [];
+    const checkboxes = document.querySelectorAll('#route-edit-members input[type="checkbox"]');
+    checkboxes.forEach(cb => {
+        if (cb.checked) {
+            members.push(cb.value);
+        }
+    });
+
+    r.name = name;
+    r.date = date;
+    r.status = status;
+    r.description = description;
+    r.members = members;
+
+    localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+    toggleRouteEditModal(false);
+    renderSavedRoutes();
+    updateMapMarkers();
+}
+
+function deleteRouteFromEditModal() {
+    if (routeEditTargetIndex === null) return;
+    if (confirm("Delete this road trip?")) {
+        settings.savedRoutes.splice(routeEditTargetIndex, 1);
+        selectedRouteIndex = null;
+        localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+        toggleRouteEditModal(false);
+        renderSavedRoutes();
+        updateMapMarkers();
+    }
+}
+
 // Initialize App
 // Reference: Window: load event - https://developer.mozilla.org/en-US/docs/Web/API/Window/load_event
 window.onload = () => {
@@ -1000,3 +1545,17 @@ window.onload = () => {
     renderMemberFilterOptions();
     switchTab('parks');
 };
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        formatDistance,
+        formatDuration,
+        groupRoutesByYearOrStatus,
+        migrateData,
+        escapeHTML,
+        focusRoute,
+        getSelectedRouteIndex: () => selectedRouteIndex,
+        setSelectedRouteIndex: (val) => { selectedRouteIndex = val; }
+    };
+}
+

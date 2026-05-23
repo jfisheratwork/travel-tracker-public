@@ -12,13 +12,20 @@ This document outlines the global rules for contributing to the Travel Tracker p
   > Written with the assistance of Google Gemini
 
 ## 3. Session Management
-- **Session Summaries:** At the start of every new coding session, a new markdown file must be created in the `sessions/` directory.
-- **Naming Convention:** `sessions/YYYY-MM-DD-Session-Summary.md` (append a timestamp or unique ID if multiple sessions occur on the same day).
-- **Content:** The summary should track:
-  - Date and Time.
-  - Objectives.
-  - Key changes made.
-  - Decisions and rationale.
+- **Session Directories:** At the start of every new coding session, a session directory tracking the session details must be created in the `sessions/` directory.
+- **Naming Convention:** `sessions/YYYY-MM-DD-Session/` (or `sessions/YYYY-MM-DD-Session-[suffix]/` if a duplicate is explicitly approved by the user).
+- **Single Session Per Day:** Only one session directory should be created per calendar day.
+- **Duplicate Prevention:** If a session directory for the current date already exists, the AI assistant must ask the user for permission (using the `ask_question` tool or a direct question) before creating a new duplicate session folder. If not approved, the assistant should update or append files inside the existing directory.
+- **Session Directory Contents:**
+  Each session directory MUST contain the following four markdown files:
+  1. `session_summary.md`: The main summary of the session. It must follow this structured layout:
+     - **Executive Summary:** A concise overview of the session, goals, and results at the top.
+     - **Outcomes:** The specific results, updates, and milestones achieved.
+     - **Fine-grained Details:** In-depth technical breakdown of tasks completed (`Tasks Done`) and tasks remaining or postponed (`Tasks Not Done`).
+     - **Prompt Log:** A list of high-level prompt summaries detailing each interaction/request during the session at the very bottom.
+  2. `plan.md`: The technical implementation plan created and approved for the session.
+  3. `tasks.md`: The task checklist used to track progress.
+  4. `diagrams.md`: Short, Mermaid-based architectural diagrams illustrating the component flows or state transitions touched during the session.
 
 ## 4. File System Boundaries
 - **Workspace Confinement:** Never modify files outside of the project's root workspace.

@@ -1,0 +1,20 @@
+- [x] Create and switch to new git branch `feature/roads-traveled`
+- [x] Update OSRM throttle limit to 30 seconds in `docs/js/app.js`
+- [x] Implement visual red error warning alert box styling for `#route-status` on errors
+- [x] Update selection highlighting styles from green to blue in `docs/js/app.js`
+- [x] Refactor `focusRoute` to toggle, zoom, and redrawing all routes correctly
+- [x] Add `escapeHTML` utility function to `docs/js/app.js`
+- [x] Escape all interpolated parameters inside `renderRouteItem`
+- [x] Escape family member names in `openRouteEditModal` checkboxes
+- [x] Run the automated security scanner tool on `docs/js/app.js` to verify fixes
+- [x] Generate the PoC verification reasoning write-up
+- [x] Generate the SecureCoder Security Audit report section in `walkthrough.md`
+- [x] Run unit tests via `node tests/app.test.js` to ensure logic is intact
+- [x] Call the `/fix_completed` local API to report completion status
+- [x] Export `focusRoute` and helpers for testing
+- [x] Add unit tests in `tests/app.test.js` verifying toggling and escaping
+- [x] Commit and push all work to origin
+- [x] Verify everything functions as expected
+- [x] Add Cache-Control and Pragma meta tags to `<head>` of `docs/index.html` to bypass caching
+- [x] Append query parameter version strings `?v=1.0.1` to CSS/JS imports in `docs/index.html` to force browser cache busting
+- [x] Re-run unit tests via `node tests/app.test.js` to ensure no HTML structural breakages
