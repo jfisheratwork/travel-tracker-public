@@ -21,25 +21,9 @@ function initWorldMap() {
 
 /** Toggles map mode between 'parks' and 'states' via buttons. */
 function setMapMode(mode) {
-    mapMode = mode;
-    const btnParks = document.getElementById('btn-map-parks');
-    const btnStates = document.getElementById('btn-map-states');
-    const btnRoads = document.getElementById('btn-map-roads');
-    const builderUi = document.getElementById('route-builder-ui');
-    
-    btnParks.className = mode === 'parks' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
-    btnStates.className = mode === 'states' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
-    if (btnRoads) btnRoads.className = mode === 'roads' ? "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md" : "px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200";
-    
-    if (builderUi) {
-        if (mode === 'roads') {
-            builderUi.classList.remove('hidden');
-            renderSavedRoutes();
-        } else {
-            builderUi.classList.add('hidden');
-        }
+    if (currentTab !== mode) {
+        switchTab(mode);
     }
-    updateMapMarkers();
 }
 
 /**
@@ -128,7 +112,12 @@ function updateMapMarkers() {
 
     // Search Filtering
     if (searchTerm) {
-        dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
+        const matchedMember = settings.familyMembers.find(m => m.toLowerCase() === searchTerm);
+        if (matchedMember) {
+            dataset = dataset.filter(item => dataStore[`${item.name}_${matchedMember}`]);
+        } else {
+            dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
+        }
     }
 
     // Apply Visibility Settings

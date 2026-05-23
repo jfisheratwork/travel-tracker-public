@@ -141,41 +141,39 @@ function renderSettingsFamilyList() {
  * updates headers, and triggers data rendering for the selected tab.
  */
 function switchTab(tab) {
+    if (tab === 'world') {
+        tab = 'parks';
+    }
+    
     currentTab = tab;
+    mapMode = tab;
     try {
         localStorage.setItem('np_travel_active_tab', tab);
     } catch(e) {}
 
-    document.querySelectorAll('nav button').forEach(b => {
-        b.classList.remove('tab-active');
-        b.classList.add('text-stone-500', 'hover:text-green-700');
-    });
-    const activeTabBtn = document.getElementById(`tab-${tab}`);
-    if (activeTabBtn) {
-        activeTabBtn.classList.add('tab-active');
-        activeTabBtn.classList.remove('text-stone-500', 'hover:text-green-700');
-    }
+    const btnParks = document.getElementById('btn-map-parks');
+    const btnStates = document.getElementById('btn-map-states');
+    const btnRoads = document.getElementById('btn-map-roads');
 
-    const mapContainer = document.getElementById('world-map-container');
-    if (mapContainer) {
-        mapContainer.classList.remove('hidden');
-    }
+    const activeClass = "px-4 py-2 rounded-lg text-sm font-bold transition-all bg-green-700 text-white shadow-md";
+    const inactiveClass = "px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100";
 
-    const mapModeButtons = document.getElementById('map-mode-buttons');
+    if (btnParks) btnParks.className = tab === 'parks' ? activeClass : inactiveClass;
+    if (btnStates) btnStates.className = tab === 'states' ? activeClass : inactiveClass;
+    if (btnRoads) btnRoads.className = tab === 'roads' ? activeClass : inactiveClass;
+
     const builderUi = document.getElementById('route-builder-ui');
-
-    if (tab === 'world') {
-        if (mapModeButtons) mapModeButtons.classList.remove('hidden');
-        if (builderUi) builderUi.classList.add('hidden');
-        const savedMode = (mapMode === 'roads' ? 'parks' : mapMode);
-        setMapMode(savedMode);
-        initWorldMap();
-    } else if (tab === 'roads') {
-        if (mapModeButtons) mapModeButtons.classList.add('hidden');
-        if (builderUi) builderUi.classList.remove('hidden');
-        setMapMode('roads');
-        initWorldMap();
+    if (builderUi) {
+        if (tab === 'roads') {
+            builderUi.classList.remove('hidden');
+            renderSavedRoutes();
+        } else {
+            builderUi.classList.add('hidden');
+        }
     }
+
+    updateMapMarkers();
+    initWorldMap();
 
     // Toggle stats widget visibility on switch
     try {
