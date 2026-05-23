@@ -105,7 +105,11 @@ function updateMapMarkers() {
                 if (selectedRouteIndex !== null && selectedRouteIndex !== routeIdx) {
                     return;
                 }
-                const roadPolyline = L.polyline(routeData.route, {
+                const coords = routeCoordinatesCache[routeData.timestamp] || (routeData.route && routeData.route.length > 0 ? routeData.route : null);
+                if (!coords || coords.length === 0) {
+                    return;
+                }
+                const roadPolyline = L.polyline(coords, {
                     color: palette[routeIdx % palette.length], 
                     weight: 5,
                     opacity: 0.8,
@@ -191,7 +195,7 @@ function updateMapMarkers() {
         }
 
         const popupContent = `
-            <div class="font-sans min-w-[160px] p-1">
+            <div class="font-sans min-w-[240px] p-1">
                 <strong class="text-sm block text-stone-800">${item.name}</strong>
                 <span class="text-xs text-stone-500 block border-b pb-1 mb-1">${subtitle}</span>
                 
@@ -201,14 +205,17 @@ function updateMapMarkers() {
 
                 ${metaHtml}
 
-                <div class="mt-2 pt-2 border-t border-stone-100">
+                <div class="mt-2 pt-2 border-t border-stone-100 flex justify-between items-center gap-2">
                     <a href="${wikiUrl}" target="_blank" class="text-xs text-blue-500 hover:text-blue-700 flex items-center gap-1">
                         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/></svg>
-                        Wikipedia Article
+                        Wikipedia
                     </a>
+                    <button onclick="openEditModal('${item.name.replace(/'/g, "\\'")}', '${mapMode}')" class="text-[10px] text-green-700 hover:text-green-900 font-bold bg-green-50 hover:bg-green-100 px-2 py-0.5 rounded border border-green-200 transition">
+                        ✏️ Edit
+                    </button>
                 </div>
             </div>`;
-        marker.bindPopup(popupContent);
+        marker.bindPopup(popupContent, { minWidth: 240, maxWidth: 320 });
 
         marker.on('popupopen', () => { marker.setIcon(selectedIcon); marker.setZIndexOffset(1000); });
         marker.on('popupclose', () => { marker.setIcon(normalIcon); marker.setZIndexOffset(0); });

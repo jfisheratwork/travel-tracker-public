@@ -28,6 +28,7 @@ let currentMemberFilter = 'all';
 let editTarget = null;
 let routeEditTargetIndex = null;
 let selectedRouteIndex = null;
+let routeCoordinatesCache = {};
 
 let parksSearchTerm = '';
 let statesSearchTerm = '';
@@ -89,7 +90,8 @@ if (typeof module !== 'undefined' && module.exports) {
         hometownMarkers, roadPolylines, mapMode, statsMode, searchTerm,
         currentMemberFilter, editTarget, routeEditTargetIndex, selectedRouteIndex,
         palette, settings, visitData,
-        parksSearchTerm, statesSearchTerm, parksMemberFilter, statesMemberFilter, collapsedYears
+        parksSearchTerm, statesSearchTerm, parksMemberFilter, statesMemberFilter, collapsedYears,
+        routeCoordinatesCache
     };
 
     Object.keys(stateVars).forEach(stateKey => {

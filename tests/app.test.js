@@ -77,7 +77,8 @@ const {
     saveBackupJSON,
     performRestore,
     setImportedData,
-    populateExamplesDropdown
+    populateExamplesDropdown,
+    migrateLocalStorageRoutes
 } = require('../docs/js/app.js');
 
 test('focusRoute in app.js', async (testContext) => {
@@ -229,5 +230,51 @@ test('populateExamplesDropdown in app.js', async (testContext) => {
         assert.ok(mockSelect.innerHTML.includes('travel_tracker_backup_2026-05-23.json'));
 
         global.document.getElementById = originalGetElementById;
+    });
+});
+
+test('migrateLocalStorageRoutes in app.js', async (testContext) => {
+    await testContext.test('migrates legacy route coords to cache and creates waypoints', () => {
+        // Setup a legacy route
+        global.settings.savedRoutes = [
+            {
+                name: 'Seattle to Portland',
+                route: [[47.6062, -122.3321], [45.5152, -122.6784]],
+                timestamp: 123456789,
+                storeFullCoordinates: false
+            }
+        ];
+        global.routeCoordinatesCache = {};
+
+        // Run migration
+        migrateLocalStorageRoutes();
+
+        // Coordinates should be in cache, not in savedRoutes
+        assert.deepEqual(global.routeCoordinatesCache[123456789], [[47.6062, -122.3321], [45.5152, -122.6784]]);
+        assert.strictEqual(global.settings.savedRoutes[0].route, undefined);
+
+        // Waypoints should be generated
+        assert.ok(global.settings.savedRoutes[0].waypoints);
+        assert.strictEqual(global.settings.savedRoutes[0].waypoints.length, 2);
+        assert.strictEqual(global.settings.savedRoutes[0].waypoints[0].name, 'Seattle');
+        assert.strictEqual(global.settings.savedRoutes[0].waypoints[1].name, 'Portland');
+    });
+
+    await testContext.test('retains coords in localStorage if storeFullCoordinates is true', () => {
+        global.settings.savedRoutes = [
+            {
+                name: 'Seattle to Portland',
+                route: [[47.6062, -122.3321], [45.5152, -122.6784]],
+                timestamp: 987654321,
+                storeFullCoordinates: true
+            }
+        ];
+        global.routeCoordinatesCache = {};
+
+        migrateLocalStorageRoutes();
+
+        // Coordinates should be in cache AND savedRoutes
+        assert.deepEqual(global.routeCoordinatesCache[987654321], [[47.6062, -122.3321], [45.5152, -122.6784]]);
+        assert.deepEqual(global.settings.savedRoutes[0].route, [[47.6062, -122.3321], [45.5152, -122.6784]]);
     });
 });

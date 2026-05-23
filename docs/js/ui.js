@@ -1056,8 +1056,8 @@ function editSavedRouteOnMap(idx) {
     switchTab('roads');
 
     // Populate start and end points
-    const startQuery = savedRoute.startQuery || (savedRoute.route && savedRoute.route.length > 0 ? `${savedRoute.route[0][0]},${savedRoute.route[0][1]}` : '');
-    const endQuery = savedRoute.endQuery || (savedRoute.route && savedRoute.route.length > 0 ? `${savedRoute.route[savedRoute.route.length - 1][0]},${savedRoute.route[savedRoute.route.length - 1][1]}` : '');
+    const startQuery = savedRoute.startQuery || (savedRoute.waypoints && savedRoute.waypoints.length > 0 ? `${savedRoute.waypoints[0].lat},${savedRoute.waypoints[0].lng}` : (savedRoute.route && savedRoute.route.length > 0 ? `${savedRoute.route[0][0]},${savedRoute.route[0][1]}` : ''));
+    const endQuery = savedRoute.endQuery || (savedRoute.waypoints && savedRoute.waypoints.length > 0 ? `${savedRoute.waypoints[savedRoute.waypoints.length - 1].lat},${savedRoute.waypoints[savedRoute.waypoints.length - 1].lng}` : (savedRoute.route && savedRoute.route.length > 0 ? `${savedRoute.route[savedRoute.route.length - 1][0]},${savedRoute.route[savedRoute.route.length - 1][1]}` : ''));
     const stopsQueries = savedRoute.stopsQueries || [];
 
     const startInput = document.getElementById('route-start');

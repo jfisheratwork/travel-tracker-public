@@ -430,6 +430,16 @@ function toggleMapboxSettings() {
 }
 
 async function getGeocode(query) {
+    const coordMatch = query.match(/^[-+]?([0-9]*\.[0-9]+|[0-9]+)\s*,\s*[-+]?([0-9]*\.[0-9]+|[0-9]+)$/);
+    if (coordMatch) {
+        const lat = parseFloat(coordMatch[1]);
+        const lng = parseFloat(coordMatch[2]);
+        return {
+            lat: lat,
+            lng: lng,
+            name: `Point (${lat.toFixed(4)}, ${lng.toFixed(4)})`
+        };
+    }
     const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1`);
     const data = await response.json();
     if (!data || data.length === 0) throw new Error(`Could not find location: ${query}`);
@@ -656,43 +666,173 @@ function cancelAltRouteSelection() {
     if (title) title.innerText = "Add New Road Trip";
 }
 
-function saveSelectedRoute() {
+async function reverseGeocode(lat, lng) {
+    try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`);
+        const data = await res.json();
+        if (data && data.address) {
+            const city = data.address.city || data.address.town || data.address.village || data.address.hamlet || data.address.county || '';
+            const state = data.address.state || '';
+            if (city && state) {
+                return `${city}, ${state}`;
+            } else if (city) {
+                return city;
+            } else if (data.display_name) {
+                return data.display_name.split(',')[0];
+            }
+        }
+    } catch (e) {
+        console.error("Reverse geocoding failed", e);
+    }
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+}
+
+function findForcingWaypoint(altCoords, recCoords, waypoints) {
+    let maxMinDistSq = -1;
+    let forcingPoint = null;
+    let forcingIdx = -1;
+
+    for (let i = 0; i < altCoords.length; i++) {
+        const p = altCoords[i];
+        let minDistSq = Infinity;
+        for (let j = 0; j < recCoords.length; j++) {
+            const q = recCoords[j];
+            const dx = p[0] - q[0];
+            const dy = p[1] - q[1];
+            const distSq = dx * dx + dy * dy;
+            if (distSq < minDistSq) {
+                minDistSq = distSq;
+            }
+        }
+        if (minDistSq > maxMinDistSq) {
+            maxMinDistSq = minDistSq;
+            forcingPoint = p;
+            forcingIdx = i;
+        }
+    }
+
+    // If maximum distance is tiny (e.g. less than ~1km, ~0.01^2), we don't need a forcing point
+    if (maxMinDistSq < 0.0001) {
+        return null;
+    }
+
+    // Find the closest coordinate index in altCoords for each waypoint
+    const waypointIndices = waypoints.map(wp => {
+        let minDistSq = Infinity;
+        let closestIdx = -1;
+        for (let i = 0; i < altCoords.length; i++) {
+            const p = altCoords[i];
+            const dx = p[0] - wp.lat;
+            const dy = p[1] - wp.lng;
+            const distSq = dx * dx + dy * dy;
+            if (distSq < minDistSq) {
+                minDistSq = distSq;
+                closestIdx = i;
+            }
+        }
+        return closestIdx;
+    });
+
+    // Find insertion index in waypoints list
+    let insertAt = waypoints.length - 1;
+    for (let k = 0; k < waypointIndices.length - 1; k++) {
+        if (forcingIdx >= waypointIndices[k] && forcingIdx <= waypointIndices[k+1]) {
+            insertAt = k + 1;
+            break;
+        }
+    }
+
+    return {
+        lat: forcingPoint[0],
+        lng: forcingPoint[1],
+        insertAt: insertAt
+    };
+}
+
+async function saveSelectedRoute() {
     if (tempAlternatives.length === 0) return;
     const selectedRoute = tempAlternatives[selectedAltRouteIdx];
     if (!selectedRoute) return;
 
-    const waypoints = selectedRoute.waypoints;
-    const name = `${waypoints[0].name} to ${waypoints[waypoints.length - 1].name}`;
+    // Read opt-in checkbox
+    const checkbox = document.getElementById('route-store-full-coords');
+    const storeFullCoordinates = checkbox ? checkbox.checked : false;
 
+    let waypoints = [...selectedRoute.waypoints];
+    let startQuery = selectedRoute.startQuery;
+    let endQuery = selectedRoute.endQuery;
+    let stopsQueries = [...(selectedRoute.stopsQueries || [])];
+
+    // Forcing waypoint for alternative routes
+    if (selectedAltRouteIdx > 0 && tempAlternatives.length > 0) {
+        const recommendedRoute = tempAlternatives[0];
+        const forcing = findForcingWaypoint(selectedRoute.coordinates, recommendedRoute.coordinates, selectedRoute.waypoints);
+        if (forcing) {
+            const status = document.getElementById('route-status');
+            if (status) status.innerText = "Resolving alternate route waypoint city name...";
+            const resolvedName = await reverseGeocode(forcing.lat, forcing.lng);
+            
+            const newWaypoint = {
+                lat: forcing.lat,
+                lng: forcing.lng,
+                name: resolvedName
+            };
+            waypoints.splice(forcing.insertAt, 0, newWaypoint);
+
+            // Insert into intermediate stops queries
+            const stopIndex = forcing.insertAt - 1;
+            stopsQueries.splice(stopIndex, 0, resolvedName);
+        }
+    }
+
+    const name = `${waypoints[0].name} to ${waypoints[waypoints.length - 1].name}`;
+    const timestamp = Date.now();
+
+    let savedRouteObj;
     if (routeEditTargetIndex !== null) {
         const existing = settings.savedRoutes[routeEditTargetIndex];
         if (existing) {
-            existing.route = selectedRoute.coordinates;
             existing.distance = selectedRoute.distance;
             existing.duration = selectedRoute.duration;
-            existing.startQuery = selectedRoute.startQuery;
-            existing.endQuery = selectedRoute.endQuery;
-            existing.stopsQueries = selectedRoute.stopsQueries;
+            existing.startQuery = startQuery;
+            existing.endQuery = endQuery;
+            existing.stopsQueries = stopsQueries;
             existing.engine = settings.routingEngine;
             existing.name = name;
+            existing.waypoints = waypoints;
+            existing.storeFullCoordinates = storeFullCoordinates;
+            if (storeFullCoordinates) {
+                existing.route = selectedRoute.coordinates;
+            } else {
+                delete existing.route; // strip coords
+            }
+            savedRouteObj = existing;
         }
     } else {
-        settings.savedRoutes.push({
+        savedRouteObj = {
             name: name,
-            route: selectedRoute.coordinates,
             engine: settings.routingEngine,
-            timestamp: Date.now(),
+            timestamp: timestamp,
             date: '',
             members: [],
             description: '',
             distance: selectedRoute.distance,
             duration: selectedRoute.duration,
             status: 'completed',
-            startQuery: selectedRoute.startQuery,
-            endQuery: selectedRoute.endQuery,
-            stopsQueries: selectedRoute.stopsQueries
-        });
+            startQuery: startQuery,
+            endQuery: endQuery,
+            stopsQueries: stopsQueries,
+            waypoints: waypoints,
+            storeFullCoordinates: storeFullCoordinates
+        };
+        if (storeFullCoordinates) {
+            savedRouteObj.route = selectedRoute.coordinates;
+        }
+        settings.savedRoutes.push(savedRouteObj);
     }
+
+    // Cache coordinates in memory immediately
+    routeCoordinatesCache[savedRouteObj.timestamp] = selectedRoute.coordinates;
 
     localStorage.setItem('np_travel_settings', JSON.stringify(settings));
 
@@ -700,6 +840,7 @@ function saveSelectedRoute() {
     document.getElementById('route-end').value = '';
     const container = document.getElementById('route-stops-container');
     if (container) container.innerHTML = '';
+    if (checkbox) checkbox.checked = false;
 
     cancelAltRouteSelection();
 
@@ -915,24 +1056,52 @@ function deleteSavedRoute(idx) {
     }
 }
 
-function focusRoute(idx) {
+async function focusRoute(idx) {
     if (selectedRouteIndex === idx) {
         selectedRouteIndex = null;
     } else {
         selectedRouteIndex = idx;
     }
     renderSavedRoutes();
-    updateMapMarkers();
 
     if (selectedRouteIndex !== null) {
         const routeData = settings.savedRoutes[selectedRouteIndex];
-        if (routeData && worldMap && routeData.route && routeData.route.length > 0) {
-            const polyline = L.polyline(routeData.route);
-            worldMap.fitBounds(polyline.getBounds());
+        if (routeData) {
+            const storedCoords = (routeData.route && routeData.route.length > 0) ? routeData.route : null;
+            if (!routeCoordinatesCache[routeData.timestamp] && !storedCoords) {
+                const status = document.getElementById('route-status');
+                if (status) {
+                    status.className = "text-xs text-stone-500 mt-2 font-medium empty:hidden";
+                    status.innerText = "Loading route path...";
+                }
+                try {
+                    const coords = await fetchRouteCoordinates(routeData);
+                    routeCoordinatesCache[routeData.timestamp] = coords;
+                    if (status) status.innerText = "";
+                } catch (err) {
+                    console.error(err);
+                    if (status) {
+                        status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
+                        status.innerText = `Error loading route path: ${err.message}`;
+                    }
+                }
+            }
+            
+            updateMapMarkers();
+
+            const coords = routeCoordinatesCache[routeData.timestamp] || storedCoords;
+            if (coords && worldMap && coords.length > 0) {
+                const polyline = L.polyline(coords);
+                worldMap.fitBounds(polyline.getBounds());
+            }
         }
     } else {
+        updateMapMarkers();
         if (worldMap && settings.savedRoutes && settings.savedRoutes.length > 0) {
-            const allCoords = settings.savedRoutes.flatMap(savedRoute => savedRoute.route);
+            const allCoords = settings.savedRoutes
+                .map(savedRoute => routeCoordinatesCache[savedRoute.timestamp] || (savedRoute.route && savedRoute.route.length > 0 ? savedRoute.route : null))
+                .filter(Boolean)
+                .flatMap(coords => coords);
             if (allCoords.length > 0) {
                 const polyline = L.polyline(allCoords);
                 worldMap.fitBounds(polyline.getBounds());
@@ -941,8 +1110,177 @@ function focusRoute(idx) {
     }
 }
 
+async function fetchRouteCoordinates(route) {
+    const waypoints = route.waypoints;
+    if (!waypoints || waypoints.length < 2) {
+        throw new Error("Invalid route waypoints.");
+    }
+
+    let routes = [];
+    const engine = route.engine || settings.routingEngine;
+    if (engine === 'osrm') {
+        routes = await fetchOSRM(waypoints);
+    } else {
+        routes = await fetchMapbox(waypoints);
+    }
+
+    if (routes.length === 0) {
+        throw new Error("No route coordinates returned.");
+    }
+
+    let reduced = routes[0].coordinates;
+    const tolerance = parseFloat(settings.routeReduction);
+    if (tolerance > 0 && worldMap) {
+        const rawPoints = routes[0].coordinates.map(coordinatePair => ({x: coordinatePair[0], y: coordinatePair[1]}));
+        const simpleRaw = L.LineUtil.simplify(rawPoints, tolerance);
+        reduced = simpleRaw.map(pointItem => [pointItem.x, pointItem.y]);
+    }
+
+    return reduced;
+}
+
+let isRouteLoadingActive = false;
+let routeLoadingCancel = false;
+
+async function loadAllRoutes() {
+    if (isRouteLoadingActive) {
+        routeLoadingCancel = true;
+        return;
+    }
+
+    const routes = settings.savedRoutes || [];
+    if (routes.length === 0) return;
+
+    const progressContainer = document.getElementById('routes-loading-progress-container');
+    const statusText = document.getElementById('routes-loading-status');
+    const percentText = document.getElementById('routes-loading-percent');
+    const progressBar = document.getElementById('routes-loading-progress-bar');
+    const btn = document.getElementById('btn-load-all-routes');
+
+    if (progressContainer) progressContainer.classList.remove('hidden');
+    if (btn) {
+        btn.innerText = "🛑 Stop Loading";
+        btn.classList.replace('bg-green-50', 'bg-red-50');
+        btn.classList.replace('text-green-700', 'text-red-700');
+        btn.classList.replace('border-green-200', 'border-red-200');
+        btn.classList.replace('hover:bg-green-100', 'hover:bg-red-100');
+    }
+
+    isRouteLoadingActive = true;
+    routeLoadingCancel = false;
+
+    let loadedCount = 0;
+    const totalCount = routes.length;
+
+    routes.forEach(route => {
+        if (routeCoordinatesCache[route.timestamp] || (route.route && route.route.length > 0)) {
+            loadedCount++;
+        }
+    });
+
+    const updateProgressUI = () => {
+        const pct = totalCount ? Math.round((loadedCount / totalCount) * 100) : 0;
+        if (percentText) percentText.innerText = `${pct}%`;
+        if (progressBar) progressBar.style.width = `${pct}%`;
+    };
+
+    updateProgressUI();
+
+    for (let i = 0; i < routes.length; i++) {
+        if (routeLoadingCancel) {
+            break;
+        }
+
+        const route = routes[i];
+        const hasStored = route.route && route.route.length > 0;
+        if (routeCoordinatesCache[route.timestamp] || hasStored) {
+            continue;
+        }
+
+        if (statusText) statusText.innerText = `Loading: ${route.name}...`;
+
+        try {
+            const coords = await fetchRouteCoordinates(route);
+            routeCoordinatesCache[route.timestamp] = coords;
+            loadedCount++;
+            updateProgressUI();
+            updateMapMarkers();
+        } catch (err) {
+            console.error(err);
+            if (statusText) statusText.innerText = `Error: ${route.name}`;
+            await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+
+        if (i < routes.length - 1) {
+            const nextRoute = routes[i+1];
+            const nextHasStored = nextRoute.route && nextRoute.route.length > 0;
+            if (!routeCoordinatesCache[nextRoute.timestamp] && !nextHasStored) {
+                const engine = route.engine || settings.routingEngine;
+                if (engine === 'osrm') {
+                    for (let secondsLeft = 15; secondsLeft > 0; secondsLeft--) {
+                        if (routeLoadingCancel) break;
+                        if (statusText) statusText.innerText = `Waiting ${secondsLeft}s (OSRM throttle)...`;
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                } else {
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                }
+            }
+        }
+    }
+
+    isRouteLoadingActive = false;
+    if (btn) {
+        btn.innerText = "🚗 Load All Routes on Map";
+        btn.className = "text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1";
+    }
+    if (statusText) {
+        if (routeLoadingCancel) {
+            statusText.innerText = "Loading stopped.";
+        } else {
+            statusText.innerText = "All routes loaded successfully!";
+            setTimeout(() => {
+                if (progressContainer) progressContainer.classList.add('hidden');
+            }, 3000);
+        }
+    }
+}
+
+function migrateLocalStorageRoutes() {
+    let migrationNeeded = false;
+    if (settings.savedRoutes && settings.savedRoutes.length > 0) {
+        settings.savedRoutes.forEach(route => {
+            if (route.route && route.route.length > 0) {
+                if (!route.storeFullCoordinates) {
+                    routeCoordinatesCache[route.timestamp] = route.route;
+                    delete route.route;
+                    migrationNeeded = true;
+                } else {
+                    routeCoordinatesCache[route.timestamp] = route.route;
+                }
+            }
+            if (!route.waypoints || route.waypoints.length === 0) {
+                const coords = routeCoordinatesCache[route.timestamp];
+                if (coords && coords.length > 0) {
+                    const startName = (route.name && route.name.includes(' to ')) ? route.name.split(' to ')[0] : (route.startQuery || 'Start');
+                    const endName = (route.name && route.name.includes(' to ')) ? route.name.split(' to ')[1] : (route.endQuery || 'Destination');
+                    route.waypoints = [
+                        { lat: coords[0][0], lng: coords[0][1], name: startName },
+                        { lat: coords[coords.length - 1][0], lng: coords[coords.length - 1][1], name: endName }
+                    ];
+                    migrationNeeded = true;
+                }
+            }
+        });
+    }
+    if (migrationNeeded) {
+        localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+    }
+}
+
 // Initialize App
 window.onload = () => {
+    migrateLocalStorageRoutes();
     checkFamilyStatus();
     renderParksMemberFilterOptions();
     renderStatesMemberFilterOptions();
@@ -975,6 +1313,9 @@ if (typeof module !== 'undefined' && module.exports) {
     global.getImportedData = () => importedData;
     global.setImportedData = (passedImportedData) => { importedData = passedImportedData; };
     global.populateExamplesDropdown = populateExamplesDropdown;
+    global.fetchRouteCoordinates = fetchRouteCoordinates;
+    global.loadAllRoutes = loadAllRoutes;
+    global.migrateLocalStorageRoutes = migrateLocalStorageRoutes;
 
     module.exports = {
         formatDistance: global.formatDistance,
@@ -996,6 +1337,9 @@ if (typeof module !== 'undefined' && module.exports) {
         performRestore: performRestore,
         getImportedData: () => importedData,
         setImportedData: (passedImportedData) => { importedData = passedImportedData; },
-        populateExamplesDropdown: populateExamplesDropdown
+        populateExamplesDropdown: populateExamplesDropdown,
+        fetchRouteCoordinates: fetchRouteCoordinates,
+        loadAllRoutes: loadAllRoutes,
+        migrateLocalStorageRoutes: migrateLocalStorageRoutes
     };
 }
