@@ -1,12 +1,13 @@
 # Session Summary - Layout Simplifications, Modal Tables, & Advanced Routing
-**Date:** 2026-05-23 (Time: 09:43:00)
+**Date:** 2026-05-23 (Time: 09:46:00)
 
 ## Executive Summary
-This session successfully transformed the Family Travel Tracker interface, focusing navigation on the Map and Road Trips. Visit tracking tables were converted to popups, stats were transformed into a collapsible widget above the map, and Route Builder was upgraded to support dynamic intermediate stops and alternative route option selections.
+This session successfully transformed the Family Travel Tracker interface, focusing navigation on the Map and Road Trips. Visit tracking tables were converted to popups, stats were transformed into a collapsible widget above the map, and Route Builder was upgraded to support dynamic intermediate stops and alternative route option selections. Following user feedback, the layout was further refined to unify all states under a primary "Map" display with action log modals and a header search input supporting matching by name or member visited.
 
 ## Outcomes
-- **Enhanced UI Layout**: Navigation tabs simplified to World Map and Road Trips. Visit lists are now log modals.
-- **Improved Workspace Memory**: Active tab selection and statistics panel states persist across browser reloads.
+- **Unified UI Layout**: Navigation tabs replaced with a primary Map view. Log visit tables are overlay modals.
+- **Header Global Search**: Integrated search bar supporting location name matching and family member visited filter matching.
+- **Improved Workspace Memory**: Active map mode selection and statistics panel states persist across browser reloads.
 - **Advanced Multi-Stop & Alternative Routing**: Intermediate waypoints can be added to Route Builder. Mapbox & OSRM requests retrieve alternative paths which can be previewed on the map and saved.
 - **Accordion Sidebar Categories**: Sidebar saved trips are grouped by year, defaulting completed past years to a collapsed layout.
 - **Tests Verified**: Automated test suite verified 20/20 checks passing.
@@ -23,6 +24,7 @@ This session successfully transformed the Family Travel Tracker interface, focus
 - [x] Upgraded geocoding and routing engine in `docs/js/app.js` to process multi-stop alternatives.
 - [x] Rendered alternative routes list selector and dynamic map preview polylines.
 - [x] Grouped road trips by year inside collapsible sidebar panels in `docs/js/app.js`.
+- [x] Restructured top header, unified tabs into map modes navigation, and implemented member-name filtering in search.
 - [x] Ran automated testing checks ensuring zero code regressions.
 
 ### Tasks Not Done
@@ -31,6 +33,8 @@ This session successfully transformed the Family Travel Tracker interface, focus
 ## Prompt Log
 1. **User Request:** "go ahead and push and commit please / push approved are you not able to break the work into subagents? / yeah just implement them all sequentially"
    - *Action:* Checked out branch `feature/travel-tracker-layout`, initialized `sessions/2026-05-23-Session-3` workspace, refactored HTML structural code, added modal and stats widget states, upgraded routing engine to fetch waypoints/alternatives, ran unit tests, and verified passing checks.
+2. **User Request:** "Hmmm... looking at what you did its not quite right. World map is the primary display... search by name, or member... National Parks | States | Road Trips"
+   - *Action:* Rebuilt navigation, merged tab switcher with map modes, added top search bar with member visited matching, updated walkthrough and session summary trackers.
 
 ---
 *Written with the assistance of Google Gemini*

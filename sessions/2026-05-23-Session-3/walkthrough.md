@@ -5,22 +5,24 @@ All layout enhancements, popup visit logging modals, active tab persistence, and
 ## Changes Made
 
 ### 1. Navigation & Modal Tables
-- **Simplified Navigation**: Restructured main navigation header in [index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html) to display only **World Map** and **Road Trips** tabs.
-- **Log Modals**: Appended `#parks-modal` and `#states-modal` DOM containers featuring independent search controls, region selectors (USA vs. Canada), member filters, and scrollable data tables.
-- **Trigger Actions**: Linked navigation actions "🌲 Log Parks" and "⭐ Log States" to open the respective popups without changing tabs or leaving the map view.
+- **Unified Interface Layout**: Refactored [index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html) to present a single unified **Map** primary view.
+- **Log Modals**: Created popup overlay modals for "Add/Edit Parks" and "Add/Edit States" placed next to the main header, allowing visit logging without changing tabs.
+- **Mode Navigation Bar**: Integrated the map mode selectors (**National Parks**, **States & Provinces**, and **Road Trips**) directly as the primary view state switchers.
 
-### 2. Collapsible Statistics & Persistence
-- **Collapsible Stats Widget**: Replaced the stats tab with an in-page `#stats-widget-container` sitting directly above the Leaflet map container. Added a show/hide toggle action.
-- **Persistence**: Saved active tab choice (`np_travel_active_tab`) and statistics toggle state (`np_travel_show_stats`) in `localStorage` to return users to their exact same workspace view on page reload.
+### 2. Multi-Criteria Global Search
+- **Search Header**: Placed a search input at the top of the viewport.
+- **Name/Member Matching**: Upgraded map query filters to search by location name (e.g., "Yosemite") OR by family member name (e.g., "Jim") to show exactly what locations that member has visited.
 
-### 3. Multi-stop & Alternative Routing
-- **Waypoint Stops Builder**: Added a dynamic container `#route-stops-container` and buttons "➕ Add Stop" in Route Builder to manage intermediate stops inputs.
-- **Alternative Paths Engine**: Updated OSRM and Mapbox routing request parameters to query with `alternatives=true`.
-- **Route Selection UI**: Rendered all fetched routing alternatives on the map: selected route in solid green, options in dashed gray. Created an interactive options panel with distance & duration indicators allowing users to select and save their preferred path.
+### 3. Collapsible Statistics & Persistence
+- **Collapsible Stats Widget**: Moved the statistics progress bars into a toggleable widget directly above the map.
+- **Persistence**: Saved active tab choice (`np_travel_active_tab`) and statistics toggle state (`np_travel_show_stats`) in `localStorage` to preserve workspace layout across loads.
 
-### 4. Collapsible Road Trip Timeline
-- **Year Groupings**: Grouped saved road trips by year in the sidebar.
-- **Default Collapse**: Completing road trips from previous years are rendered collapsed by default with progress count indicators, preventing sidebar clutter.
+### 4. Multi-stop & Alternative Routing
+- **Waypoint Stops Builder**: Implemented intermediate stops input fields in Route Builder.
+- **Alternative Paths Engine**: Fetched routes with `alternatives=true` from OSRM/Mapbox and drew choices dynamically on the map (active path in green, other options in dashed gray). Users can click and select which path to save.
+
+### 5. Collapsible Road Trip Timeline
+- **Year Groupings**: Grouped saved road trips by year in the sidebar. Completed road trips from previous years are rendered collapsed by default with progress count indicators.
 
 ---
 
@@ -32,11 +34,11 @@ Ran node-based unit tests to verify mathematical and utility calculations:
 node tests/app.test.js
 ```
 **Results**:
-- `formatDistance` converts meters to miles correctly (invalid/negative inputs resolved to `0.00 mi`).
+- `formatDistance` converts meters to miles correctly.
 - `formatDuration` converts seconds to readable strings correctly.
 - `groupRoutesByYearOrStatus` organizes routes in descending timestamp order correctly.
 - `migrateData` successfully converts legacy hometowns and saved trip structures.
-- **Status**: 20/20 tests passing successfully with 0 regressions.
+- **Status**: 20/20 tests passing successfully.
 
 ---
 *Written with the assistance of Google Gemini*
