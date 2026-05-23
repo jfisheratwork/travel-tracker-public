@@ -13,6 +13,8 @@ if (typeof require !== 'undefined') {
 
 function initWorldMap() {
     if (!worldMap) {
+        // Leaflet Map Library: https://leafletjs.com/
+        // Used to initialize the interactive map, set its base view/zoom, and attach tile layers.
         worldMap = L.map('world-map').setView([48, -100], 3);
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png').addTo(worldMap);
     }
@@ -32,9 +34,9 @@ function setMapMode(mode) {
  */
 function updateMapMarkers() {
     if (!worldMap) return;
-    mapMarkers.forEach(m => worldMap.removeLayer(m));
-    hometownMarkers.forEach(m => worldMap.removeLayer(m));
-    roadPolylines.forEach(l => worldMap.removeLayer(l));
+    mapMarkers.forEach(mapMarker => worldMap.removeLayer(mapMarker));
+    hometownMarkers.forEach(hometownMarker => worldMap.removeLayer(hometownMarker));
+    roadPolylines.forEach(roadPolyline => worldMap.removeLayer(roadPolyline));
     hometownMarkers = [];
     mapMarkers = [];
     roadPolylines = [];
@@ -66,8 +68,8 @@ function updateMapMarkers() {
 
     // Plot Hometowns
     if (settings.hometowns && settings.hometowns.length > 0) {
-        settings.hometowns.forEach((home, index) => {
-            const isLast = index === settings.hometowns.length - 1;
+        settings.hometowns.forEach((home, hometownIdx) => {
+            const isLast = hometownIdx === settings.hometowns.length - 1;
             const color = isLast ? '#3b82f6' : '#9ca3af';
             
             const homeIcon = createIcon(color, 'home', false, false);
@@ -85,36 +87,36 @@ function updateMapMarkers() {
 
     if (mapMode === 'roads') {
         if (settings.savedRoutes) {
-            let filteredRoutes = settings.savedRoutes.map((r, idx) => ({ ...r, originalIndex: idx }));
+            let filteredRoutes = settings.savedRoutes.map((savedRoute, routeIdx) => ({ ...savedRoute, originalIndex: routeIdx }));
 
             // Search filtering for road trips
             if (searchTerm) {
-                filteredRoutes = filteredRoutes.filter(r => {
-                    if (r.name && r.name.toLowerCase().includes(searchTerm)) return true;
-                    if (r.date && r.date.includes(searchTerm)) return true;
-                    if (r.members && r.members.some(m => m.toLowerCase().includes(searchTerm))) return true;
-                    if (r.description && r.description.toLowerCase().includes(searchTerm)) return true;
+                filteredRoutes = filteredRoutes.filter(savedRoute => {
+                    if (savedRoute.name && savedRoute.name.toLowerCase().includes(searchTerm)) return true;
+                    if (savedRoute.date && savedRoute.date.includes(searchTerm)) return true;
+                    if (savedRoute.members && savedRoute.members.some(familyMember => familyMember.toLowerCase().includes(searchTerm))) return true;
+                    if (savedRoute.description && savedRoute.description.toLowerCase().includes(searchTerm)) return true;
                     return false;
                 });
             }
 
             filteredRoutes.forEach(routeData => {
-                const idx = routeData.originalIndex;
-                if (selectedRouteIndex !== null && selectedRouteIndex !== idx) {
+                const routeIdx = routeData.originalIndex;
+                if (selectedRouteIndex !== null && selectedRouteIndex !== routeIdx) {
                     return;
                 }
-                const line = L.polyline(routeData.route, {
-                    color: palette[idx % palette.length], 
+                const roadPolyline = L.polyline(routeData.route, {
+                    color: palette[routeIdx % palette.length], 
                     weight: 5,
                     opacity: 0.8,
                     smoothFactor: 1,
                     className: 'cursor-pointer'
                 }).addTo(worldMap);
-                line.bindPopup(`<strong>${routeData.name}</strong><br><span class="text-xs text-stone-500">${routeData.engine} engine</span>`);
-                line.on('click', () => {
-                    openRouteEditModal(idx);
+                roadPolyline.bindPopup(`<strong>${routeData.name}</strong><br><span class="text-xs text-stone-500">${routeData.engine} engine</span>`);
+                roadPolyline.on('click', () => {
+                    openRouteEditModal(routeIdx);
                 });
-                roadPolylines.push(line);
+                roadPolylines.push(roadPolyline);
             });
 
             if (typeof updateSearchResultCount === 'function') {
@@ -123,9 +125,9 @@ function updateMapMarkers() {
 
             // Auto-fit to search results
             if (searchTerm && roadPolylines.length > 0) {
-                const allBounds = roadPolylines.map(l => l.getBounds());
+                const allBounds = roadPolylines.map(roadPolyline => roadPolyline.getBounds());
                 const combinedBounds = allBounds[0];
-                allBounds.slice(1).forEach(b => combinedBounds.extend(b));
+                allBounds.slice(1).forEach(boundsItem => combinedBounds.extend(boundsItem));
                 worldMap.fitBounds(combinedBounds, { padding: [30, 30] });
             }
         }
@@ -138,7 +140,7 @@ function updateMapMarkers() {
 
     // Search Filtering
     if (searchTerm) {
-        const matchedMember = settings.familyMembers.find(m => m.toLowerCase().includes(searchTerm));
+        const matchedMember = settings.familyMembers.find(familyMember => familyMember.toLowerCase().includes(searchTerm));
         if (matchedMember) {
             dataset = dataset.filter(item => dataStore[`${item.name}_${matchedMember}`]);
         } else {
@@ -163,7 +165,7 @@ function updateMapMarkers() {
     }
 
     dataset.forEach(item => {
-        let visitedCount = settings.familyMembers.filter(m => dataStore[`${item.name}_${m}`]).length;
+        let visitedCount = settings.familyMembers.filter(familyMember => dataStore[`${item.name}_${familyMember}`]).length;
         let color = (settings.familyMembers.length > 0 && visitedCount === settings.familyMembers.length) ? "#16a34a" : (visitedCount > 0 ? "#eab308" : "#9ca3af");
 
         const hasVisits = visitedCount > 0;
@@ -194,7 +196,7 @@ function updateMapMarkers() {
                 <span class="text-xs text-stone-500 block border-b pb-1 mb-1">${subtitle}</span>
                 
                 <div class="space-y-0.5 text-xs">
-                    ${settings.familyMembers.map(m => `<div class="flex justify-between items-center"><span class="text-stone-600">${m}</span><span class="${dataStore[`${item.name}_${m}`] ? 'text-green-600 font-bold' : 'text-stone-300'}">${dataStore[`${item.name}_${m}`] ? 'Visited' : 'No'}</span></div>`).join('')}
+                    ${settings.familyMembers.map(familyMember => `<div class="flex justify-between items-center"><span class="text-stone-600">${familyMember}</span><span class="${dataStore[`${item.name}_${familyMember}`] ? 'text-green-600 font-bold' : 'text-stone-300'}">${dataStore[`${item.name}_${familyMember}`] ? 'Visited' : 'No'}</span></div>`).join('')}
                 </div>
 
                 ${metaHtml}

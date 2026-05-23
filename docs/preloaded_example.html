@@ -741,7 +741,12 @@
         /** Attempt to fetch 'examples/' folder content to populate dropdown. */
         async function populateExamplesDropdown() {
             const select = document.getElementById('example-select');
-            select.innerHTML = '`<option value="family1.json">family1.json</option>` ';
+            if (select) {
+                select.innerHTML = `
+                    <option value="travel_tracker_backup_2026-05-23.json">travel_tracker_backup_2026-05-23.json</option>
+                    <option value="family1.json">family1.json</option>
+                `;
+            }
         }
 
         /** Loads a selected example JSON file. */
