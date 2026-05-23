@@ -94,6 +94,8 @@ function saveMetaData() {
     } else {
         renderStatesTable();
     }
+    renderVisitedList(editTargetType);
+    updateMapMarkers();
 }
 
 /** Renders the UI element showing the list of hometowns. */
@@ -162,13 +164,35 @@ function switchTab(tab) {
     if (btnStates) btnStates.className = tab === 'states' ? activeClass : inactiveClass;
     if (btnRoads) btnRoads.className = tab === 'roads' ? activeClass : inactiveClass;
 
+    // Toggle below-map panels
     const builderUi = document.getElementById('route-builder-ui');
+    const parksVisitedUi = document.getElementById('parks-visited-ui');
+    const statesVisitedUi = document.getElementById('states-visited-ui');
+
     if (builderUi) {
         if (tab === 'roads') {
             builderUi.classList.remove('hidden');
             renderSavedRoutes();
         } else {
             builderUi.classList.add('hidden');
+        }
+    }
+
+    if (parksVisitedUi) {
+        if (tab === 'parks') {
+            parksVisitedUi.classList.remove('hidden');
+            renderVisitedList('parks');
+        } else {
+            parksVisitedUi.classList.add('hidden');
+        }
+    }
+
+    if (statesVisitedUi) {
+        if (tab === 'states') {
+            statesVisitedUi.classList.remove('hidden');
+            renderVisitedList('states');
+        } else {
+            statesVisitedUi.classList.add('hidden');
         }
     }
 
@@ -435,10 +459,106 @@ function updateRoadTripStats() {
     }
 }
 
+/**
+ * Renders a list of visited parks or states below the map.
+ * Shows each visited location as a card with member badges and edit button.
+ * Filtered by searchTerm when active.
+ */
+function renderVisitedList(type) {
+    const listId = type === 'parks' ? 'visited-parks-list' : 'visited-states-list';
+    const list = document.getElementById(listId);
+    if (!list) return;
+
+    const dataset = type === 'parks' ? [...parks] : [...states];
+    const dataStore = visitData[type];
+    const metaStore = (visitData.meta && visitData.meta[type]) ? visitData.meta[type] : {};
+
+    // Filter to only visited locations
+    let visited = dataset.filter(item => {
+        return settings.familyMembers.some(m => dataStore[`${item.name}_${m}`]);
+    });
+
+    // Apply visibility settings
+    if (type === 'states') {
+        visited = visited.filter(item => {
+            if (item.sub === 'USA') return settings.showUSA;
+            if (item.sub === 'Canada') return settings.showCanada;
+            return true;
+        });
+    }
+    if (type === 'parks') {
+        visited = visited.filter(item => {
+            if (item.country === 'USA') return settings.showUSAParks;
+            if (item.country === 'Canada') return settings.showCanadianParks;
+            return true;
+        });
+    }
+
+    // Apply search filter
+    if (searchTerm) {
+        const matchedMember = settings.familyMembers.find(m => m.toLowerCase().includes(searchTerm));
+        if (matchedMember) {
+            visited = visited.filter(item => dataStore[`${item.name}_${matchedMember}`]);
+        } else {
+            visited = visited.filter(item => item.name.toLowerCase().includes(searchTerm));
+        }
+    }
+
+    // Sort alphabetically
+    visited.sort((a, b) => a.name.localeCompare(b.name));
+
+    if (visited.length === 0) {
+        const emptyMsg = searchTerm
+            ? `No ${type === 'parks' ? 'parks' : 'states'} matching "${escapeHTML(searchTerm)}".`
+            : `No ${type === 'parks' ? 'parks' : 'states'} visited yet. Use "Add ${type === 'parks' ? 'Parks' : 'States'}" to log visits.`;
+        list.innerHTML = `<div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">${emptyMsg}</div>`;
+        return;
+    }
+
+    let html = '';
+    visited.forEach(item => {
+        const visitedMembers = settings.familyMembers.filter(m => dataStore[`${item.name}_${m}`]);
+        const allVisited = visitedMembers.length === settings.familyMembers.length;
+        const meta = metaStore[item.name] || {};
+
+        const memberBadges = visitedMembers.map(m =>
+            `<span class="px-1.5 py-0.5 bg-green-50 border border-green-200 rounded-full text-[10px] text-green-700 font-medium">${escapeHTML(m)}</span>`
+        ).join(' ');
+
+        const subtitle = type === 'parks'
+            ? `${item.sub}, ${item.country}`
+            : item.sub;
+
+        const statusIcon = allVisited
+            ? '<span class="text-green-600 font-bold text-xs">✓ All</span>'
+            : `<span class="text-stone-400 text-xs">${visitedMembers.length}/${settings.familyMembers.length}</span>`;
+
+        html += `<div class="p-3 bg-white border border-stone-200 rounded-lg flex justify-between items-start hover:bg-stone-50 transition shadow-sm">
+            <div class="space-y-1.5 flex-1 min-w-0 pr-2">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <strong class="text-stone-800 text-sm font-semibold">${escapeHTML(item.name)}</strong>
+                    <span class="text-xs text-stone-400">${escapeHTML(subtitle)}</span>
+                    ${statusIcon}
+                </div>
+                <div class="flex flex-wrap gap-1 items-center">
+                    ${memberBadges}
+                </div>
+                ${meta.date ? `<div class="text-[11px] text-stone-500">📅 ${escapeHTML(meta.date)}</div>` : ''}
+                ${meta.comment ? `<p class="text-xs text-stone-400 italic line-clamp-1">"${escapeHTML(meta.comment)}"</p>` : ''}
+            </div>
+            <button onclick="openEditModal('${item.name.replace(/'/g, "\\'")}', '${type}')" class="text-stone-400 hover:text-stone-600 p-1.5 rounded hover:bg-stone-100 transition flex-shrink-0" title="Edit details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </button>
+        </div>`;
+    });
+
+    list.innerHTML = html;
+}
+
 function sortTable(n) {
     if (sortColumn === n) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
     else { sortColumn = n; sortDirection = 'asc'; }
-    updateSortIndicators(); renderData();
+    updateSortIndicators();
 }
 
 function updateSortIndicators() {
@@ -460,6 +580,7 @@ function toggleParksModal(show) {
         modal.classList.replace('opacity-100', 'opacity-0');
         setTimeout(() => modal.classList.add('hidden'), 200);
         updateMapMarkers();
+        renderVisitedList('parks');
     }
 }
 
@@ -476,6 +597,7 @@ function toggleStatesModal(show) {
         modal.classList.replace('opacity-100', 'opacity-0');
         setTimeout(() => modal.classList.add('hidden'), 200);
         updateMapMarkers();
+        renderVisitedList('states');
     }
 }
 
@@ -774,6 +896,7 @@ function toggleVisit(n, m, type) {
     save(); 
     if (type === 'parks') renderParksTable();
     else renderStatesTable();
+    renderVisitedList(type);
 }
 
 function toggleAllRow(n, val, type) { 
@@ -781,6 +904,7 @@ function toggleAllRow(n, val, type) {
     save(); 
     if (type === 'parks') renderParksTable();
     else renderStatesTable();
+    renderVisitedList(type);
 }
 
 function toggleRouteEditModal(show) {
@@ -911,6 +1035,7 @@ if (typeof module !== 'undefined' && module.exports) {
         openRouteEditModal,
         saveRouteEditDetails,
         deleteRouteFromEditModal,
-        updateRoadTripStats
+        updateRoadTripStats,
+        renderVisitedList
     };
 }

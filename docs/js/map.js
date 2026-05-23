@@ -85,7 +85,21 @@ function updateMapMarkers() {
 
     if (mapMode === 'roads') {
         if (settings.savedRoutes) {
-            settings.savedRoutes.forEach((routeData, idx) => {
+            let filteredRoutes = settings.savedRoutes.map((r, idx) => ({ ...r, originalIndex: idx }));
+
+            // Search filtering for road trips
+            if (searchTerm) {
+                filteredRoutes = filteredRoutes.filter(r => {
+                    if (r.name && r.name.toLowerCase().includes(searchTerm)) return true;
+                    if (r.date && r.date.includes(searchTerm)) return true;
+                    if (r.members && r.members.some(m => m.toLowerCase().includes(searchTerm))) return true;
+                    if (r.description && r.description.toLowerCase().includes(searchTerm)) return true;
+                    return false;
+                });
+            }
+
+            filteredRoutes.forEach(routeData => {
+                const idx = routeData.originalIndex;
                 if (selectedRouteIndex !== null && selectedRouteIndex !== idx) {
                     return;
                 }
@@ -102,6 +116,18 @@ function updateMapMarkers() {
                 });
                 roadPolylines.push(line);
             });
+
+            if (typeof updateSearchResultCount === 'function') {
+                updateSearchResultCount(filteredRoutes.length);
+            }
+
+            // Auto-fit to search results
+            if (searchTerm && roadPolylines.length > 0) {
+                const allBounds = roadPolylines.map(l => l.getBounds());
+                const combinedBounds = allBounds[0];
+                allBounds.slice(1).forEach(b => combinedBounds.extend(b));
+                worldMap.fitBounds(combinedBounds, { padding: [30, 30] });
+            }
         }
         return;
     }
@@ -112,7 +138,7 @@ function updateMapMarkers() {
 
     // Search Filtering
     if (searchTerm) {
-        const matchedMember = settings.familyMembers.find(m => m.toLowerCase() === searchTerm);
+        const matchedMember = settings.familyMembers.find(m => m.toLowerCase().includes(searchTerm));
         if (matchedMember) {
             dataset = dataset.filter(item => dataStore[`${item.name}_${matchedMember}`]);
         } else {
@@ -187,6 +213,17 @@ function updateMapMarkers() {
 
         mapMarkers.push(marker);
     });
+
+    // Report search result count for parks/states
+    if (typeof updateSearchResultCount === 'function') {
+        updateSearchResultCount(dataset.length);
+    }
+
+    // Auto-fit to search results
+    if (searchTerm && mapMarkers.length > 0) {
+        const group = L.featureGroup(mapMarkers);
+        worldMap.fitBounds(group.getBounds(), { padding: [30, 30] });
+    }
 }
 
 // Node.js environment export support
