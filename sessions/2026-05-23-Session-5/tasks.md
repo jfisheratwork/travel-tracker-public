@@ -1,0 +1,21 @@
+- [x] Prominent "Family Travel Tracker" h1 title
+- [x] Move search inline with Add buttons
+- [x] Remove redundant "Map" header
+- [x] Widen main container
+- [x] Rename "Add/Edit" → "Add" buttons
+- [x] Fix `handleSearch()` — remove dead `renderData()`
+- [x] Add `clearSearch()` function with ✕ button
+- [x] Add `updateSearchResultCount()` with badge
+- [x] Add road trip search filtering in map.js (name/member/date/description)
+- [x] Add auto-fit map bounds on search results
+- [x] Change member search to partial match (fuzzy)
+- [x] Add below-map visited parks/states list HTML containers
+- [x] Implement `renderVisitedList()` in ui.js
+- [x] Update `switchTab()` visibility toggles for all 3 panels
+- [x] Filter `renderSavedRoutes()` by searchTerm
+- [x] Fix variable reference bug (`r.date` → `routeWithIdx.date`)
+- [x] Sync visited lists on modal close, toggleVisit, toggleAllRow, saveMetaData
+- [x] Add `max-h-[100vh] overflow-y-auto` to all 3 below-map list containers
+- [x] Deep code review — removed 3 dead `renderData()` calls
+- [x] Run unit tests — 20/20 passing
+- [x] Create and finalize Session-5 tracking files

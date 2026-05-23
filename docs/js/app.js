@@ -14,11 +14,56 @@ if (typeof module !== 'undefined' && module.exports) {
     Object.assign(global, state, helpers, map, ui);
 }
 
-/** Filter list and map based on search input. */
+/** Filter map markers, below-map lists, and update result count. */
 function handleSearch(val) {
-    searchTerm = val.toLowerCase();
-    if (currentTab === 'world') updateMapMarkers();
-    else if (currentTab !== 'stats') renderData();
+    searchTerm = val.toLowerCase().trim();
+
+    const clearBtn = document.getElementById('search-clear-btn');
+    if (clearBtn) {
+        if (searchTerm) clearBtn.classList.remove('hidden');
+        else clearBtn.classList.add('hidden');
+    }
+
+    updateMapMarkers();
+
+    if (mapMode === 'roads') {
+        renderSavedRoutes();
+    } else {
+        renderVisitedList(mapMode);
+    }
+}
+
+/** Clears the search input and resets all views. */
+function clearSearch() {
+    const input = document.getElementById('global-search-input');
+    if (input) input.value = '';
+    searchTerm = '';
+
+    const clearBtn = document.getElementById('search-clear-btn');
+    if (clearBtn) clearBtn.classList.add('hidden');
+
+    const countEl = document.getElementById('search-result-count');
+    if (countEl) { countEl.classList.add('hidden'); countEl.innerText = ''; }
+
+    updateMapMarkers();
+    if (mapMode === 'roads') {
+        renderSavedRoutes();
+    } else {
+        renderVisitedList(mapMode);
+    }
+}
+
+/** Updates the search result count badge. */
+function updateSearchResultCount(count) {
+    const el = document.getElementById('search-result-count');
+    if (!el) return;
+    if (searchTerm) {
+        el.innerText = `${count} result${count !== 1 ? 's' : ''}`;
+        el.classList.remove('hidden');
+    } else {
+        el.classList.add('hidden');
+        el.innerText = '';
+    }
 }
 
 /** Shows visual warning if no family members are configured. */
@@ -57,7 +102,6 @@ function loadSampleData() {
     });
 
     save();
-    renderData();
     checkFamilyStatus();
     location.reload();
 }
@@ -617,17 +661,33 @@ function renderSavedRoutes() {
         return;
     }
 
+    // Apply search filtering
+    let filteredRoutes = settings.savedRoutes.map((r, idx) => ({ ...r, originalIndex: idx }));
+    if (searchTerm) {
+        filteredRoutes = filteredRoutes.filter(r => {
+            if (r.name && r.name.toLowerCase().includes(searchTerm)) return true;
+            if (r.date && r.date.includes(searchTerm)) return true;
+            if (r.members && r.members.some(m => m.toLowerCase().includes(searchTerm))) return true;
+            if (r.description && r.description.toLowerCase().includes(searchTerm)) return true;
+            return false;
+        });
+    }
+
+    if (filteredRoutes.length === 0) {
+        list.innerHTML = `<div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No road trips matching "${escapeHTML(searchTerm)}".</div>`;
+        return;
+    }
+
     const planned = [];
     const completedByYear = {}; 
     const completedUndated = [];
 
-    settings.savedRoutes.forEach((r, idx) => {
-        const routeWithIdx = { ...r, originalIndex: idx };
-        if (r.status === 'planned') {
+    filteredRoutes.forEach(routeWithIdx => {
+        if (routeWithIdx.status === 'planned') {
             planned.push(routeWithIdx);
         } else {
-            if (r.date && r.date.trim() !== '') {
-                const year = new Date(r.date).getFullYear();
+            if (routeWithIdx.date && routeWithIdx.date.trim() !== '') {
+                const year = new Date(routeWithIdx.date).getFullYear();
                 if (!completedByYear[year]) {
                     completedByYear[year] = [];
                 }
