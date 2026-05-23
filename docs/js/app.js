@@ -1552,7 +1552,10 @@ if (typeof module !== 'undefined' && module.exports) {
         formatDuration,
         groupRoutesByYearOrStatus,
         migrateData,
-        escapeHTML
+        escapeHTML,
+        focusRoute,
+        getSelectedRouteIndex: () => selectedRouteIndex,
+        setSelectedRouteIndex: (val) => { selectedRouteIndex = val; }
     };
 }
 

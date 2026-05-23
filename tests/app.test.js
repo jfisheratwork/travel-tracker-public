@@ -54,7 +54,11 @@ const {
     formatDistance,
     formatDuration,
     groupRoutesByYearOrStatus,
-    migrateData
+    migrateData,
+    escapeHTML,
+    focusRoute,
+    getSelectedRouteIndex,
+    setSelectedRouteIndex
 } = require('../docs/js/app.js');
 
 // 2. Unit Tests
@@ -208,5 +212,50 @@ test('migrateData', async (t) => {
         assert.deepEqual(visitData.parks, {});
         assert.deepEqual(visitData.states, {});
         assert.deepEqual(visitData.meta, { parks: {}, states: {} });
+    });
+});
+
+test('escapeHTML', () => {
+    assert.strictEqual(escapeHTML(''), '');
+    assert.strictEqual(escapeHTML('hello'), 'hello');
+    assert.strictEqual(escapeHTML('<div>'), '&lt;div&gt;');
+    assert.strictEqual(escapeHTML('"test" & \'test\''), '&quot;test&quot; &amp; &#39;test&#39;');
+});
+
+test('focusRoute', async (t) => {
+    // Setup mocks
+    global.renderSavedRoutes = () => {};
+    global.updateMapMarkers = () => {};
+    global.settings = {
+        savedRoutes: [
+            { name: 'Route 1', route: [[45, -120], [46, -121]] },
+            { name: 'Route 2', route: [[35, -110], [36, -111]] }
+        ]
+    };
+    global.worldMap = {
+        fitBounds: () => {}
+    };
+    global.L = {
+        polyline: () => ({
+            getBounds: () => {}
+        })
+    };
+
+    await t.test('selects a route when none is selected', () => {
+        setSelectedRouteIndex(null);
+        focusRoute(0);
+        assert.strictEqual(getSelectedRouteIndex(), 0);
+    });
+
+    await t.test('toggles/deselects a route when clicking it again', () => {
+        setSelectedRouteIndex(0);
+        focusRoute(0);
+        assert.strictEqual(getSelectedRouteIndex(), null);
+    });
+
+    await t.test('switches selection to a new route when clicking a different one', () => {
+        setSelectedRouteIndex(0);
+        focusRoute(1);
+        assert.strictEqual(getSelectedRouteIndex(), 1);
     });
 });
