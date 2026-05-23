@@ -1,0 +1,11 @@
+- [x] Create `docs/js/state.js` and extract state variables and persistence logic
+- [x] Create `docs/js/helpers.js` and extract pure helper and utility functions
+- [x] Create `docs/js/map.js` and extract Leaflet map configurations and marker plotting
+- [x] Create `docs/js/ui.js` and extract modal toggling, DOM updates, and data rendering
+- [x] Modify `docs/js/app.js` to act as orchestrator and export modules to Node.js tests
+- [x] Modify `docs/index.html` to include script elements for all modular files in correct order
+- [x] Run unit tests via `node tests/app.test.js` to verify zero logic regressions
+- [x] Update session files (`plan.md`, `tasks.md`, `session_summary.md`, `walkthrough.md`) inside the session folder
+- [x] Create high-level `architecture.md` outlining project layers and sequences
+- [x] Update `README.md` to add file mappings, test execution setup, and link to architecture.md
+- [ ] Commit all changes locally on a new feature branch and request push approval (Pending user approval)

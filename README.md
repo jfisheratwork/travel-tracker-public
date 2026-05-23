@@ -1,8 +1,29 @@
 # Travel Tracker
 
-A simple web application to track your travels.
+A serverless static web application to track visits to National Parks, States/Provinces, and road trip routes for the whole family. The app runs completely on the client side and stores all visit logs securely in local storage.
 
-## Setup and Running Locally
+---
+
+## 📖 Architecture & Design
+For a detailed technical breakdown of the components, data flows, and test environment design, see [architecture.md](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture.md).
+
+---
+
+## 🛠️ Project Structure
+
+The project has been modularized into separate frontend script files to enable easy concurrent development and cleaner code boundaries:
+
+*   **[docs/index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html)**: Main HTML structure, Tailwind CSS loading, and Leaflet map container.
+*   **[docs/css/style.css](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/css/style.css)**: Custom interface layout overrides, print settings, and animation stylesheets.
+*   **[docs/js/helpers.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/helpers.js)**: Pure functional utilities (e.g. coordinates distance calculators, HTML sanitizers, list groupers, and JSON schema migrations).
+*   **[docs/js/state.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/state.js)**: State definition variables, color palettes, and LocalStorage load/save syncing.
+*   **[docs/js/map.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/map.js)**: Leaflet map controller, markers formatting, popup templates, and driving polylines.
+*   **[docs/js/ui.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/ui.js)**: DOM render engines, data table sorters, settings checklists, and modal controllers.
+*   **[docs/js/app.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/app.js)**: Main orchestrator (event listeners, backup restoration, OSRM/Mapbox routing requests).
+
+---
+
+## 🚀 Setup and Running Locally
 
 To run this project locally, you'll need Python installed. We recommend using Homebrew on macOS.
 
@@ -17,17 +38,30 @@ Paste the following command in your terminal:
 brew install python
 ```
 
-### 3. Run the local server
+### 3. Run the Local Server
 Navigate to the project directory in your terminal and start the server from the `docs` folder:
 
 ```bash
 cd docs
-python3 -m http.server 8000
+python3 -m http.server 8080
 ```
 
-Then open your browser and go to [http://localhost:8000/](http://localhost:8000/)
+Then open your browser and go to [http://localhost:8080/](http://localhost:8080/)
 
-## Deployment
+---
+
+## 🧪 Running Unit Tests
+
+The project includes an automated unit test suite verifying data formatting, date grouping, local storage migrations, HTML sanitization, and routing selection toggles.
+
+To execute the test runner locally, run:
+```bash
+node tests/app.test.js
+```
+
+---
+
+## 🌐 Deployment
 
 This project is hosted on GitHub Pages. The site is served from the `docs/` folder on the `main` branch.
 
@@ -36,7 +70,9 @@ Every time a commit is pushed to the `main` branch, GitHub automatically rebuild
 The application is published at:
 [https://jfisheratwork.github.io/travel-tracker-public/](https://jfisheratwork.github.io/travel-tracker-public/)
 
-## Data Management
+---
+
+## 💾 Data Management
 
 ### Local Storage & Privacy
 Your travel data and settings are stored entirely in your browser's **Local Storage**. 

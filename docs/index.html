@@ -140,176 +140,141 @@
             </button>
         </div>
 
-        <!-- 
-          Element: <header> - Introductory content or navigational aids.
-          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/header
-        -->
-        <header class="text-center mb-6">
-            <h1 class="text-4xl font-bold text-green-800 flex items-center justify-center gap-3">🌎 Family Travel
-                Tracker</h1>
-            <p class="text-stone-600 mt-2">Tracking our adventures across North America.</p>
+        <!-- Global Search Bar -->
+        <div class="max-w-md mx-auto mb-6 relative no-print">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            </span>
+            <input type="text" id="global-search-input" placeholder="Search by name, or member (e.g. Yosemite, John)..." oninput="handleSearch(this.value)"
+                class="w-full pl-10 pr-4 py-3 rounded-xl border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm font-medium">
+        </div>
+
+        <!-- Header: Map Title & Add/Edit Actions -->
+        <header class="flex flex-wrap justify-between items-center gap-4 mb-6 border-b border-stone-200 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-stone-800 flex items-center gap-2">🌎 Map</h1>
+                <p class="text-stone-500 text-sm">Family Travel Tracker</p>
+            </div>
+            
+            <div class="flex gap-2 no-print">
+                <button onclick="toggleParksModal(true)"
+                    class="px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm font-bold hover:bg-green-100 transition flex items-center gap-1.5 shadow-sm">
+                    🌲 Add/Edit Parks
+                </button>
+                <button onclick="toggleStatesModal(true)"
+                    class="px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-sm font-bold hover:bg-blue-100 transition flex items-center gap-1.5 shadow-sm">
+                    ⭐ Add/Edit States
+                </button>
+            </div>
         </header>
 
-        <!-- Controls Row -->
-        <div id="controls-container" class="flex flex-wrap gap-3 items-center justify-center mb-6 no-print">
-            <!-- Search Input -->
-            <div class="relative">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                    class="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">
-                    <circle cx="11" cy="11" r="8" />
-                    <line x1="21" x2="16.65" y1="21" y2="16.65" />
-                </svg>
-                <input type="text" id="search-input" placeholder="Search..." oninput="handleSearch(this.value)"
-                    class="pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all w-32 focus:w-56 bg-white shadow-sm">
-            </div>
-
-            <!-- Member Filter -->
-            <div id="member-filter-container">
-                <select id="member-filter" onchange="updateMemberFilter()"
-                    class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
-                    <option value="all">All Members</option>
-                </select>
-            </div>
-
-            <div id="region-filter-container" class="hidden">
-                <select id="region-filter" onchange="renderData()"
-                    class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm"></select>
-            </div>
-        </div>
-
-        <!-- 
-          Element: <nav> - A section of the page capable of navigation links.
-          Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/nav
-        -->
-        <nav class="flex flex-wrap justify-center mb-8 border-b border-stone-200 no-print">
-            <button onclick="switchTab('parks')" id="tab-parks"
-                class="px-6 py-3 text-lg transition-all tab-active">National Parks</button>
-            <button onclick="switchTab('states')" id="tab-states"
-                class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">States & Provinces</button>
-            <button onclick="switchTab('world')" id="tab-world"
-                class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">World Map</button>
-            <button onclick="switchTab('stats')" id="tab-stats"
-                class="px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700">Stats</button>
-        </nav>
-
-        <!-- Stats View Container -->
-        <div id="stats-view-container" class="hidden">
-            <div class="flex justify-center gap-4 mb-6">
-                <button onclick="setStatsMode('parks')" id="btn-stats-parks"
-                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md">National
-                    Parks</button>
-                <button onclick="setStatsMode('states')" id="btn-stats-states"
-                    class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200">States
-                    & Provinces</button>
-            </div>
-            <div id="stats" class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-                <div class="lg:col-span-1 space-y-4">
-                    <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
-                        <span id="stats-label"
-                            class="block text-sm text-stone-500 uppercase tracking-wide font-semibold">Parks
-                            Visited</span>
-                        <span id="total-visited" class="text-3xl font-bold text-green-700">0 / 63</span>
-                    </div>
-                    <div id="regional-stats"
-                        class="hidden space-y-3 bg-white p-4 rounded-xl shadow-sm border border-stone-200">
-                        <div id="us-stat-container" class="space-y-1">
-                            <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span
-                                    id="us-stat-label">US States</span><span id="us-stat-count">0/50</span></div>
-                            <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
-                                <div id="us-stat-bar" class="bg-blue-600 h-full transition-all duration-500"
-                                    style="width: 0%"></div>
-                            </div>
-                        </div>
-                        <div id="ca-stat-container" class="space-y-1">
-                            <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span
-                                    id="ca-stat-label">CA Provinces</span><span id="ca-stat-count">0/13</span></div>
-                            <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
-                                <div id="ca-stat-bar" class="bg-red-600 h-full transition-all duration-500"
-                                    style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="remaining-box"
-                        class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
-                        <span class="block text-sm text-stone-500 uppercase tracking-wide">Remaining</span>
-                        <span id="total-remaining" class="text-3xl font-bold text-stone-400">--</span>
-                    </div>
-                </div>
-                <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-stone-200">
-                    <div class="mb-6">
-                        <div class="flex justify-between items-end mb-1">
-                            <span class="text-sm font-bold text-stone-700 uppercase tracking-wide">Detailed Stats &
-                                Provinces</span>
-                            <span id="group-percent" class="text-xs text-stone-500 font-medium">0%</span>
-                        </div>
-                        <div class="w-full bg-stone-200 rounded-full h-4 overflow-hidden">
-                            <div id="progress-bar" class="bg-green-600 h-full transition-all duration-700"
-                                style="width: 0%"></div>
-                        </div>
-                    </div>
-                    <div id="family-progress-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
-                </div>
-            </div>
-        </div>
-
-
-
-        <!-- Table View -->
-        <div id="table-container"
-            class="overflow-auto bg-white rounded-xl shadow-lg border border-stone-200 h-[calc(100vh-320px)] max-h-[800px] min-h-[400px]">
-            <!-- 
-              Element: <table> - Represents tabular data.
-              Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/table
-            -->
-            <table class="w-full text-left border-collapse" id="main-table">
-                <!-- 
-                  Element: <thead> - Defines a set of rows defining the head of the table.
-                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/thead
-                -->
-                <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
-                    <tr id="table-header-row"></tr>
-                </thead>
-                <!-- 
-                  Element: <tbody> - Encapsulates a set of rows making up the body of a table.
-                  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/tbody
-                -->
-                <tbody id="data-list"></tbody>
-            </table>
-        </div>
-
-        <!-- Map View -->
-        <div id="world-map-container" class="hidden">
+        <!-- Main Display Container -->
+        <div id="world-map-container">
             <div class="bg-white p-4 rounded-xl shadow-lg border border-stone-200">
-                <div class="flex justify-center gap-4 mb-4">
-                    <button onclick="setMapMode('parks')" id="btn-map-parks"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-700 text-white shadow-md">National
-                        Parks</button>
-                    <button onclick="setMapMode('states')" id="btn-map-states"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200">States
-                        & Capitals</button>
-                    <button onclick="setMapMode('roads')" id="btn-map-roads"
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-stone-100 text-stone-600 hover:bg-stone-200">Road
-                        Trips</button>
+                <div class="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-stone-100 pb-4 no-print">
+                    <div class="flex gap-2" id="map-mode-buttons">
+                        <button onclick="switchTab('parks')" id="btn-map-parks"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">National Parks</button>
+                        <button onclick="switchTab('states')" id="btn-map-states"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">States & Provinces</button>
+                        <button onclick="switchTab('roads')" id="btn-map-roads"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">Road Trips</button>
+                    </div>
+                    <button id="toggle-stats-btn" onclick="toggleStatsWidget()"
+                        class="px-4 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center gap-1.5 shadow-sm">
+                        📊 Show Statistics
+                    </button>
                 </div>
+
+                <!-- Collapsible Stats Widget -->
+                <div id="stats-widget-container" class="hidden mb-6 bg-stone-50 p-6 rounded-xl border border-stone-200">
+                    <div id="stats" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <div class="lg:col-span-1 space-y-4">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
+                                <span id="stats-label"
+                                    class="block text-sm text-stone-500 uppercase tracking-wide font-semibold">Parks
+                                    Visited</span>
+                                <span id="total-visited" class="text-3xl font-bold text-green-700">0 / 63</span>
+                            </div>
+                            <div id="regional-stats"
+                                class="hidden space-y-3 bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                                <div id="us-stat-container" class="space-y-1">
+                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span
+                                            id="us-stat-label">US States</span><span id="us-stat-count">0/50</span></div>
+                                    <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
+                                        <div id="us-stat-bar" class="bg-blue-600 h-full transition-all duration-500"
+                                            style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div id="ca-stat-container" class="space-y-1">
+                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span
+                                            id="ca-stat-label">CA Provinces</span><span id="ca-stat-count">0/13</span></div>
+                                    <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
+                                        <div id="ca-stat-bar" class="bg-red-600 h-full transition-all duration-500"
+                                            style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="remaining-box"
+                                class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
+                                <span id="remaining-label" class="block text-sm text-stone-500 uppercase tracking-wide">Remaining</span>
+                                <span id="total-remaining" class="text-3xl font-bold text-stone-400">--</span>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col justify-between">
+                            <div class="mb-4">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-sm font-bold text-stone-700 uppercase tracking-wide">Detailed Progress</span>
+                                    <span id="group-percent" class="text-xs text-stone-500 font-medium">0%</span>
+                                </div>
+                                <div class="w-full bg-stone-200 rounded-full h-4 overflow-hidden shadow-inner">
+                                    <div id="progress-bar" class="bg-green-600 h-full transition-all duration-700"
+                                        style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div id="family-progress-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="world-map"></div>
                 <div id="map-legend" class="mt-4 flex gap-6 justify-center text-sm">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span> All
-                        Visited</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span>
-                        Partially Visited</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-stone-400"></span> Not
-                        Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span> All Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Partially Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-stone-400"></span> Not Visited</div>
                 </div>
+
                 <!-- Route Builder UI -->
                 <div id="route-builder-ui" class="hidden mt-4 bg-stone-50 border border-stone-200 p-4 rounded-xl">
                     <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">Add New Road Trip</h3>
-                    <div class="flex gap-2">
-                        <input type="text" id="route-start" placeholder="Start (e.g. Seattle, WA)" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
-                        <input type="text" id="route-end" placeholder="Destination (e.g. Portland, OR)" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
-                        <button onclick="requestRoute()" class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition">Route</button>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="route-start" placeholder="Start (e.g. Seattle, WA)" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
+                            <input type="text" id="route-end" placeholder="Destination (e.g. Portland, OR)" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
+                        </div>
+                        
+                        <!-- Dynamic intermediate stops -->
+                        <div id="route-stops-container" class="flex flex-col gap-2"></div>
+                        
+                        <div class="flex justify-between items-center mt-1">
+                            <button onclick="addStopInput()" class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1">
+                                ➕ Add Stop
+                            </button>
+                            <button onclick="requestRoute()" class="bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition shadow">Route</button>
+                        </div>
                     </div>
+                    
                     <div id="route-status" class="text-xs text-stone-500 mt-2 font-medium empty:hidden"></div>
+
+                    <!-- Alternative Routes Selector -->
+                    <div id="alt-routes-selector" class="hidden mt-4 border-t border-stone-200 pt-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Select Preferred Route Option</h4>
+                        <div id="alt-routes-list" class="flex flex-col gap-2"></div>
+                        <div class="flex gap-2 mt-3 justify-end">
+                            <button onclick="cancelAltRouteSelection()" class="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-855 font-semibold transition">Cancel</button>
+                            <button onclick="saveSelectedRoute()" class="px-4 py-1.5 text-xs bg-green-700 text-white font-bold rounded-lg hover:bg-green-800 transition">Save Selected Route</button>
+                        </div>
+                    </div>
                     
                     <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3 border-t border-stone-200 pt-4 mt-4">Saved Trips</h3>
                     <div id="saved-routes-list" class="flex flex-col gap-2 text-sm text-stone-500">
@@ -325,8 +290,131 @@
         </footer>
     </div>
 
+    <!-- Log Parks Modal -->
+    <div id="parks-modal"
+        class="fixed inset-0 z-[1800] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-[85vh] max-h-[85vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    🌲 Log National Parks Visits
+                </h2>
+                <button onclick="toggleParksModal(false)" class="text-stone-400 hover:text-stone-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Search & Filters -->
+            <div class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
+                <div class="relative flex-1 min-w-[200px]">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </span>
+                    <input type="text" id="parks-search-input" placeholder="Search parks..." oninput="handleParksSearch(this.value)"
+                        class="w-full pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm">
+                </div>
+                <div class="flex gap-2">
+                    <select id="parks-member-filter" onchange="updateParksMemberFilter()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Members</option>
+                    </select>
+                    <select id="parks-region-filter" onchange="renderParksTable()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Visible Locations</option>
+                        <option value="USA">USA Parks</option>
+                        <option value="Canada">Canada Parks</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Table View -->
+            <div class="overflow-auto flex-1 bg-white">
+                <table class="w-full text-left border-collapse" id="parks-table">
+                    <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
+                        <tr id="parks-table-header-row"></tr>
+                    </thead>
+                    <tbody id="parks-data-list"></tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-end flex-shrink-0">
+                <button onclick="toggleParksModal(false)"
+                    class="px-6 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-800 transition shadow-sm">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log States Modal -->
+    <div id="states-modal"
+        class="fixed inset-0 z-[1800] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-[85vh] max-h-[85vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    ⭐ Log States & Provinces Visits
+                </h2>
+                <button onclick="toggleStatesModal(false)" class="text-stone-400 hover:text-stone-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Search & Filters -->
+            <div class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
+                <div class="relative flex-1 min-w-[200px]">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </span>
+                    <input type="text" id="states-search-input" placeholder="Search states & provinces..." oninput="handleStatesSearch(this.value)"
+                        class="w-full pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm">
+                </div>
+                <div class="flex gap-2">
+                    <select id="states-member-filter" onchange="updateStatesMemberFilter()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Members</option>
+                    </select>
+                    <select id="states-region-filter" onchange="renderStatesTable()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Visible Locations</option>
+                        <option value="USA">USA States</option>
+                        <option value="Canada">Canada Provinces</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Table View -->
+            <div class="overflow-auto flex-1 bg-white">
+                <table class="w-full text-left border-collapse" id="states-table">
+                    <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
+                        <tr id="states-table-header-row"></tr>
+                    </thead>
+                    <tbody id="states-data-list"></tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-end flex-shrink-0">
+                <button onclick="toggleStatesModal(false)"
+                    class="px-6 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-800 transition shadow-sm">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Edit Metadata Modal -->
     <div id="edit-modal"
+
         class="fixed inset-0 z-[2100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
         <div
             class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 transform">
@@ -853,6 +941,10 @@
       Data structures are defined first, followed by app state, then functions.
     -->
     <script src="js/data_constants.js?v=1.0.1"></script>
+    <script src="js/helpers.js?v=1.0.1"></script>
+    <script src="js/state.js?v=1.0.1"></script>
+    <script src="js/map.js?v=1.0.1"></script>
+    <script src="js/ui.js?v=1.0.1"></script>
     <script src="js/demo_route.js?v=1.0.1"></script>
     <script src="js/app.js?v=1.0.1"></script>
 </body>
