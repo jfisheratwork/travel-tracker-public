@@ -1,0 +1,5 @@
+- [x] Diagnose `updateStats()` fallback behavior for road trips mode
+- [x] Create `updateRoadTripStats()` function with trip-specific metrics
+- [x] Add `remaining-label` id to HTML for contextual label switching
+- [x] Export `updateRoadTripStats` for Node.js compatibility
+- [x] Run unit tests — 20/20 passing

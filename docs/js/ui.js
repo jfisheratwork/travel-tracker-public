@@ -265,6 +265,12 @@ function toggleStatsWidget(show) {
 }
 
 function updateStats() {
+    // Road Trips mode: show trip-specific statistics
+    if (mapMode === 'roads') {
+        updateRoadTripStats();
+        return;
+    }
+
     let target = (mapMode === 'states') ? 'states' : 'parks';
     let dataset = target === 'parks' ? [...parks] : [...states];
     const dataStore = visitData[target];
@@ -286,9 +292,14 @@ function updateStats() {
     const totalRemaining = document.getElementById('total-remaining');
     const progressBar = document.getElementById('progress-bar');
     const groupPercent = document.getElementById('group-percent');
+    const remainingBox = document.getElementById('remaining-box');
+
+    const remainingLabel = document.getElementById('remaining-label');
 
     if (statsLabel) statsLabel.innerText = target === 'parks' ? 'Parks Visited' : 'Total Visited';
     if (totalVisited) totalVisited.innerText = `${unique.size} / ${dataset.length}`;
+    if (remainingBox) remainingBox.classList.remove('hidden');
+    if (remainingLabel) remainingLabel.innerText = 'Remaining';
     if (totalRemaining) totalRemaining.innerText = dataset.length - unique.size;
     if (progressBar) progressBar.style.width = `${dataset.length ? (unique.size / dataset.length) * 100 : 0}%`;
     if (groupPercent) groupPercent.innerText = `${Math.round(dataset.length ? (unique.size / dataset.length) * 100 : 0)}%`;
@@ -342,6 +353,84 @@ function updateStats() {
                 html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${getMemberColor(i)}-500 h-full" style="width:${totalCap ? (mTotal / totalCap) * 100 : 0}%"></div></div>`;
             }
             grid.innerHTML += html + `</div>`;
+        });
+    }
+}
+
+/**
+ * Renders road trip-specific statistics in the stats widget.
+ * Shows total trips, aggregate distance/duration, completed vs planned split,
+ * and per-member participation counts.
+ */
+function updateRoadTripStats() {
+    const routes = settings.savedRoutes || [];
+    const completed = routes.filter(r => r.status !== 'planned');
+    const planned = routes.filter(r => r.status === 'planned');
+
+    const totalDistance = completed.reduce((sum, r) => sum + (r.distance || 0), 0);
+    const totalDuration = completed.reduce((sum, r) => sum + (r.duration || 0), 0);
+
+    const statsLabel = document.getElementById('stats-label');
+    const totalVisited = document.getElementById('total-visited');
+    const totalRemaining = document.getElementById('total-remaining');
+    const remainingBox = document.getElementById('remaining-box');
+    const progressBar = document.getElementById('progress-bar');
+    const groupPercent = document.getElementById('group-percent');
+
+    const remainingLabel = document.getElementById('remaining-label');
+
+    if (statsLabel) statsLabel.innerText = 'Road Trips';
+    if (totalVisited) totalVisited.innerText = `${completed.length} completed`;
+    if (remainingBox) remainingBox.classList.remove('hidden');
+    if (remainingLabel) remainingLabel.innerText = 'Planned';
+    if (totalRemaining) totalRemaining.innerText = planned.length;
+    if (progressBar) {
+        const pct = routes.length ? (completed.length / routes.length) * 100 : 0;
+        progressBar.style.width = `${pct}%`;
+    }
+    if (groupPercent) {
+        groupPercent.innerText = `${routes.length} total`;
+    }
+
+    // Show distance/duration in the regional stats area
+    const regionalStats = document.getElementById('regional-stats');
+    if (regionalStats) {
+        regionalStats.classList.remove('hidden');
+
+        const usStatLabel = document.getElementById('us-stat-label');
+        const usStatCount = document.getElementById('us-stat-count');
+        const usStatBar = document.getElementById('us-stat-bar');
+        const caStatLabel = document.getElementById('ca-stat-label');
+        const caStatCount = document.getElementById('ca-stat-count');
+        const caStatBar = document.getElementById('ca-stat-bar');
+
+        if (usStatLabel) usStatLabel.innerText = 'Total Distance';
+        if (usStatCount) usStatCount.innerText = formatDistance(totalDistance);
+        if (usStatBar) usStatBar.style.width = '100%';
+        if (caStatLabel) caStatLabel.innerText = 'Total Duration';
+        if (caStatCount) caStatCount.innerText = formatDuration(totalDuration);
+        if (caStatBar) caStatBar.style.width = '100%';
+    }
+
+    // Per-member participation grid
+    const grid = document.getElementById('family-progress-grid');
+    if (grid) {
+        grid.innerHTML = '';
+        settings.familyMembers.forEach((m, i) => {
+            const memberTrips = completed.filter(r => r.members && r.members.includes(m));
+            const memberDistance = memberTrips.reduce((sum, r) => sum + (r.distance || 0), 0);
+
+            let html = `<div class="bg-stone-50/50 p-2 rounded-lg border border-stone-100">
+                <div class="flex justify-between text-xs font-bold">
+                    <span>${escapeHTML(m)}</span>
+                    <span class="text-stone-500">${memberTrips.length}/${completed.length} trips</span>
+                </div>
+                <div class="w-full bg-stone-200 rounded-full h-2 mt-1">
+                    <div class="bg-${getMemberColor(i)}-500 h-full rounded-full transition-all" style="width:${completed.length ? (memberTrips.length / completed.length) * 100 : 0}%"></div>
+                </div>
+                <div class="text-[10px] text-stone-400 mt-1">${formatDistance(memberDistance)}</div>
+            </div>`;
+            grid.innerHTML += html;
         });
     }
 }
@@ -821,6 +910,7 @@ if (typeof module !== 'undefined' && module.exports) {
         toggleRouteEditModal,
         openRouteEditModal,
         saveRouteEditDetails,
-        deleteRouteFromEditModal
+        deleteRouteFromEditModal,
+        updateRoadTripStats
     };
 }
