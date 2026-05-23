@@ -10,7 +10,11 @@ if (typeof require !== 'undefined') {
 }
 
 // State variables track the current view and data
-let currentTab = 'parks';
+let currentTab = 'world';
+try {
+    currentTab = localStorage.getItem('np_travel_active_tab') || 'world';
+} catch(e) {}
+
 let sortColumn = 1;
 let sortDirection = 'asc';
 let worldMap = null;
@@ -25,27 +29,55 @@ let editTarget = null;
 let routeEditTargetIndex = null;
 let selectedRouteIndex = null;
 
+let parksSearchTerm = '';
+let statesSearchTerm = '';
+let parksMemberFilter = 'all';
+let statesMemberFilter = 'all';
+let collapsedYears = {};
+try {
+    collapsedYears = JSON.parse(localStorage.getItem('np_travel_collapsed_years')) || {};
+} catch(e) {}
+
 // Palette for family progress color variety
 const palette = ['blue', 'pink', 'orange', 'purple', 'teal', 'red', 'green', 'yellow', 'indigo', 'cyan'];
 
 // Load Settings & Data from LocalStorage
-let rawSettings = JSON.parse(localStorage.getItem('np_travel_settings')) || {
-    showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true,
-    familyMembers: [],
-    hometowns: []
-};
+let rawSettings = null;
+try {
+    rawSettings = JSON.parse(localStorage.getItem('np_travel_settings'));
+} catch(e) {}
+if (!rawSettings) {
+    rawSettings = {
+        showUSA: true, showCanada: true, showUSAParks: true, showCanadianParks: true,
+        familyMembers: [],
+        hometowns: []
+    };
+}
 
-let rawVisitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));
+let rawVisitData = null;
+try {
+    rawVisitData = JSON.parse(localStorage.getItem('np_travel_tracker_v3'));
+} catch(e) {}
 
 const migrated = migrateData(rawSettings, rawVisitData);
 let settings = migrated.settings;
 let visitData = migrated.visitData;
 
-localStorage.setItem('np_travel_settings', JSON.stringify(settings));
-localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
+try {
+    localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+    localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
+} catch(e) {}
 
 function save() {
-    localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
+    try {
+        localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
+    } catch(e) {}
+}
+
+function saveCollapsedYears() {
+    try {
+        localStorage.setItem('np_travel_collapsed_years', JSON.stringify(collapsedYears));
+    } catch(e) {}
 }
 
 // Node.js testing environment getters, setters, and exports
@@ -56,7 +88,8 @@ if (typeof module !== 'undefined' && module.exports) {
         currentTab, sortColumn, sortDirection, worldMap, mapMarkers,
         hometownMarkers, roadPolylines, mapMode, statsMode, searchTerm,
         currentMemberFilter, editTarget, routeEditTargetIndex, selectedRouteIndex,
-        palette, settings, visitData
+        palette, settings, visitData,
+        parksSearchTerm, statesSearchTerm, parksMemberFilter, statesMemberFilter, collapsedYears
     };
 
     Object.keys(stateVars).forEach(key => {
@@ -69,8 +102,10 @@ if (typeof module !== 'undefined' && module.exports) {
     });
 
     global.save = save;
+    global.saveCollapsedYears = saveCollapsedYears;
 
     module.exports = {
         save
     };
 }
+

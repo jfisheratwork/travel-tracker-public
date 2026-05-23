@@ -7,7 +7,7 @@ th.sortable::after { content: '↕'; font-size: 0.8rem; margin-left: 5px; opacit
 th.sort-asc::after { content: '↑'; opacity: 1; }
 th.sort-desc::after { content: '↓'; opacity: 1; }
 #world-map { height: 600px; width: 100%; border-radius: 0.75rem; z-index: 1; }
-#settings-modal, #export-modal, #edit-modal { transition: opacity 0.2s ease-in-out; }
+#settings-modal, #export-modal, #edit-modal, #parks-modal, #states-modal, #route-edit-modal { transition: opacity 0.2s ease-in-out; }
 @media print { .no-print { display: none; } }
 
 @keyframes border-pulse {

@@ -35,9 +35,12 @@ function renderMemberFilterOptions() {
     }
 }
 
+let editTargetType = 'parks';
+
 /** Opens the Edit Metadata Modal for a specific location */
-function openEditModal(name) {
+function openEditModal(name, type) {
     editTarget = name;
+    editTargetType = type || 'parks';
     const modal = document.getElementById('edit-modal');
     const title = document.getElementById('edit-modal-title');
     const dateInput = document.getElementById('edit-date');
@@ -45,9 +48,9 @@ function openEditModal(name) {
     const charCount = document.getElementById('char-count');
 
     if (!visitData.meta) visitData.meta = { parks: {}, states: {} };
-    if (!visitData.meta[currentTab]) visitData.meta[currentTab] = {};
+    if (!visitData.meta[editTargetType]) visitData.meta[editTargetType] = {};
 
-    const meta = visitData.meta[currentTab][name] || {};
+    const meta = visitData.meta[editTargetType][name] || {};
 
     title.innerText = `Edit Details: ${name}`;
     dateInput.value = meta.date || '';
@@ -77,16 +80,20 @@ function saveMetaData() {
     const date = document.getElementById('edit-date').value;
     const comment = document.getElementById('edit-comment').value;
 
-    if (!visitData.meta[currentTab]) visitData.meta[currentTab] = {};
+    if (!visitData.meta[editTargetType]) visitData.meta[editTargetType] = {};
 
-    visitData.meta[currentTab][editTarget] = {
+    visitData.meta[editTargetType][editTarget] = {
         date: date,
         comment: comment
     };
 
     save();
     toggleEditModal(false);
-    renderData();
+    if (editTargetType === 'parks') {
+        renderParksTable();
+    } else {
+        renderStatesTable();
+    }
 }
 
 /** Renders the UI element showing the list of hometowns. */
@@ -134,94 +141,47 @@ function renderSettingsFamilyList() {
  * updates headers, and triggers data rendering for the selected tab.
  */
 function switchTab(tab) {
-    let previousTab = currentTab;
     currentTab = tab;
-    sortColumn = 1;
-    sortDirection = 'asc';
+    try {
+        localStorage.setItem('np_travel_active_tab', tab);
+    } catch(e) {}
 
-    document.querySelectorAll('nav button').forEach(b => b.className = `px-6 py-3 text-lg transition-all text-stone-500 hover:text-green-700`);
+    document.querySelectorAll('nav button').forEach(b => {
+        b.classList.remove('tab-active');
+        b.classList.add('text-stone-500', 'hover:text-green-700');
+    });
     const activeTabBtn = document.getElementById(`tab-${tab}`);
     if (activeTabBtn) {
-        activeTabBtn.className = `px-6 py-3 text-lg transition-all tab-active`;
+        activeTabBtn.classList.add('tab-active');
+        activeTabBtn.classList.remove('text-stone-500', 'hover:text-green-700');
     }
 
-    const tableContainer = document.getElementById('table-container');
     const mapContainer = document.getElementById('world-map-container');
-    const statsViewContainer = document.getElementById('stats-view-container');
-    const controlsContainer = document.getElementById('controls-container');
-    const regionFilterContainer = document.getElementById('region-filter-container');
-    const filterSelect = document.getElementById('region-filter');
-
-    tableContainer.classList.add('hidden');
-    mapContainer.classList.add('hidden');
-    statsViewContainer.classList.add('hidden');
-    controlsContainer.classList.remove('hidden');
-
-    let options = [];
-    let showDropdown = false;
-    if (tab === 'parks') {
-        if (settings.showUSAParks && settings.showCanadianParks) {
-            options = [{ val: 'all', text: 'All Visible Locations' }, { val: 'USA', text: 'USA Parks' }, { val: 'Canada', text: 'Canada Parks' }];
-            showDropdown = true;
-        }
-    } else if (tab === 'states') {
-        if (settings.showUSA && settings.showCanada) {
-            options = [{ val: 'all', text: 'All Visible Locations' }, { val: 'USA', text: 'USA States' }, { val: 'Canada', text: 'Canada Provinces' }];
-            showDropdown = true;
-        }
+    if (mapContainer) {
+        mapContainer.classList.remove('hidden');
     }
 
-    if (showDropdown) {
-        filterSelect.innerHTML = options.map(o => `<option value="${o.val}">${o.text}</option>`).join('');
-        regionFilterContainer.classList.remove('hidden');
-    } else {
-        regionFilterContainer.classList.add('hidden');
-        filterSelect.value = 'all';
-    }
-
-    const headerRow = document.getElementById('table-header-row');
-    if (headerRow) {
-        const showAll = currentMemberFilter === 'all';
-        const activeMembers = showAll ? settings.familyMembers : [currentMemberFilter];
-
-        let headers = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th>
-                       <th id="col-name" onclick="sortTable(1)" class="p-4 border-b sortable">Name</th>`;
-
-        if (tab === 'parks') {
-            headers += `<th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">State/Prov</th>
-                         <th id="col-country" onclick="sortTable(3)" class="p-4 border-b sortable">Country</th>`;
-        } else {
-            headers += `<th id="col-sub" onclick="sortTable(2)" class="p-4 border-b sortable">Country</th>`;
-        }
-
-        const offset = tab === 'parks' ? 4 : 3;
-        activeMembers.forEach((m, i) => {
-            headers += `<th onclick="sortTable(${offset + i})" class="p-4 border-b text-center sortable text-xs uppercase tracking-tighter">${m}</th>`;
-        });
-
-        if (showAll) {
-            headers += `<th onclick="sortTable(${offset + activeMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable">Family</th>`;
-        }
-
-        headerRow.innerHTML = headers;
-        updateSortIndicators();
-    }
+    const mapModeButtons = document.getElementById('map-mode-buttons');
+    const builderUi = document.getElementById('route-builder-ui');
 
     if (tab === 'world') {
-        mapContainer.classList.remove('hidden');
-        if (previousTab === 'states') setMapMode('states');
-        else setMapMode('parks');
+        if (mapModeButtons) mapModeButtons.classList.remove('hidden');
+        if (builderUi) builderUi.classList.add('hidden');
+        const savedMode = (mapMode === 'roads' ? 'parks' : mapMode);
+        setMapMode(savedMode);
         initWorldMap();
-    } else if (tab === 'stats') {
-        statsViewContainer.classList.remove('hidden');
-        controlsContainer.classList.add('hidden');
-        if (previousTab === 'states') setStatsMode('states');
-        else setStatsMode('parks');
-        updateStats();
-    } else {
-        tableContainer.classList.remove('hidden');
-        renderData();
+    } else if (tab === 'roads') {
+        if (mapModeButtons) mapModeButtons.classList.add('hidden');
+        if (builderUi) builderUi.classList.remove('hidden');
+        setMapMode('roads');
+        initWorldMap();
     }
+
+    // Toggle stats widget visibility on switch
+    try {
+        const showStats = localStorage.getItem('np_travel_show_stats') === 'true';
+        toggleStatsWidget(showStats);
+    } catch(e) {}
 }
 
 /** Shows/Hides the Info Modal. */
@@ -280,9 +240,34 @@ function setStatsMode(mode) {
     updateStats();
 }
 
+function toggleStatsWidget(show) {
+    const container = document.getElementById('stats-widget-container');
+    const btn = document.getElementById('toggle-stats-btn');
+    if (!container || !btn) return;
+
+    let shouldShow = show;
+    if (shouldShow === undefined) {
+        shouldShow = container.classList.contains('hidden');
+    }
+
+    if (shouldShow) {
+        container.classList.remove('hidden');
+        btn.innerHTML = '📊 Hide Statistics';
+        updateStats();
+        try {
+            localStorage.setItem('np_travel_show_stats', 'true');
+        } catch(e) {}
+    } else {
+        container.classList.add('hidden');
+        btn.innerHTML = '📊 Show Statistics';
+        try {
+            localStorage.setItem('np_travel_show_stats', 'false');
+        } catch(e) {}
+    }
+}
+
 function updateStats() {
-    let target = currentTab === 'stats' ? statsMode : currentTab;
-    if (target !== 'parks' && target !== 'states') target = 'parks';
+    let target = (mapMode === 'states') ? 'states' : 'parks';
     let dataset = target === 'parks' ? [...parks] : [...states];
     const dataStore = visitData[target];
 
@@ -298,49 +283,69 @@ function updateStats() {
     const unique = new Set();
     Object.keys(dataStore).forEach(k => { const name = k.split('_')[0]; if (dataStore[k] && dataset.find(i => i.name === name)) unique.add(name); });
 
-    document.getElementById('stats-label').innerText = target === 'parks' ? 'Parks Visited' : 'Total Visited';
-    document.getElementById('total-visited').innerText = `${unique.size} / ${dataset.length}`;
-    document.getElementById('total-remaining').innerText = dataset.length - unique.size;
-    document.getElementById('progress-bar').style.width = `${dataset.length ? (unique.size / dataset.length) * 100 : 0}%`;
-    document.getElementById('group-percent').innerText = `${Math.round(dataset.length ? (unique.size / dataset.length) * 100 : 0)}%`;
+    const statsLabel = document.getElementById('stats-label');
+    const totalVisited = document.getElementById('total-visited');
+    const totalRemaining = document.getElementById('total-remaining');
+    const progressBar = document.getElementById('progress-bar');
+    const groupPercent = document.getElementById('group-percent');
+
+    if (statsLabel) statsLabel.innerText = target === 'parks' ? 'Parks Visited' : 'Total Visited';
+    if (totalVisited) totalVisited.innerText = `${unique.size} / ${dataset.length}`;
+    if (totalRemaining) totalRemaining.innerText = dataset.length - unique.size;
+    if (progressBar) progressBar.style.width = `${dataset.length ? (unique.size / dataset.length) * 100 : 0}%`;
+    if (groupPercent) groupPercent.innerText = `${Math.round(dataset.length ? (unique.size / dataset.length) * 100 : 0)}%`;
 
     const showSplit = (target === 'states' && settings.showUSA && settings.showCanada) ||
         (target === 'parks' && settings.showUSAParks && settings.showCanadianParks);
 
-    if (showSplit) {
-        const usTotal = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
-        const caTotal = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
-        let usV = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
-        let caV = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
-        document.getElementById('regional-stats').classList.remove('hidden');
-        document.getElementById('us-stat-label').innerText = target === 'parks' ? 'US Parks' : 'US States';
-        document.getElementById('us-stat-count').innerText = `${usV}/${usTotal}`;
-        document.getElementById('us-stat-bar').style.width = `${usTotal ? (usV / usTotal) * 100 : 0}%`;
-        document.getElementById('ca-stat-label').innerText = target === 'parks' ? 'CA Parks' : 'CA Provinces';
-        document.getElementById('ca-stat-count').innerText = `${caV}/${caTotal}`;
-        document.getElementById('ca-stat-bar').style.width = `${caTotal ? (caV / caTotal) * 100 : 0}%`;
-    } else {
-        document.getElementById('regional-stats').classList.add('hidden');
+    const regionalStats = document.getElementById('regional-stats');
+    if (regionalStats) {
+        if (showSplit) {
+            const usTotal = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
+            const caTotal = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
+            let usV = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
+            let caV = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada') && settings.familyMembers.some(m => dataStore[`${i.name}_${m}`])).length;
+            regionalStats.classList.remove('hidden');
+            
+            const usStatLabel = document.getElementById('us-stat-label');
+            const usStatCount = document.getElementById('us-stat-count');
+            const usStatBar = document.getElementById('us-stat-bar');
+            const caStatLabel = document.getElementById('ca-stat-label');
+            const caStatCount = document.getElementById('ca-stat-count');
+            const caStatBar = document.getElementById('ca-stat-bar');
+
+            if (usStatLabel) usStatLabel.innerText = target === 'parks' ? 'US Parks' : 'US States';
+            if (usStatCount) usStatCount.innerText = `${usV}/${usTotal}`;
+            if (usStatBar) usStatBar.style.width = `${usTotal ? (usV / usTotal) * 100 : 0}%`;
+            if (caStatLabel) caStatLabel.innerText = target === 'parks' ? 'CA Parks' : 'CA Provinces';
+            if (caStatCount) caStatCount.innerText = `${caV}/${caTotal}`;
+            if (caStatBar) caStatBar.style.width = `${caTotal ? (caV / caTotal) * 100 : 0}%`;
+        } else {
+            regionalStats.classList.add('hidden');
+        }
     }
 
-    const grid = document.getElementById('family-progress-grid'); grid.innerHTML = '';
-    settings.familyMembers.forEach((m, i) => {
-        let mTotal = 0, mUs = 0, mCa = 0;
-        dataset.forEach(item => { if (dataStore[`${item.name}_${m}`]) { mTotal++; if (item.sub === 'USA' || item.country === 'USA') mUs++; else mCa++; } });
-        const totalCap = dataset.length;
-        let html = `<div class="bg-stone-50/50 p-2 rounded-lg border border-stone-100"><div class="flex justify-between text-xs font-bold"><span>${m}</span><span class="text-stone-500">${mTotal}/${totalCap}</span></div>`;
-        if (showSplit) {
-            const usCap = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
-            const caCap = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
-            html += `<div class="space-y-1.5 mt-2">`;
-            if ((target === 'states' && settings.showUSA) || (target === 'parks' && settings.showUSAParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>USA</span><span>${mUs}/${usCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-blue-500 h-full" style="width:${usCap ? (mUs / usCap) * 100 : 0}%"></div></div></div>`;
-            if ((target === 'states' && settings.showCanada) || (target === 'parks' && settings.showCanadianParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>CAN</span><span>${mCa}/${caCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-red-500 h-full" style="width:${caCap ? (mCa / caCap) * 100 : 0}%"></div></div></div>`;
-            html += `</div>`;
-        } else {
-            html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${getMemberColor(i)}-500 h-full" style="width:${totalCap ? (mTotal / totalCap) * 100 : 0}%"></div></div>`;
-        }
-        grid.innerHTML += html + `</div>`;
-    });
+    const grid = document.getElementById('family-progress-grid'); 
+    if (grid) {
+        grid.innerHTML = '';
+        settings.familyMembers.forEach((m, i) => {
+            let mTotal = 0, mUs = 0, mCa = 0;
+            dataset.forEach(item => { if (dataStore[`${item.name}_${m}`]) { mTotal++; if (item.sub === 'USA' || item.country === 'USA') mUs++; else mCa++; } });
+            const totalCap = dataset.length;
+            let html = `<div class="bg-stone-50/50 p-2 rounded-lg border border-stone-100"><div class="flex justify-between text-xs font-bold"><span>${m}</span><span class="text-stone-500">${mTotal}/${totalCap}</span></div>`;
+            if (showSplit) {
+                const usCap = dataset.filter(i => (i.sub === 'USA' || i.country === 'USA')).length;
+                const caCap = dataset.filter(i => (i.sub === 'Canada' || i.country === 'Canada')).length;
+                html += `<div class="space-y-1.5 mt-2">`;
+                if ((target === 'states' && settings.showUSA) || (target === 'parks' && settings.showUSAParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>USA</span><span>${mUs}/${usCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-blue-500 h-full" style="width:${usCap ? (mUs / usCap) * 100 : 0}%"></div></div></div>`;
+                if ((target === 'states' && settings.showCanada) || (target === 'parks' && settings.showCanadianParks)) html += `<div class="flex flex-col gap-0.5"><div class="flex justify-between text-[8px] uppercase font-bold text-stone-400"><span>CAN</span><span>${mCa}/${caCap}</span></div><div class="w-full bg-stone-200 h-1 rounded-full"><div class="bg-red-500 h-full" style="width:${caCap ? (mCa / caCap) * 100 : 0}%"></div></div></div>`;
+                html += `</div>`;
+            } else {
+                html += `<div class="w-full bg-stone-200 rounded-full h-2 mt-1"><div class="bg-${getMemberColor(i)}-500 h-full" style="width:${totalCap ? (mTotal / totalCap) * 100 : 0}%"></div></div>`;
+            }
+            grid.innerHTML += html + `</div>`;
+        });
+    }
 }
 
 function sortTable(n) {
@@ -355,46 +360,222 @@ function updateSortIndicators() {
     if (active) active.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
 }
 
-function renderData() {
-    if (currentTab === 'world' || currentTab === 'stats') return;
-    const list = document.getElementById('data-list');
-    let dataset = [...(currentTab === 'parks' ? parks : states)];
-    const dataStore = visitData[currentTab];
-    const metaStore = visitData.meta[currentTab] || {};
+function toggleParksModal(show) {
+    const modal = document.getElementById('parks-modal');
+    if (!modal) return;
+    if (show) {
+        renderParksMemberFilterOptions();
+        initParksTableHeaders();
+        renderParksTable();
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+    } else {
+        modal.classList.replace('opacity-100', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+        updateMapMarkers();
+    }
+}
 
-    if (searchTerm) {
-        dataset = dataset.filter(item => item.name.toLowerCase().includes(searchTerm));
+function toggleStatesModal(show) {
+    const modal = document.getElementById('states-modal');
+    if (!modal) return;
+    if (show) {
+        renderStatesMemberFilterOptions();
+        initStatesTableHeaders();
+        renderStatesTable();
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.replace('opacity-0', 'opacity-100'), 10);
+    } else {
+        modal.classList.replace('opacity-100', 'opacity-0');
+        setTimeout(() => modal.classList.add('hidden'), 200);
+        updateMapMarkers();
+    }
+}
+
+function handleParksSearch(val) {
+    parksSearchTerm = val.toLowerCase();
+    renderParksTable();
+}
+
+function handleStatesSearch(val) {
+    statesSearchTerm = val.toLowerCase();
+    renderStatesTable();
+}
+
+function updateParksMemberFilter() {
+    parksMemberFilter = document.getElementById('parks-member-filter').value;
+    initParksTableHeaders();
+    renderParksTable();
+}
+
+function updateStatesMemberFilter() {
+    statesMemberFilter = document.getElementById('states-member-filter').value;
+    initStatesTableHeaders();
+    renderStatesTable();
+}
+
+function renderParksMemberFilterOptions() {
+    const select = document.getElementById('parks-member-filter');
+    if (!select) return;
+    const current = select.value || 'all';
+    let html = '<option value="all">All Members</option>';
+    settings.familyMembers.forEach(m => {
+        html += `<option value="${m}">${m}</option>`;
+    });
+    select.innerHTML = html;
+    if (settings.familyMembers.includes(current) || current === 'all') {
+        select.value = current;
+    } else {
+        select.value = 'all';
+        parksMemberFilter = 'all';
+    }
+}
+
+function renderStatesMemberFilterOptions() {
+    const select = document.getElementById('states-member-filter');
+    if (!select) return;
+    const current = select.value || 'all';
+    let html = '<option value="all">All Members</option>';
+    settings.familyMembers.forEach(m => {
+        html += `<option value="${m}">${m}</option>`;
+    });
+    select.innerHTML = html;
+    if (settings.familyMembers.includes(current) || current === 'all') {
+        select.value = current;
+    } else {
+        select.value = 'all';
+        statesMemberFilter = 'all';
+    }
+}
+
+function sortParksTable(n) {
+    if (sortColumn === n) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    else { sortColumn = n; sortDirection = 'asc'; }
+    updateParksSortIndicators();
+    renderParksTable();
+}
+
+function sortStatesTable(n) {
+    if (sortColumn === n) sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    else { sortColumn = n; sortDirection = 'asc'; }
+    updateStatesSortIndicators();
+    renderStatesTable();
+}
+
+function initParksTableHeaders() {
+    const headerRow = document.getElementById('parks-table-header-row');
+    if (!headerRow) return;
+    const showAll = parksMemberFilter === 'all';
+    const activeMembers = showAll ? settings.familyMembers : [parksMemberFilter];
+
+    let headers = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th>
+                   <th id="parks-col-name" onclick="sortParksTable(1)" class="p-4 border-b sortable cursor-pointer hover:bg-stone-200">Name</th>
+                   <th id="parks-col-sub" onclick="sortParksTable(2)" class="p-4 border-b sortable cursor-pointer hover:bg-stone-200">State/Prov</th>
+                   <th id="parks-col-country" onclick="sortParksTable(3)" class="p-4 border-b sortable cursor-pointer hover:bg-stone-200">Country</th>`;
+
+    activeMembers.forEach((m, i) => {
+        headers += `<th onclick="sortParksTable(${4 + i})" class="p-4 border-b text-center sortable cursor-pointer hover:bg-stone-200 text-xs uppercase tracking-tighter">${m}</th>`;
+    });
+
+    if (showAll) {
+        headers += `<th onclick="sortParksTable(${4 + activeMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable cursor-pointer hover:bg-stone-200">Family</th>`;
+    }
+    headerRow.innerHTML = headers;
+    updateParksSortIndicators();
+}
+
+function initStatesTableHeaders() {
+    const headerRow = document.getElementById('states-table-header-row');
+    if (!headerRow) return;
+    const showAll = statesMemberFilter === 'all';
+    const activeMembers = showAll ? settings.familyMembers : [statesMemberFilter];
+
+    let headers = `<th class="p-4 border-b text-center w-12" title="Select/Deselect All">All</th>
+                   <th id="states-col-name" onclick="sortStatesTable(1)" class="p-4 border-b sortable cursor-pointer hover:bg-stone-200">Name</th>
+                   <th id="states-col-sub" onclick="sortStatesTable(2)" class="p-4 border-b sortable cursor-pointer hover:bg-stone-200">Country</th>`;
+
+    activeMembers.forEach((m, i) => {
+        headers += `<th onclick="sortStatesTable(${3 + i})" class="p-4 border-b text-center sortable cursor-pointer hover:bg-stone-200 text-xs uppercase tracking-tighter">${m}</th>`;
+    });
+
+    if (showAll) {
+        headers += `<th onclick="sortStatesTable(${3 + activeMembers.length})" class="p-4 border-b text-center bg-stone-200/50 sortable cursor-pointer hover:bg-stone-200">Family</th>`;
+    }
+    headerRow.innerHTML = headers;
+    updateStatesSortIndicators();
+}
+
+function updateParksSortIndicators() {
+    document.querySelectorAll('#parks-table th.sortable').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+    let selector = '';
+    if (sortColumn === 1) selector = '#parks-col-name';
+    else if (sortColumn === 2) selector = '#parks-col-sub';
+    else if (sortColumn === 3) selector = '#parks-col-country';
+    else {
+        const headers = document.querySelectorAll('#parks-table-header-row th');
+        if (headers[sortColumn]) {
+            headers[sortColumn].classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            return;
+        }
+    }
+    const active = document.querySelector(selector);
+    if (active) active.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+}
+
+function updateStatesSortIndicators() {
+    document.querySelectorAll('#states-table th.sortable').forEach(th => th.classList.remove('sort-asc', 'sort-desc'));
+    let selector = '';
+    if (sortColumn === 1) selector = '#states-col-name';
+    else if (sortColumn === 2) selector = '#states-col-sub';
+    else {
+        const headers = document.querySelectorAll('#states-table-header-row th');
+        if (headers[sortColumn]) {
+            headers[sortColumn].classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+            return;
+        }
+    }
+    const active = document.querySelector(selector);
+    if (active) active.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+}
+
+function renderParksTable() {
+    const list = document.getElementById('parks-data-list');
+    if (!list) return;
+    let dataset = [...parks];
+    const dataStore = visitData.parks;
+    const metaStore = visitData.meta.parks || {};
+
+    if (parksSearchTerm) {
+        dataset = dataset.filter(item => item.name.toLowerCase().includes(parksSearchTerm));
     }
 
-    if (currentTab === 'states') dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
-    if (currentTab === 'parks') {
-        dataset = dataset.filter(i => {
-            if (i.country === 'USA') return settings.showUSAParks;
-            if (i.country === 'Canada') return settings.showCanadianParks;
-            return true;
-        });
-    }
+    dataset = dataset.filter(i => {
+        if (i.country === 'USA') return settings.showUSAParks;
+        if (i.country === 'Canada') return settings.showCanadianParks;
+        return true;
+    });
 
-    const f = document.getElementById('region-filter').value;
-    if (currentTab === 'parks') {
-        if (f === 'USA') dataset = dataset.filter(i => i.country === 'USA');
-        if (f === 'Canada') dataset = dataset.filter(i => i.country === 'Canada');
-    } else if (currentTab === 'states') {
-        if (f === 'USA') dataset = dataset.filter(i => i.sub === 'USA');
-        if (f === 'Canada') dataset = dataset.filter(i => i.sub === 'Canada');
-    }
+    const f = document.getElementById('parks-region-filter').value;
+    if (f === 'USA') dataset = dataset.filter(i => i.country === 'USA');
+    if (f === 'Canada') dataset = dataset.filter(i => i.country === 'Canada');
 
-    const showAll = currentMemberFilter === 'all';
-    const activeMembers = showAll ? settings.familyMembers : [currentMemberFilter];
+    const showAll = parksMemberFilter === 'all';
+    const activeMembers = showAll ? settings.familyMembers : [parksMemberFilter];
 
     dataset.sort((a, b) => {
         let vA, vB;
-        const offset = currentTab === 'parks' ? 4 : 3;
         if (sortColumn === 1) { vA = a.name.toLowerCase(); vB = b.name.toLowerCase(); }
         else if (sortColumn === 2) { vA = a.sub.toLowerCase(); vB = b.sub.toLowerCase(); }
-        else if (currentTab === 'parks' && sortColumn === 3) { vA = a.country.toLowerCase(); vB = b.country.toLowerCase(); }
-        else if (sortColumn >= offset && sortColumn < offset + activeMembers.length) { let m = activeMembers[sortColumn - offset]; vA = dataStore[`${a.name}_${m}`] ? 1 : 0; vB = dataStore[`${b.name}_${m}`] ? 1 : 0; }
-        else if (showAll && sortColumn === offset + activeMembers.length) { vA = settings.familyMembers.filter(m => dataStore[`${a.name}_${m}`]).length; vB = settings.familyMembers.filter(m => dataStore[`${b.name}_${m}`]).length; }
+        else if (sortColumn === 3) { vA = a.country.toLowerCase(); vB = b.country.toLowerCase(); }
+        else if (sortColumn >= 4 && sortColumn < 4 + activeMembers.length) { 
+            let m = activeMembers[sortColumn - 4]; 
+            vA = dataStore[`${a.name}_${m}`] ? 1 : 0; 
+            vB = dataStore[`${b.name}_${m}`] ? 1 : 0; 
+        }
+        else if (showAll && sortColumn === 4 + activeMembers.length) { 
+            vA = settings.familyMembers.filter(m => dataStore[`${a.name}_${m}`]).length; 
+            vB = settings.familyMembers.filter(m => dataStore[`${b.name}_${m}`]).length; 
+        }
         return sortDirection === 'asc' ? (vA < vB ? -1 : 1) : (vA > vB ? -1 : 1);
     });
 
@@ -408,21 +589,20 @@ function renderData() {
         const hasMeta = metaStore[i.name] && (metaStore[i.name].comment || metaStore[i.name].date);
         const wrenchColor = hasMeta ? "text-blue-500 hover:text-blue-700" : "text-stone-300 hover:text-stone-500";
 
-        let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked)" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
+        let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked, 'parks')" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
         <td class="p-4 font-medium flex items-center justify-between group">
-            <a href="${getWikiLink(i, currentTab)}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
+            <a href="${getWikiLink(i, 'parks')}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
                 ${i.name}
                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-30"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
             </a>
-            <button onclick="openEditModal('${i.name}')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
+            <button onclick="openEditModal('${i.name}', 'parks')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
             </button>
         </td>
-        <td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
+        <td class="p-4 text-sm text-stone-500">${i.sub}</td>
+        <td class="p-4 text-sm text-stone-500">${i.country}</td>`;
 
-        if (currentTab === 'parks') cells += `<td class="p-4 text-sm text-stone-500">${i.country}</td>`;
-
-        activeMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
+        activeMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}', 'parks')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
 
         if (showAll) {
             cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'text-green-600' : 'text-stone-400'}">${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? '✓' : vCount + '/' + settings.familyMembers.length}</td>`;
@@ -433,8 +613,88 @@ function renderData() {
     updateStats();
 }
 
-function toggleVisit(n, m) { visitData[currentTab][`${n}_${m}`] = !visitData[currentTab][`${n}_${m}`]; save(); renderData(); }
-function toggleAllRow(n, val) { settings.familyMembers.forEach(m => visitData[currentTab][`${n}_${m}`] = val); save(); renderData(); }
+function renderStatesTable() {
+    const list = document.getElementById('states-data-list');
+    if (!list) return;
+    let dataset = [...states];
+    const dataStore = visitData.states;
+    const metaStore = visitData.meta.states || {};
+
+    if (statesSearchTerm) {
+        dataset = dataset.filter(item => item.name.toLowerCase().includes(statesSearchTerm));
+    }
+
+    dataset = dataset.filter(i => (i.sub === 'USA' && settings.showUSA) || (i.sub === 'Canada' && settings.showCanada));
+
+    const f = document.getElementById('states-region-filter').value;
+    if (f === 'USA') dataset = dataset.filter(i => i.sub === 'USA');
+    if (f === 'Canada') dataset = dataset.filter(i => i.sub === 'Canada');
+
+    const showAll = statesMemberFilter === 'all';
+    const activeMembers = showAll ? settings.familyMembers : [statesMemberFilter];
+
+    dataset.sort((a, b) => {
+        let vA, vB;
+        if (sortColumn === 1) { vA = a.name.toLowerCase(); vB = b.name.toLowerCase(); }
+        else if (sortColumn === 2) { vA = a.sub.toLowerCase(); vB = b.sub.toLowerCase(); }
+        else if (sortColumn >= 3 && sortColumn < 3 + activeMembers.length) { 
+            let m = activeMembers[sortColumn - 3]; 
+            vA = dataStore[`${a.name}_${m}`] ? 1 : 0; 
+            vB = dataStore[`${b.name}_${m}`] ? 1 : 0; 
+        }
+        else if (showAll && sortColumn === 3 + activeMembers.length) { 
+            vA = settings.familyMembers.filter(m => dataStore[`${a.name}_${m}`]).length; 
+            vB = settings.familyMembers.filter(m => dataStore[`${b.name}_${m}`]).length; 
+        }
+        return sortDirection === 'asc' ? (vA < vB ? -1 : 1) : (vA > vB ? -1 : 1);
+    });
+
+    list.innerHTML = '';
+
+    dataset.forEach(i => {
+        let vCount = settings.familyMembers.filter(m => dataStore[`${i.name}_${m}`]).length;
+        let tr = document.createElement('tr');
+        tr.className = "hover:bg-stone-50 border-b border-stone-100 " + (vCount > 0 ? "checked-row" : "");
+
+        const hasMeta = metaStore[i.name] && (metaStore[i.name].comment || metaStore[i.name].date);
+        const wrenchColor = hasMeta ? "text-blue-500 hover:text-blue-700" : "text-stone-300 hover:text-stone-500";
+
+        let cells = `<td class="p-4 text-center border-r border-stone-100"><input type="checkbox" class="all-checkbox w-4 h-4 cursor-pointer opacity-40 hover:opacity-100 transition" onchange="toggleAllRow('${i.name}', this.checked, 'states')" ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'checked' : ''}></td>
+        <td class="p-4 font-medium flex items-center justify-between group">
+            <a href="${getWikiLink(i, 'states')}" target="_blank" title="View Wikipedia Article" class="flex items-center gap-2 hover:text-green-700 transition-colors">
+                ${i.name}
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-30"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" x2="21" y1="14" y2="3"/></svg>
+            </a>
+            <button onclick="openEditModal('${i.name}', 'states')" class="${wrenchColor} transition-colors p-1 rounded hover:bg-stone-100" title="Edit Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+            </button>
+        </td>
+        <td class="p-4 text-sm text-stone-500">${i.sub}</td>`;
+
+        activeMembers.forEach(m => cells += `<td class="p-4 text-center"><input type="checkbox" class="park-checkbox w-5 h-5 cursor-pointer" onchange="toggleVisit('${i.name}', '${m}', 'states')" ${dataStore[`${i.name}_${m}`] ? 'checked' : ''}></td>`);
+
+        if (showAll) {
+            cells += `<td class="p-4 text-center bg-stone-100/50 font-bold ${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? 'text-green-600' : 'text-stone-400'}">${settings.familyMembers.length > 0 && vCount === settings.familyMembers.length ? '✓' : vCount + '/' + settings.familyMembers.length}</td>`;
+        }
+
+        tr.innerHTML = cells; list.appendChild(tr);
+    });
+    updateStats();
+}
+
+function toggleVisit(n, m, type) { 
+    visitData[type][`${n}_${m}`] = !visitData[type][`${n}_${m}`]; 
+    save(); 
+    if (type === 'parks') renderParksTable();
+    else renderStatesTable();
+}
+
+function toggleAllRow(n, val, type) { 
+    settings.familyMembers.forEach(m => visitData[type][`${n}_${m}`] = val); 
+    save(); 
+    if (type === 'parks') renderParksTable();
+    else renderStatesTable();
+}
 
 function toggleRouteEditModal(show) {
     const modal = document.getElementById('route-edit-modal');
@@ -547,9 +807,17 @@ if (typeof module !== 'undefined' && module.exports) {
         toggleExportModal,
         setStatsMode,
         updateStats,
-        sortTable,
-        updateSortIndicators,
-        renderData,
+        toggleStatsWidget,
+        toggleParksModal,
+        toggleStatesModal,
+        handleParksSearch,
+        handleStatesSearch,
+        updateParksMemberFilter,
+        updateStatesMemberFilter,
+        sortParksTable,
+        sortStatesTable,
+        renderParksTable,
+        renderStatesTable,
         toggleVisit,
         toggleAllRow,
         toggleRouteEditModal,

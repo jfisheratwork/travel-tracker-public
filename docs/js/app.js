@@ -322,99 +322,291 @@ async function getGeocode(query) {
     return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon), name: data[0].display_name.split(',')[0] };
 }
 
-async function fetchOSRM(start, end) {
+let tempAlternatives = [];
+let selectedAltRouteIdx = 0;
+let tempAltPolylines = [];
+
+async function fetchOSRM(waypoints) {
     const now = Date.now();
     if (now - lastOSRMCall < 30000) {
         throw new Error("OSRM Public Server limited to 1 request every 30 seconds. Please wait.");
     }
     lastOSRMCall = now;
-    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson&overview=full`);
+    const coordsStr = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${coordsStr}?geometries=geojson&overview=full&alternatives=true`);
     const data = await res.json();
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) throw new Error("OSRM routing failed.");
-    const route = data.routes[0];
-    return {
+    return data.routes.map((route, index) => ({
         coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]),
         distance: route.distance,
-        duration: route.duration
-    };
+        duration: route.duration,
+        index: index
+    }));
 }
 
-async function fetchMapbox(start, end) {
+async function fetchMapbox(waypoints) {
     if (!settings.mapboxKey) throw new Error("Mapbox API Key is required.");
-    const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${start.lng},${start.lat};${end.lng},${end.lat}?geometries=geojson&overview=full&access_token=${settings.mapboxKey}`);
+    const coordsStr = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
+    const res = await fetch(`https://api.mapbox.com/directions/v5/mapbox/driving/${coordsStr}?geometries=geojson&overview=full&alternatives=true&access_token=${settings.mapboxKey}`);
     const data = await res.json();
     if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) throw new Error("Mapbox routing failed.");
-    const route = data.routes[0];
-    return {
+    return data.routes.map((route, index) => ({
         coordinates: route.geometry.coordinates.map(c => [c[1], c[0]]),
         distance: route.distance,
-        duration: route.duration
-    };
+        duration: route.duration,
+        index: index
+    }));
 }
 
 async function requestRoute() {
     const startStr = document.getElementById('route-start').value.trim();
     const endStr = document.getElementById('route-end').value.trim();
     const status = document.getElementById('route-status');
-    status.className = "text-xs text-stone-500 mt-2 font-medium empty:hidden";
-    status.innerText = "Geocoding endpoints...";
+    if (status) {
+        status.className = "text-xs text-stone-500 mt-2 font-medium empty:hidden";
+        status.innerText = "Geocoding endpoints...";
+    }
     
     if (!startStr || !endStr) {
-        status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
-        status.innerText = "Please provide both start and end locations.";
+        if (status) {
+            status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
+            status.innerText = "Please provide both start and end locations.";
+        }
         return;
     }
 
+    const stopsInputs = document.querySelectorAll('.route-stop-input');
+    const stopQueries = Array.from(stopsInputs).map(input => input.value.trim()).filter(Boolean);
+
     try {
+        const waypoints = [];
         const start = await getGeocode(startStr);
-        const end = await getGeocode(endStr);
-        status.innerText = `Routing ${start.name} to ${end.name}...`;
-
-        let routeResult = null;
-        if (settings.routingEngine === 'osrm') routeResult = await fetchOSRM(start, end);
-        else routeResult = await fetchMapbox(start, end);
-
-        const rawCoords = routeResult.coordinates;
-        const distance = routeResult.distance;
-        const duration = routeResult.duration;
-
-        let reducedCoords = rawCoords;
-        const tolerance = parseFloat(settings.routeReduction);
-        if (tolerance > 0 && worldMap) {
-            status.innerText = `Simplifying geometry...`;
-            const rawPoints = rawCoords.map(c => ({x: c[0], y: c[1]}));
-            const simpleRaw = L.LineUtil.simplify(rawPoints, tolerance);
-            reducedCoords = simpleRaw.map(p => [p.x, p.y]);
-        }
-
-        settings.savedRoutes.push({
-            name: `${start.name} to ${end.name}`,
-            route: reducedCoords,
-            engine: settings.routingEngine,
-            timestamp: Date.now(),
-            date: '',
-            members: [],
-            description: '',
-            distance: distance,
-            duration: duration,
-            status: 'completed'
-        });
-        localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+        waypoints.push(start);
         
-        status.innerText = `Success! Saved route with ${reducedCoords.length} points (down from ${rawCoords.length}).`;
-        document.getElementById('route-start').value = '';
-        document.getElementById('route-end').value = '';
-        renderSavedRoutes();
-        updateMapMarkers();
-
-        if (worldMap && reducedCoords.length > 0) {
-            const tempLine = L.polyline(reducedCoords);
-            worldMap.fitBounds(tempLine.getBounds());
+        for (const query of stopQueries) {
+            if (status) status.innerText = `Geocoding stop: ${query}...`;
+            const stop = await getGeocode(query);
+            waypoints.push(stop);
         }
+        
+        const end = await getGeocode(endStr);
+        waypoints.push(end);
+        
+        if (status) status.innerText = `Routing...`;
+
+        let routes = [];
+        if (settings.routingEngine === 'osrm') {
+            routes = await fetchOSRM(waypoints);
+        } else {
+            routes = await fetchMapbox(waypoints);
+        }
+
+        tempAlternatives = routes.map(r => {
+            let reduced = r.coordinates;
+            const tolerance = parseFloat(settings.routeReduction);
+            if (tolerance > 0 && worldMap) {
+                const rawPoints = r.coordinates.map(c => ({x: c[0], y: c[1]}));
+                const simpleRaw = L.LineUtil.simplify(rawPoints, tolerance);
+                reduced = simpleRaw.map(p => [p.x, p.y]);
+            }
+            return {
+                ...r,
+                coordinates: reduced,
+                originalCoords: r.coordinates,
+                waypoints: waypoints
+            };
+        });
+
+        showAltRouteSelectionUI();
     } catch (e) {
-        status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
-        status.innerText = `Error: ${e.message}`;
+        if (status) {
+            status.className = "text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2 font-medium empty:hidden shadow-sm";
+            status.innerText = `Error: ${e.message}`;
+        }
     }
+}
+
+function showAltRouteSelectionUI() {
+    const selector = document.getElementById('alt-routes-selector');
+    const list = document.getElementById('alt-routes-list');
+    const status = document.getElementById('route-status');
+
+    if (!selector || !list) return;
+
+    clearTempAltPolylines();
+
+    list.innerHTML = '';
+    tempAlternatives.forEach((alt, idx) => {
+        const div = document.createElement('div');
+        div.className = `p-3 rounded-lg border border-stone-200 cursor-pointer transition flex items-center justify-between bg-white hover:border-green-600 ${idx === 0 ? 'ring-2 ring-green-600 border-green-600' : ''}`;
+        div.id = `alt-route-card-${idx}`;
+        div.setAttribute('onclick', `selectAltRoute(${idx})`);
+
+        const distanceStr = formatDistance(alt.distance);
+        const durationStr = formatDuration(alt.duration);
+
+        div.innerHTML = `
+            <div>
+                <span class="block text-xs font-bold text-stone-700">Option ${idx + 1}${idx === 0 ? ' (Recommended)' : ''}</span>
+                <span class="text-xs text-stone-500">${distanceStr} • ${durationStr}</span>
+            </div>
+            <input type="radio" name="alt-route-radio" value="${idx}" ${idx === 0 ? 'checked' : ''} class="accent-green-700">
+        `;
+        list.appendChild(div);
+
+        if (worldMap) {
+            const isSelected = idx === 0;
+            const line = L.polyline(alt.coordinates, {
+                color: isSelected ? '#15803d' : '#9ca3af',
+                weight: isSelected ? 5 : 3,
+                opacity: isSelected ? 0.9 : 0.5,
+                dashArray: isSelected ? null : '5, 5'
+            }).addTo(worldMap);
+            tempAltPolylines.push(line);
+        }
+    });
+
+    selector.classList.remove('hidden');
+    if (status) status.innerText = `Select one of the ${tempAlternatives.length} alternative route options shown.`;
+
+    if (worldMap && tempAltPolylines.length > 0) {
+        const bounds = tempAltPolylines[0].getBounds();
+        tempAltPolylines.forEach(l => bounds.extend(l.getBounds()));
+        worldMap.fitBounds(bounds);
+    }
+}
+
+function selectAltRoute(idx) {
+    selectedAltRouteIdx = idx;
+
+    const radios = document.getElementsByName('alt-route-radio');
+    radios.forEach((r, i) => {
+        r.checked = (i === idx);
+        const card = document.getElementById(`alt-route-card-${i}`);
+        if (card) {
+            if (i === idx) {
+                card.className = "p-3 rounded-lg border border-stone-200 cursor-pointer transition flex items-center justify-between bg-white border-green-600 ring-2 ring-green-600 animate-in zoom-in-95 duration-100";
+            } else {
+                card.className = "p-3 rounded-lg border border-stone-200 cursor-pointer transition flex items-center justify-between bg-white hover:border-green-600";
+            }
+        }
+    });
+
+    tempAltPolylines.forEach((line, i) => {
+        if (i === idx) {
+            line.setStyle({
+                color: '#15803d',
+                weight: 5,
+                opacity: 0.9,
+                dashArray: null
+            });
+            line.bringToFront();
+        } else {
+            line.setStyle({
+                color: '#9ca3af',
+                weight: 3,
+                opacity: 0.5,
+                dashArray: '5, 5'
+            });
+        }
+    });
+}
+
+function clearTempAltPolylines() {
+    if (tempAltPolylines) {
+        tempAltPolylines.forEach(line => {
+            if (worldMap) worldMap.removeLayer(line);
+        });
+    }
+    tempAltPolylines = [];
+}
+
+function cancelAltRouteSelection() {
+    clearTempAltPolylines();
+    tempAlternatives = [];
+    selectedAltRouteIdx = 0;
+
+    const selector = document.getElementById('alt-routes-selector');
+    if (selector) selector.classList.add('hidden');
+    const status = document.getElementById('route-status');
+    if (status) status.innerText = '';
+}
+
+function saveSelectedRoute() {
+    if (tempAlternatives.length === 0) return;
+    const selectedRoute = tempAlternatives[selectedAltRouteIdx];
+    if (!selectedRoute) return;
+
+    const waypoints = selectedRoute.waypoints;
+    const name = `${waypoints[0].name} to ${waypoints[waypoints.length - 1].name}`;
+
+    settings.savedRoutes.push({
+        name: name,
+        route: selectedRoute.coordinates,
+        engine: settings.routingEngine,
+        timestamp: Date.now(),
+        date: '',
+        members: [],
+        description: '',
+        distance: selectedRoute.distance,
+        duration: selectedRoute.duration,
+        status: 'completed'
+    });
+
+    localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+
+    document.getElementById('route-start').value = '';
+    document.getElementById('route-end').value = '';
+    const container = document.getElementById('route-stops-container');
+    if (container) container.innerHTML = '';
+
+    cancelAltRouteSelection();
+
+    const status = document.getElementById('route-status');
+    if (status) {
+        status.className = "text-xs text-stone-500 mt-2 font-medium empty:hidden";
+        status.innerText = "Success! Route saved.";
+    }
+
+    renderSavedRoutes();
+    updateMapMarkers();
+}
+
+function addStopInput() {
+    const container = document.getElementById('route-stops-container');
+    if (!container) return;
+    const count = container.children.length;
+    
+    const div = document.createElement('div');
+    div.className = "flex gap-2 items-center animate-in fade-in slide-in-from-top-1 duration-150";
+    div.id = `stop-input-wrapper-${count}`;
+    
+    div.innerHTML = `
+        <input type="text" class="route-stop-input flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white" placeholder="Stop (e.g. Portland, OR)">
+        <button onclick="removeStopInput(${count})" class="text-stone-400 hover:text-red-600 transition font-bold px-2 py-1">✕</button>
+    `;
+    container.appendChild(div);
+}
+
+function removeStopInput(index) {
+    const el = document.getElementById(`stop-input-wrapper-${index}`);
+    if (el) {
+        el.remove();
+        const container = document.getElementById('route-stops-container');
+        Array.from(container.children).forEach((child, i) => {
+            child.id = `stop-input-wrapper-${i}`;
+            const btn = child.querySelector('button');
+            if (btn) {
+                btn.setAttribute('onclick', `removeStopInput(${i})`);
+            }
+        });
+    }
+}
+
+function toggleYearCollapse(year) {
+    collapsedYears[year] = !collapsedYears[year];
+    saveCollapsedYears();
+    renderSavedRoutes();
 }
 
 function renderSavedRoutes() {
@@ -506,11 +698,38 @@ function renderSavedRoutes() {
         </div>`;
     }
 
+    const currentYear = new Date().getFullYear();
+
     sortedYears.forEach(year => {
         const routes = completedByYear[year];
-        html += `<div class="mb-4">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-green-700 mb-2 mt-1">Completed Trips - ${year} (${routes.length})</h4>
-            <div class="flex flex-col gap-2">${routes.map(renderRouteItem).join('')}</div>
+        
+        if (collapsedYears[year] === undefined) {
+            try {
+                const yVal = parseInt(year);
+                if (!isNaN(yVal) && yVal < currentYear) {
+                    collapsedYears[year] = true;
+                } else {
+                    collapsedYears[year] = false;
+                }
+            } catch(e) {
+                collapsedYears[year] = false;
+            }
+        }
+        
+        const isCollapsed = collapsedYears[year];
+        const toggleIcon = isCollapsed ? '▶' : '▼';
+        
+        html += `<div class="mb-4 border-b border-stone-100 pb-3 last:border-0">
+            <div onclick="toggleYearCollapse('${year}')" class="flex justify-between items-center cursor-pointer select-none py-1 hover:text-green-700 transition-colors">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-green-700 flex items-center gap-1.5">
+                    <span class="text-[10px] text-stone-400 font-normal">${toggleIcon}</span>
+                    Completed Trips - ${year}
+                </h4>
+                <span class="text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full shadow-sm">${routes.length}</span>
+            </div>
+            <div class="${isCollapsed ? 'hidden' : 'flex flex-col gap-2 mt-2 pl-2 border-l border-stone-200/50'}">
+                ${routes.map(renderRouteItem).join('')}
+            </div>
         </div>`;
     });
 
@@ -563,8 +782,9 @@ function focusRoute(idx) {
 // Initialize App
 window.onload = () => {
     checkFamilyStatus();
-    renderMemberFilterOptions();
-    switchTab('parks');
+    renderParksMemberFilterOptions();
+    renderStatesMemberFilterOptions();
+    switchTab(currentTab);
 };
 
 // Node.js test environment exports mapping
@@ -574,6 +794,13 @@ if (typeof module !== 'undefined' && module.exports) {
     global.removeHometown = removeHometown;
     global.removeFamilyMember = removeFamilyMember;
     global.checkFamilyStatus = checkFamilyStatus;
+    global.addStopInput = addStopInput;
+    global.removeStopInput = removeStopInput;
+    global.toggleYearCollapse = toggleYearCollapse;
+    global.requestRoute = requestRoute;
+    global.cancelAltRouteSelection = cancelAltRouteSelection;
+    global.saveSelectedRoute = saveSelectedRoute;
+    global.selectAltRoute = selectAltRoute;
 
     module.exports = {
         formatDistance: global.formatDistance,

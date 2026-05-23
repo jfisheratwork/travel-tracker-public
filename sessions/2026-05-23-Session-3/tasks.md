@@ -1,0 +1,7 @@
+- [x] Initialize `sessions/2026-05-23-Session-3/` directory and copy files
+- [x] Modify `docs/index.html` to simplify navigation tabs, add Parks/States Modals, add Route Builder Stops inputs, add Alt Routes container, and place Stats widget above the map
+- [x] Modify `docs/js/state.js` to handle active tab persistence and collapsed years state
+- [x] Modify `docs/js/ui.js` to support Modal tab tables rendering, toggle state persistence, tab switching behaviors, and stats widget updates
+- [x] Modify `docs/js/app.js` to implement intermediate stops adding/removing, alternative routes fetching and selection UI, year accordion collapsing in route lists, and Node.js testing compatibility
+- [x] Run unit tests `node tests/app.test.js` to verify zero logic regressions
+- [x] Commit all changes locally on the branch `feature/travel-tracker-layout` and request push approval
