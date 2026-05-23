@@ -90,3 +90,17 @@ This PR introduces robust road-following routing enhancements (Phase 3) along wi
   1. Row click highlights in blue, other routes disappear, map zooms to route.
   2. Row second click removes blue border, all routes redraw, map zooms to encompass all routes.
   3. Clicking "Search" for routing twice within 30 seconds triggers the visual red warning alert box indicating a throttle error.
+
+---
+
+# Addendum - Cache Busting Implementation Plan (Added 2026-05-23)
+
+Implement Options 1 and 4 to mitigate browser/CDN caching on static hosting platforms.
+
+## Proposed Changes
+
+### Frontend Assets
+
+#### [MODIFY] [index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html)
+- Insert Cache-Control and Pragma meta tags to `<head>` of `docs/index.html`.
+- Append version query strings `?v=1.0.1` to local script and CSS imports in `docs/index.html`.

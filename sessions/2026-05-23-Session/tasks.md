@@ -11,5 +11,10 @@
 - [x] Generate the SecureCoder Security Audit report section in `walkthrough.md`
 - [x] Run unit tests via `node tests/app.test.js` to ensure logic is intact
 - [x] Call the `/fix_completed` local API to report completion status
-- [x] Update session summary files in the session directory
+- [x] Export `focusRoute` and helpers for testing
+- [x] Add unit tests in `tests/app.test.js` verifying toggling and escaping
+- [x] Commit and push all work to origin
 - [x] Verify everything functions as expected
+- [x] Add Cache-Control and Pragma meta tags to `<head>` of `docs/index.html` to bypass caching
+- [x] Append query parameter version strings `?v=1.0.1` to CSS/JS imports in `docs/index.html` to force browser cache busting
+- [x] Re-run unit tests via `node tests/app.test.js` to ensure no HTML structural breakages
