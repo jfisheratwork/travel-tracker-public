@@ -157,7 +157,12 @@ function migrateData(settingsObj, visitDataObj) {
                 description: route.description !== undefined ? route.description : '',
                 distance: typeof route.distance === 'number' ? route.distance : 0,
                 duration: typeof route.duration === 'number' ? route.duration : 0,
-                status: route.status || 'completed'
+                status: route.status || 'completed',
+                waypoints: Array.isArray(route.waypoints) ? route.waypoints : [],
+                startQuery: route.startQuery || '',
+                endQuery: route.endQuery || '',
+                stopsQueries: Array.isArray(route.stopsQueries) ? route.stopsQueries : [],
+                storeFullCoordinates: route.storeFullCoordinates !== undefined ? route.storeFullCoordinates : false
             };
         });
     }
