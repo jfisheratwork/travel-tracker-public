@@ -1,81 +1,99 @@
-# Implementation Plan - Fix Road Trip Selection & Staging on Branch
+# Implementation Plan - Refactor app.js into Modular Components
 
-We are addressing the selection logic behavior for road trips, updating the OSRM throttle limit with visual warning alert styling, and creating a new git branch to stage and manage the substantial uncommitted work.
-
-## User Review Required
-
-> [!IMPORTANT]
-> - **Selection Visuals:** The selected road trip row will now be highlighted with a **blue border** (`border-2 border-blue-500 bg-blue-50/20`) instead of green.
-> - **Map Behavior:** Selecting a route isolates it (hides all others) and zooms to its bounds. Clicking again deselects it, restoring all route lines and fitting the map bounds to all routes combined.
-> - **OSRM Throttling (Feedback Incorporated):** 
->   - Reduce the OSRM request throttle wait from 2 minutes to **30 seconds**.
->   - Add a strong visual alert box (red text, light red background, red border) to the `#route-status` container if a request is throttled or errors out.
-> - **Git Branching:** We will create a new branch `feature/roads-traveled` to isolate all Phase 3 routing changes.
-
----
+Refactor the 1,562-line `docs/js/app.js` into five separate, logical files to make concurrent development and unit testing easier, while maintaining browser compatibility for GitHub Pages (zero-dependency static hosting) and full test suite compatibility with Node.js.
 
 ## Proposed Changes
 
-### Version Control
+### File Structure & Split Map
 
-#### [NEW BRANCH] `feature/roads-traveled`
-- Create and switch to a new local branch `feature/roads-traveled` to hold all uncommitted changes.
+The monolithic `docs/js/app.js` will be split into the following files:
 
-### App Logic
+1. **[NEW] [state.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/state.js)**:
+   - Declares global state variables (`currentTab`, `sortColumn`, `sortDirection`, `worldMap`, `mapMarkers`, `hometownMarkers`, `roadPolylines`, `mapMode`, `statsMode`, `searchTerm`, `currentMemberFilter`, `editTarget`, `routeEditTargetIndex`, `selectedRouteIndex`).
+   - Declares the dynamic colors palette.
+   - Loads and parses initial settings/visitData from `localStorage`.
+   - Runs `migrateData()` and persists back to `localStorage`.
+   - Holds state persistence methods: `save()`.
 
-#### [MODIFY] [app.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/app.js)
-- Update OSRM throttling logic in `fetchOSRM(start, end)`:
-  - Reduce cooldown to 30 seconds (`30000` ms).
-  - Update throw message: `OSRM Public Server limited to 1 request every 30 seconds. Please wait.`
-- Update error rendering in `requestRoute()`:
-  - On error, style `#route-status` with visual alert warning classes (`text-red-600 bg-red-50 border border-red-200 rounded-lg p-2.5 mt-2`).
-  - Reset `#route-status` style back to default (`text-stone-500 mt-2`) on new search or geocode start.
-- Modify `renderSavedRoutes()`:
-  - Style selected road trip cards with a blue border (`border-2 border-blue-500 bg-blue-50/20`) instead of green.
-- Modify `focusRoute(idx)`:
-  - Keep toggle behavior (second click sets `selectedRouteIndex = null`).
-  - Deselection triggers redrawing all routes and zooming out to show all combined route coordinates.
+2. **[NEW] [helpers.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/helpers.js)**:
+   - Pure utility functions:
+     - `escapeHTML(str)`
+     - `formatDistance(meters)`
+     - `formatDuration(seconds)`
+     - `groupRoutesByYearOrStatus(routes, groupBy)`
+     - `migrateData(settingsObj, visitDataObj)`
+     - `getWikiLink(item, type)`
+     - `getMemberColor(index)`
+
+3. **[NEW] [map.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/map.js)**:
+   - Leaflet map initialization and markers layout:
+     - `initWorldMap()`
+     - `setMapMode(mode)`
+     - `updateMapMarkers()`
+
+4. **[NEW] [ui.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/ui.js)**:
+   - Modal management, DOM rendering, and event-triggered layouts:
+     - `toggleEditModal()`, `toggleRouteEditModal()`, `toggleInfoModal()`, `toggleSettingsModal()`, `toggleExportModal()`
+     - `switchTab()`, `sortTable()`, `updateSortIndicators()`, `renderData()`, `toggleVisit()`, `toggleAllRow()`
+     - `renderHometownUI()`, `renderSettingsFamilyList()`, `renderMemberFilterOptions()`, `updateMemberFilter()`
+     - `openEditModal()`, `saveMetaData()`, `openRouteEditModal()`, `saveRouteEditDetails()`, `deleteRouteFromEditModal()`
+
+5. **[MODIFY] [app.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/app.js)**:
+   - Orchestration, import/backups, input helpers, and testing compatibility:
+     - `handleSearch()`, `updateCharCount()`
+     - `addFamilyMember()`, `removeFamilyMember()`, `removeHometown()`
+     - `confirmReset()`, `cancelReset()`, `performReset()`
+     - `loadSampleData()`, `showLoadConfirmation()`, `cancelLoad()`, `performLoad()`
+     - `saveBackupJSON()`, `handleBackupImport()`, `cancelRestore()`, `performRestore()`
+     - `getExportData()`, `saveToCSV()`, `saveToExcel()`, `handleImport()`
+     - `toggleMapboxSettings()`, `getGeocode()`, `fetchOSRM()`, `fetchMapbox()`, `requestRoute()`
+     - `renderSavedRoutes()`, `deleteSavedRoute()`, `focusRoute()`
+     - `window.onload` handler.
+     - In Node.js testing environments, it will dynamically `require` the other files and load their variables/functions into `global` to emulate the shared browser environment and preserve Node test runner compliance.
 
 ---
 
-## Draft Git Commit and PR Message
+### Script Ingestion
 
-### Commit Message
-```text
-feat(roads): isolate selected route on map and highlight active sidebar row
+#### [MODIFY] [index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html)
+- Load the scripts in dependency order:
+  ```html
+  <script src="js/data_constants.js?v=1.0.1"></script>
+  <script src="js/helpers.js?v=1.0.1"></script>
+  <script src="js/state.js?v=1.0.1"></script>
+  <script src="js/map.js?v=1.0.1"></script>
+  <script src="js/ui.js?v=1.0.1"></script>
+  <script src="js/demo_route.js?v=1.0.1"></script>
+  <script src="js/app.js?v=1.0.1"></script>
+  ```
 
-- Switch active row border highlight from green to blue when selected.
-- Isolate the selected polyline on the map, hiding all other polylines.
-- Support toggling selection to deselect the active route, which redraws all polylines and auto-zooms to fit all routes.
-- Update delete handlers to reset the selection state.
-- Reduce OSRM request throttle cooldown to 30 seconds and introduce a styled red warning alert box for API errors.
+---
 
-Written with the assistance of Google Gemini
-```
+### Node.js Emulation Design
 
-### Pull Request Description
-```markdown
-## Description
-This PR introduces robust road-following routing enhancements (Phase 3) along with interactive map and list selection mechanics for road trips.
-
-### Core Enhancements:
-1. **OSRM & Mapbox Routing Engines:** Integrates public OSRM and Mapbox APIs in the frontend for driving coordinate fetches (returning real road-following polylines instead of straight lines).
-2. **Douglas-Peucker Point Reduction:** Implements geometry simplification configurations in the settings panel to balance visual accuracy and local storage footprint.
-3. **Edit Road Trip Modal:** Adds a modal to modify trip metadata (name, date, status, description, and participant checkmarks) by clicking on polylines or list items.
-4. **Interactive Route Isolation:** Clicking a road trip card in the sidebar isolates its route on the Leaflet map and highlights its row with a blue border. Clicking again deselects it, redrawing all routes and zooming out to show all paths.
-5. **OSRM Throttle Cooldown & Styling:** Reduces OSRM cooldown to 30 seconds and adds a prominent red alert style warning to the status box on request errors.
-
-## Key Changes
-- **Map Isolation & Zoom:** Added toggling selection logic in `focusRoute()` and polyline filters in `updateMapMarkers()` in [docs/js/app.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/app.js).
-- **Blue Card Highlighting:** Styled selected route cards with a blue border and background.
-- **Static Seed Data:** Populated `docs/examples/family1.json` with detailed Spokane-based road trips.
-- **Unit Tests:** Added 15 new unit tests under `tests/app.test.js` verifying formatting, route grouping, and migration behavior.
-
-## Verification
-- Verified all 15 unit tests pass via `node tests/app.test.js`.
-- Confirmed correct interactive behaviors manually in Chrome at `http://localhost:8080`.
-
-> Written with the assistance of Google Gemini
+To avoid breaking [tests/app.test.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/tests/app.test.js), the files will export their items if `module.exports` exists.
+In `docs/js/app.js`:
+```javascript
+if (typeof module !== 'undefined' && module.exports) {
+    const state = require('./state.js');
+    const helpers = require('./helpers.js');
+    const map = require('./map.js');
+    const ui = require('./ui.js');
+    
+    // Mix everything into node global scope so they function as shared globals
+    Object.assign(global, state, helpers, map, ui);
+    
+    module.exports = {
+        formatDistance: global.formatDistance,
+        formatDuration: global.formatDuration,
+        groupRoutesByYearOrStatus: global.groupRoutesByYearOrStatus,
+        migrateData: global.migrateData,
+        escapeHTML: global.escapeHTML,
+        focusRoute: global.focusRoute,
+        getSelectedRouteIndex: () => global.selectedRouteIndex,
+        setSelectedRouteIndex: (val) => { global.selectedRouteIndex = val; }
+    };
+}
 ```
 
 ---
@@ -83,24 +101,7 @@ This PR introduces robust road-following routing enhancements (Phase 3) along wi
 ## Verification Plan
 
 ### Automated Tests
-- Run `node tests/app.test.js` to ensure zero regressions in logic.
+- Run `node tests/app.test.js` to ensure the modularized structures are imported and evaluated correctly without regression.
 
 ### Manual Verification
-- Deploy to localhost and verify:
-  1. Row click highlights in blue, other routes disappear, map zooms to route.
-  2. Row second click removes blue border, all routes redraw, map zooms to encompass all routes.
-  3. Clicking "Search" for routing twice within 30 seconds triggers the visual red warning alert box indicating a throttle error.
-
----
-
-# Addendum - Cache Busting Implementation Plan (Added 2026-05-23)
-
-Implement Options 1 and 4 to mitigate browser/CDN caching on static hosting platforms.
-
-## Proposed Changes
-
-### Frontend Assets
-
-#### [MODIFY] [index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html)
-- Insert Cache-Control and Pragma meta tags to `<head>` of `docs/index.html`.
-- Append version query strings `?v=1.0.1` to local script and CSS imports in `docs/index.html`.
+- Verify in browser that tabs, map markers, settings configuration, and road trip calculations continue to operate correctly with the split files.
