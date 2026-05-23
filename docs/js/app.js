@@ -41,6 +41,19 @@ localStorage.setItem('np_travel_tracker_v3', JSON.stringify(visitData));
 // --- HELPER FUNCTIONS ---
 
 /**
+ * Escapes characters in a string to prevent XSS in HTML contexts.
+ */
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+/**
  * Converts meters to miles.
  */
 function formatDistance(meters) {
@@ -1330,7 +1343,7 @@ function renderSavedRoutes() {
         const distStr = formatDistance(r.distance);
         const durStr = formatDuration(r.duration);
         const membersBadges = r.members && r.members.length > 0 
-            ? r.members.map(m => `<span class="px-1.5 py-0.5 bg-stone-100 border border-stone-200 rounded-full text-[10px] text-stone-600 font-medium">${m}</span>`).join(' ')
+            ? r.members.map(m => `<span class="px-1.5 py-0.5 bg-stone-100 border border-stone-200 rounded-full text-[10px] text-stone-600 font-medium">${escapeHTML(m)}</span>`).join(' ')
             : '<span class="text-[10px] text-stone-400 italic">No members added</span>';
 
         const badgeClass = r.status === 'planned' 
@@ -1344,21 +1357,21 @@ function renderSavedRoutes() {
         return `<div class="p-3 ${bgClass} rounded-lg flex justify-between items-start cursor-pointer transition ${shadowClass}" onclick="focusRoute(${r.originalIndex})">
             <div class="space-y-1.5 flex-1 min-w-0 pr-2">
                 <div class="flex items-center gap-2 flex-wrap">
-                    <strong class="text-stone-800 text-sm font-semibold truncate max-w-[180px]">${r.name}</strong>
-                    <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">${r.status}</span>
+                    <strong class="text-stone-800 text-sm font-semibold truncate max-w-[180px]">${escapeHTML(r.name)}</strong>
+                    <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase tracking-wider ${badgeClass}">${escapeHTML(r.status)}</span>
                 </div>
                 <div class="text-xs text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-1">
                     <span>${distStr}</span>
                     <span class="text-stone-300">•</span>
                     <span>${durStr}</span>
                     <span class="text-stone-300">•</span>
-                    <span class="uppercase font-semibold text-[10px]">${r.engine}</span>
-                    ${r.date ? `<span class="text-stone-300">•</span><span class="text-stone-500 font-medium">${r.date}</span>` : ''}
+                    <span class="uppercase font-semibold text-[10px]">${escapeHTML(r.engine)}</span>
+                    ${r.date ? `<span class="text-stone-300">•</span><span class="text-stone-500 font-medium">${escapeHTML(r.date)}</span>` : ''}
                 </div>
                 <div class="flex flex-wrap gap-1 items-center pt-0.5">
                     ${membersBadges}
                 </div>
-                ${r.description ? `<p class="text-xs text-stone-400 italic mt-1 line-clamp-2">${r.description}</p>` : ''}
+                ${r.description ? `<p class="text-xs text-stone-400 italic mt-1 line-clamp-2">${escapeHTML(r.description)}</p>` : ''}
             </div>
             <div class="flex items-center gap-1.5 flex-shrink-0">
                 <button onclick="event.stopPropagation(); openRouteEditModal(${r.originalIndex})" class="text-stone-400 hover:text-stone-600 p-1 rounded hover:bg-stone-100 transition" title="Edit trip details">
@@ -1463,9 +1476,10 @@ function openRouteEditModal(idx) {
         let html = '';
         settings.familyMembers.forEach((member) => {
             const checked = (r.members && r.members.includes(member)) ? 'checked' : '';
+            const escapedMember = escapeHTML(member);
             html += `<label class="flex items-center gap-2 p-1.5 rounded hover:bg-stone-100 cursor-pointer text-sm text-stone-700">
-                <input type="checkbox" value="${member}" ${checked} class="w-4 h-4 rounded accent-green-700">
-                <span class="truncate">${member}</span>
+                <input type="checkbox" value="${escapedMember}" ${checked} class="w-4 h-4 rounded accent-green-700">
+                <span class="truncate">${escapedMember}</span>
             </label>`;
         });
         if (settings.familyMembers.length === 0) {
@@ -1537,7 +1551,8 @@ if (typeof module !== 'undefined' && module.exports) {
         formatDistance,
         formatDuration,
         groupRoutesByYearOrStatus,
-        migrateData
+        migrateData,
+        escapeHTML
     };
 }
 
