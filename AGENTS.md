@@ -13,11 +13,10 @@ This document outlines the global rules for contributing to the Travel Tracker p
 
 ## 3. Session Management
 - **Session Directories:** At the start of every new coding session, a session directory tracking the session details must be created in the `sessions/` directory.
-- **Naming Convention:** `sessions/YYYY-MM-DD-Session/` (or `sessions/YYYY-MM-DD-Session-[suffix]/` if a duplicate is explicitly approved by the user).
-- **Single Session Per Day:** Only one session directory should be created per calendar day.
-- **Duplicate Prevention:** If a session directory for the current date already exists, the AI assistant must ask the user for permission (using the `ask_question` tool or a direct question) before creating a new duplicate session folder. If not approved, the assistant should update or append files inside the existing directory.
+- **Naming Convention:** `sessions/YYYY-MM-DD-Session-{n}/` where `{n}` is an incrementing integer starting at 1 for the first session of that day (e.g. `sessions/2026-05-23-Session-1/`, `sessions/2026-05-23-Session-2/`).
+- **New Session Trigger:** A new session folder MUST be created when starting work on a new feature branch, or when wrapping up previous work after a merged PR (ensuring that subsequent tasks are isolated and their history/plans are not overwritten).
 - **Session Directory Contents:**
-  Each session directory MUST contain the following four markdown files:
+  Each session directory MUST contain the following five markdown files:
   1. `session_summary.md`: The main summary of the session. It must follow this structured layout:
      - **Executive Summary:** A concise overview of the session, goals, and results at the top.
      - **Outcomes:** The specific results, updates, and milestones achieved.
@@ -26,6 +25,7 @@ This document outlines the global rules for contributing to the Travel Tracker p
   2. `plan.md`: The technical implementation plan created and approved for the session.
   3. `tasks.md`: The task checklist used to track progress.
   4. `diagrams.md`: Short, Mermaid-based architectural diagrams illustrating the component flows or state transitions touched during the session.
+  5. `walkthrough.md`: A summary of changes made, verification results, and manual testing evidence.
 
 ## 4. File System Boundaries
 - **Workspace Confinement:** Never modify files outside of the project's root workspace.
