@@ -1,0 +1,50 @@
+name: Deploy to docs/newsite
+
+on:
+  push:
+    branches:
+      - main
+      - feature/moving-to-angular-and-typescript
+    paths-ignore:
+      - 'docs/newsite/**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Angular app
+        run: npm run build -- --base-href /newsite/
+
+      - name: Publish to docs/newsite
+        run: |
+          # Create the directory if it doesn't exist
+          mkdir -p docs/newsite
+          
+          # Clean old files to ensure removed assets don't linger
+          rm -rf docs/newsite/*
+          
+          # Copy the Angular build output (from the application builder's browser folder)
+          cp -r dist/travel-tracker-public/browser/* docs/newsite/
+          
+          # Configure Git and commit
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/newsite
+          
+          # Only commit if there are changes
+          git diff --quiet && git diff --staged --quiet || git commit -m "Deploy Angular app to docs/newsite"
+          git push
