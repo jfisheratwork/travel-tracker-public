@@ -1,66 +1,91 @@
-# Developer Guide & Onboarding
+# Travel Tracker Developer Guide
 
-Welcome to the Family Travel Tracker development guide. This document outlines how to set up, develop, and run tests for this application.
+Welcome to the Travel Tracker project! We've migrated to a modern Angular and TypeScript stack to ensure maintainability and robust cross-platform potential. 
 
-## Prerequisites
+This guide covers everything you need to know to build, test, and debug the application.
 
-To run this project locally and execute tests, you need **Node.js** (version 18 or higher recommended).
+## 1. Getting Started
 
-### Installation via Homebrew (macOS)
-1. If you do not have Homebrew installed, install it first from [brew.sh](https://brew.sh/).
-2. Install Node.js:
-   ```bash
-   brew install node
-   ```
-3. Verify the installation:
-   ```bash
-   node --version
-   npm --version
-   ```
+Before doing anything, ensure you have the required prerequisites:
+- **Node.js**: The Javascript runtime. (Install via Homebrew: `brew install node`)
+- **Angular CLI**: The command-line interface for Angular. (Install globally: `npm install -g @angular/cli`)
 
----
-
-## Local Development Server
-
-Since the app relies on fetching local JS/CSS modules and preloaded data, running it via a local HTTP server is required (to avoid CORS policies on `file://` protocols).
-
-Start a simple local HTTP server from the repository root:
-- Using Python 3:
-  ```bash
-  python3 -m http.server 8000
-  ```
-- Or using Node's `npx`:
-  ```bash
-  npx http-server -p 8000
-  ```
-
-Open your browser and navigate to `http://localhost:8000/docs/index.html`.
-
----
-
-## Running Tests
-
-This project uses the native Node.js test runner (introduced in Node.js 18), requiring no external packages like Jest or Mocha.
-
-### Run all tests
-From the root directory, run:
+### Initial Setup
+After cloning the repository, install the exact pinned versions of our dependencies:
 ```bash
-node --test tests/*.test.js
+npm install
+```
+*Note: Do not run `npm update` or manually change versions in `package.json` unless it complies with our "n-5 days since release" pinning policy.*
+
+## 2. Build, Test, and Debug Flows
+
+### Local Development Server
+To run the app locally with Hot Module Replacement (HMR):
+```bash
+npm start
+```
+The application will be available at `http://localhost:4200`.
+
+### Debugging
+We have provided a `.vscode/launch.json` configuration for 1-click debugging in VS Code.
+1. Run `npm start`.
+2. Open the "Run and Debug" panel in VS Code.
+3. Select "Launch Chrome against localhost" (or Edge) and hit the Play button.
+You can now set breakpoints directly in your `.ts` files inside VS Code!
+
+### Testing
+We use **Vitest** for incredibly fast unit testing.
+```bash
+npm run test
 ```
 
-### Run specific test file
+### Production Build
+To build the application for production deployment:
 ```bash
-node --test tests/helpers.test.js
+npm run build
 ```
+The output will be placed in the `dist/travel-tracker-public/browser` directory.
+
+## 3. Coding Guidelines & Strict Rules
+
+### The Documentation Linking Rule
+**CRITICAL:** The first time a specific Angular API, third-party library function, or new HTML element is used in a file, you **MUST** place a comment linking directly to its official documentation above it. 
+This rule is strictly enforced to aid in learning and onboarding.
+
+Example:
+```typescript
+// DOCS: https://angular.io/api/core/Component
+@Component({
+  standalone: true,
+  selector: 'app-map',
+  templateUrl: './map.component.html',
+  styleUrls: ['./map.component.css']
+})
+export class MapComponent {
+    // DOCS: https://rxjs.dev/api/index/class/BehaviorSubject
+    private state = new BehaviorSubject(null);
+}
+```
+
+### Module Architecture: Standalone Components
+We exclusively use Angular's **Standalone Components**. We do NOT use `NgModule` (`app.module.ts`).
+Each component must explicitly declare its dependencies in its `@Component` decorator's `imports` array. This ensures easy-to-understand module boundaries.
+
+### Scoped CSS
+To reduce reliance on complex global CSS, style your components using standard `.css` files linked in the `styleUrls` array of your component.
 
 ---
 
-## Appendix: Open Source Libraries
+## Appendix A: Learning Resources
 
-The application uses the following libraries loaded via CDNs:
+If you are new to the stack, start here:
 
-| Library Name | GitHub Repository | Documentation Page | Release Notes | Description |
-|---|---|---|---|---|
-| **Leaflet Maps** | [Leaflet/Leaflet](https://github.com/Leaflet/Leaflet) | [leafletjs.com/reference](https://leafletjs.com/reference.html) | [Leaflet Releases](https://github.com/Leaflet/Leaflet/releases) | Mobile-friendly interactive maps library used to plot paths and markers. |
-| **Tailwind CSS** | [tailwindlabs/tailwindcss](https://github.com/tailwindlabs/tailwindcss) | [tailwindcss.com/docs](https://tailwindcss.com/docs) | [Tailwind Releases](https://github.com/tailwindlabs/tailwindcss/releases) | Utility-first CSS framework for layout styling. |
-| **SheetJS (xlsx)** | [SheetJS/sheetjs](https://github.com/SheetJS/sheetjs) | [docs.sheetjs.com](https://docs.sheetjs.com/) | [SheetJS Changelog](https://github.com/SheetJS/sheetjs/blob/master/CHANGELOG.md) | Parser and writer for various spreadsheet formats (Excel, CSV). |
+- **Angular Standalone Components:** [Getting started with Standalone Components](https://angular.io/guide/standalone-components)
+- **RxJS (Reactive Extensions):** [Learn RxJS Basics](https://www.learnrxjs.io/) and specifically [BehaviorSubjects](https://rxjs.dev/api/index/class/BehaviorSubject)
+- **TypeScript Strict Mode:** [Understanding strict type checking](https://www.typescriptlang.org/tsconfig#strict)
+- **Vitest:** [Vitest Guide](https://vitest.dev/guide/)
+- **Leaflet (Map Rendering):** [Leaflet Quick Start Guide](https://leafletjs.com/examples/quick-start/)
+
+---
+## Appendix B: OpenSpec Architecture
+For detailed specifications on each individual component and the data layer, please refer to the markdown files in the `openspec/` directory at the root of this project.

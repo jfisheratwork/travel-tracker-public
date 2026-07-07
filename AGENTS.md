@@ -16,20 +16,33 @@ This document outlines the global rules for contributing to the Travel Tracker p
 - **Naming Convention:** `sessions/YYYY-MM-DD-Session-{n}/` where `{n}` is an incrementing integer starting at 1 for the first session of that day (e.g. `sessions/2026-05-23-Session-1/`, `sessions/2026-05-23-Session-2/`).
 - **New Session Trigger:** A new session folder MUST be created when starting work on a new feature branch, or when wrapping up previous work after a merged PR (ensuring that subsequent tasks are isolated and their history/plans are not overwritten).
 - **Session Directory Contents & Update Frequency:**
-  Each session directory MUST contain the following four markdown files, which should only be updated when committing or pushing to optimize token usage:
+  Each session directory MUST contain the a session_summary markdown file, which should only be updated when committing or pushing to optimize token usage:
   1. `session_summary.md`: The main summary of the session. It must follow this structured layout:
      - **Executive Summary:** A concise overview of the session, goals, and results at the top.
      - **Outcomes:** The specific results, updates, and milestones achieved.
      - **Fine-grained Details:** In-depth technical breakdown of tasks completed (`Tasks Done`) and tasks remaining or postponed (`Tasks Not Done`).
      - **Prompt Log:** A list of high-level prompt summaries detailing each interaction/request during the session at the very bottom.
-  2. `plan.md`: The technical implementation plan created and approved for the session.
-  3. `tasks.md`: The task checklist used to track progress.
-  4. `walkthrough.md`: A summary of changes made, verification results, and manual testing evidence.
 
 ## 4. File System Boundaries
 - **Workspace Confinement:** Never modify files outside of the project's root workspace.
 - **Git Directory:** Do not modify files inside the `.git` directory unless running a specific git command approved by the user.
 - **System Files:** Do not touch system configuration files or user home directory files outside the repo.
+
+
+## 5. Agent Directives: LSP-First Engineering
+
+### Navigation & Discovery
+- ALWAYS prioritize LSP operations (goToDefinition, findReferences, workspaceSymbol) for code discovery.
+- NEVER use grep, glob, or read_file for navigation tasks unless LSP tools explicitly fail.
+- When refactoring, perform a symbol search (LSP) to identify all call sites before attempting any file modifications.
+
+### Token Optimization
+- Do not read full file contents to "infer" dependencies. Use LSP to inspect call hierarchies.
+- Perform refactors atomically: 1. Rename/Modify definition; 2. Update specific call sites identified by LSP; 3. Run type-check.
+- Avoid "mega-prompts" that ask for structural changes across 5+ files simultaneously. Break into modular sub-tasks.
+
+### Antigravity/Gemini Context
+- Leverage the IDE's internal symbol table. If you are unsure of a symbol's usage, call `workspaceSymbol` instead of scanning the file tree.
 
 ---
 *These rules are to be followed by all contributors and AI assistants.*
