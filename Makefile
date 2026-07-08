@@ -8,9 +8,13 @@ install:
 dev:
 	npm start
 
-# Build the Angular application for production
+# Build the Angular application for production (using default angular.json baseHref if any)
 build:
 	npm run build
+
+# Build the Angular application for local HTTP serving (overriding base-href to root)
+build-local:
+	npm run build -- --base-href /
 
 # Run unit tests via Vitest
 test:

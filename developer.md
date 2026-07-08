@@ -23,7 +23,8 @@ npm install
 For convenience, we provide a `Makefile` with common development commands:
 - `make install` - Installs NPM dependencies.
 - `make dev` - Starts the Angular dev server (same as `npm start`).
-- `make build` - Compiles the app for production.
+- `make build` - Compiles the app for production (using configured base paths).
+- `make build-local` - Compiles the app for local HTTP serving, overriding base href to `/`.
 - `make test` - Runs the Vitest test suite.
 - `make lint` - Runs ESLint.
 - `make format` - Runs Prettier to format source files.
