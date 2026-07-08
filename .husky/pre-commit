@@ -1,1 +1,17 @@
+# Skip docs/newsite check in CI
+if [ "$GITHUB_ACTIONS" != "true" ] && [ "$CI" != "true" ]; then
+  # Check if any files in docs/newsite/ are staged
+  STAGED_DOCS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^docs/newsite/' || true)
+
+  if [ -n "$STAGED_DOCS_FILES" ]; then
+    echo "❌ Error: You are trying to commit files in docs/newsite/ locally."
+    echo "The docs/newsite directory is automatically built and committed by GitHub Actions."
+    echo "Please unstage these files using: git restore --staged docs/newsite/"
+    echo ""
+    echo "Staged files:"
+    echo "$STAGED_DOCS_FILES"
+    exit 1
+  fi
+fi
+
 npm test

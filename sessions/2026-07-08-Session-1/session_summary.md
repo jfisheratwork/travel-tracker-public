@@ -21,6 +21,7 @@ Transformed the Road Trip planning interface from a static sidebar form into a h
 - Updated `walkthrough.md` with redesign details.
 - Added a `make generate-env` step to `.github/workflows/deploy.yml` to resolve module not found errors.
 - Created a `build-action` target in the `Makefile` to simulate the GitHub Actions pipeline locally.
+- Added a Husky pre-commit hook to prevent accidental local commits to the `docs/newsite/` build output directory.
 
 ### Tasks Not Done
 - None. All requested UX features for the route builder are completed.
@@ -36,3 +37,4 @@ Transformed the Road Trip planning interface from a static sidebar form into a h
 - "build failed in github actions...check our git deploy action"
 - "create a makefile entry that simulates the github action buiild"
 - "push that to main lets try again"
+- "seems docs/newsite should be blocked from being committed localy. would use .gitignore but that would break our github action. maybe a precommit hook local only"
