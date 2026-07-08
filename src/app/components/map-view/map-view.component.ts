@@ -204,7 +204,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
         try {
           const options = await firstValueFrom(this.routingService.getRoutes(selectedRoute.engine, selectedRoute.waypoints));
           if (options && options.length > 0) {
-            coords = this.reduceCoordinates(options[0].route, routeReduction);
+            coords = options[0].route;
             this.routeCoordinatesCache[selectedRoute.timestamp] = coords;
           }
         } catch (e) {
@@ -230,7 +230,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
           try {
             const options = await firstValueFrom(this.routingService.getRoutes(route.engine, route.waypoints));
             if (options && options.length > 0) {
-              coords = this.reduceCoordinates(options[0].route, routeReduction);
+              coords = options[0].route;
               this.routeCoordinatesCache[route.timestamp] = coords;
             }
           } catch (e) {
