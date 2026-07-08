@@ -34,6 +34,9 @@ export class RouteBuilderComponent implements OnInit {
   endQuery = '';
   stopsQueries: string[] = [];
 
+  familyMembers: any[] = [];
+  selectedMembers: string[] = [];
+
   // Routing State
   isCalculating = false;
   routeOptions: RouteOption[] = [];
@@ -54,7 +57,28 @@ export class RouteBuilderComponent implements OnInit {
       this.savedRoutes = settings.savedRoutes || [];
       this.routingEngine = settings.routingEngine;
       this.routeReduction = settings.routeReduction ?? 0.01;
+      this.familyMembers = settings.familyMembers || [];
+
+      // Auto-populate active hometown as start query if empty
+      const activeHometown =
+        settings.hometowns.length > 0 ? settings.hometowns[settings.hometowns.length - 1] : null;
+      if (activeHometown && !this.startQuery && !this.isEditing) {
+        this.startQuery = activeHometown.name;
+      }
     });
+  }
+
+  toggleMember(name: string) {
+    const idx = this.selectedMembers.indexOf(name);
+    if (idx > -1) {
+      this.selectedMembers.splice(idx, 1);
+    } else {
+      this.selectedMembers.push(name);
+    }
+  }
+
+  loadAllRoutes() {
+    this.stateService.setSelectedRoute(null);
   }
 
   addStop() {
@@ -138,7 +162,7 @@ export class RouteBuilderComponent implements OnInit {
         id: 'preview',
         name: 'Preview',
         description: '',
-        members: [],
+        members: this.selectedMembers,
         status: 'planned',
         engine: this.routingEngine,
         distance: option.distance,
@@ -165,7 +189,7 @@ export class RouteBuilderComponent implements OnInit {
       description: this.description,
       startDate: this.startDate,
       endDate: this.endDate,
-      members: [], // to be expanded later if needed
+      members: [...this.selectedMembers],
       status: 'planned',
       engine: this.routingEngine,
       distance: option.distance,
@@ -197,6 +221,7 @@ export class RouteBuilderComponent implements OnInit {
     this.description = route.description || '';
     this.startDate = route.startDate || '';
     this.endDate = route.endDate || '';
+    this.selectedMembers = route.members ? [...route.members] : [];
     this.startQuery = route.startQuery;
     this.endQuery = route.endQuery;
     this.stopsQueries = [...route.stopsQueries];
@@ -230,7 +255,14 @@ export class RouteBuilderComponent implements OnInit {
     this.description = '';
     this.startDate = '';
     this.endDate = '';
-    this.startQuery = '';
+    this.selectedMembers = [];
+
+    // reset startQuery to active hometown if applicable
+    const settings = (this.stateService as any).settingsSubject.getValue();
+    const activeHometown =
+      settings.hometowns.length > 0 ? settings.hometowns[settings.hometowns.length - 1] : null;
+    this.startQuery = activeHometown ? activeHometown.name : '';
+
     this.endQuery = '';
     this.stopsQueries = [];
     this.routeOptions = [];

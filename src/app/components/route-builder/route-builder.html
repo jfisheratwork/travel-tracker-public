@@ -22,6 +22,18 @@
     </div>
   </div>
 
+  <div class="form-group">
+    <label>Who Participated?</label>
+    <div class="members-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
+      <label *ngFor="let member of familyMembers" style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
+        <input type="checkbox" 
+               [checked]="selectedMembers.includes(member.name)"
+               (change)="toggleMember(member.name)" />
+        {{ member.name }}
+      </label>
+    </div>
+  </div>
+
   <div class="locations-section">
     <div class="form-group">
       <label>Start Location *</label>
@@ -78,9 +90,20 @@
   <hr />
 
   <div class="saved-routes-section">
-    <h3>Saved Road Trips</h3>
-    <div class="saved-route-card" *ngFor="let route of savedRoutes">
-      <div class="route-info" (click)="stateService.setSelectedRoute(route)">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Saved Road Trips</h3>
+      <button class="secondary-btn" (click)="loadAllRoutes()">
+        🚗 Load All Routes on Map
+      </button>
+    </div>
+    <div class="saved-route-card cursor-pointer border rounded-lg p-3 transition-all duration-200 hover:bg-yellow-50 hover:border-yellow-400 bg-white" 
+         *ngFor="let route of savedRoutes"
+         [class.border-yellow-500]="(stateService.selectedRoute$ | async)?.id === route.id"
+         [class.border-stone-200]="(stateService.selectedRoute$ | async)?.id !== route.id"
+         [class.bg-yellow-50]="(stateService.selectedRoute$ | async)?.id === route.id"
+         [class.border-2]="(stateService.selectedRoute$ | async)?.id === route.id"
+         (click)="stateService.setSelectedRoute(route)">
+      <div class="route-info">
         <strong>{{ route.name }}</strong>
         <div class="route-meta">
           {{ formatDistance(route.distance) }} miles

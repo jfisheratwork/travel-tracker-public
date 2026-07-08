@@ -15,7 +15,7 @@ describe('RouteBuilderComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RouteBuilderComponent, HttpClientTestingModule, ReactiveFormsModule],
-      providers: [RoutingService, LocalStorageService, StateService]
+      providers: [RoutingService, LocalStorageService, StateService],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RouteBuilderComponent);

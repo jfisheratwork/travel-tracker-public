@@ -8,7 +8,8 @@ export enum AppErrorType {
 }
 
 export const AppErrorMessages: Record<AppErrorType, string> = {
-  [AppErrorType.NETWORK_TIMEOUT]: 'The network request timed out. Please check your connection and try again.',
+  [AppErrorType.NETWORK_TIMEOUT]:
+    'The network request timed out. Please check your connection and try again.',
   [AppErrorType.UNAUTHORIZED]: 'You do not have permission to access this resource.',
   [AppErrorType.NOT_FOUND]: 'The requested resource was not found.',
   [AppErrorType.SERVER_ERROR]: 'The server encountered an error. Please try again later.',

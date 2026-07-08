@@ -1,10 +1,11 @@
 import { HttpInterceptorFn, HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { timeout, retry, catchError } from 'rxjs/operators';
+import { timeout, retry, catchError, finalize } from 'rxjs/operators';
 import { throwError, timer, Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from '../services/logger.service';
 import { ToastService } from '../services/toast.service';
+import { StateService } from '../../services/state.service';
 import { AppErrorType, AppErrorMessages } from '../models/app-error.model';
 
 export const networkInterceptor: HttpInterceptorFn = (req, next) => {
@@ -14,6 +15,9 @@ export const networkInterceptor: HttpInterceptorFn = (req, next) => {
   const MAX_RETRIES = 2;
   const logger = inject(LoggerService);
   const toastService = inject(ToastService);
+  const stateService = inject(StateService);
+
+  stateService.setLoading(true);
 
   return next(req).pipe(
     timeout(TIMEOUT_MS),
@@ -32,7 +36,7 @@ export const networkInterceptor: HttpInterceptorFn = (req, next) => {
         return timer(1000 * retryCount);
       },
     }),
-      catchError((error: any) => {
+    catchError((error: any) => {
       logger.error('Network request failed permanently after retries.', error);
 
       let type = AppErrorType.UNKNOWN;
@@ -54,6 +58,9 @@ export const networkInterceptor: HttpInterceptorFn = (req, next) => {
       toastService.showError(appError);
 
       return throwError(() => appError);
+    }),
+    finalize(() => {
+      stateService.setLoading(false);
     }),
   ) as any;
 };
