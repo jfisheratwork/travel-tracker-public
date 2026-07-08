@@ -79,6 +79,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
         // Default zoom to active hometown
         if (this.map) {
           setTimeout(() => {
+            if (!this.map || typeof this.map.invalidateSize !== 'function') return;
             this.map.invalidateSize();
             const activeHometown =
               settings.hometowns.length > 0
