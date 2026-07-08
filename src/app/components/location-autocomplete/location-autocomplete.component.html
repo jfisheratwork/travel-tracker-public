@@ -1,0 +1,22 @@
+<div class="relative w-full h-full flex flex-col">
+  <label *ngIf="label" class="text-[10px] uppercase tracking-wider font-bold text-stone-500 block">{{ label }}</label>
+  <input 
+    type="text" 
+    [ngModel]="query" 
+    (ngModelChange)="onQueryChange($event)"
+    (focus)="onFocus()"
+    [placeholder]="placeholder" 
+    class="w-full border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none bg-white flex-1"
+    [ngClass]="{'mt-1': label}"
+  />
+  
+  <div *ngIf="showDropdown" class="absolute top-[100%] left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+    <div 
+      *ngFor="let suggestion of suggestions" 
+      (click)="selectSuggestion(suggestion)" 
+      class="px-3 py-2 text-sm hover:bg-stone-50 cursor-pointer text-stone-700 border-b border-stone-100 last:border-0 truncate"
+      [title]="suggestion.name">
+      {{ suggestion.name }}
+    </div>
+  </div>
+</div>
