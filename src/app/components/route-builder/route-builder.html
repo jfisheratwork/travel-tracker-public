@@ -1,120 +1,250 @@
-<div class="route-builder-container">
-  <h2>{{ isEditing ? 'Edit Road Trip' : 'Plan a Road Trip' }}</h2>
-
-  <div class="form-group">
-    <label>Trip Name *</label>
-    <input type="text" [(ngModel)]="name" placeholder="e.g. Summer West Coast Trip" required />
-  </div>
-
-  <div class="form-group">
-    <label>Notes</label>
-    <textarea [(ngModel)]="description" placeholder="Any special instructions..."></textarea>
-  </div>
-
-  <div class="form-row">
-    <div class="form-group">
-      <label>Start Date</label>
-      <input type="date" [(ngModel)]="startDate" />
-    </div>
-    <div class="form-group">
-      <label>End Date</label>
-      <input type="date" [(ngModel)]="endDate" />
-    </div>
-  </div>
-
-  <div class="form-group">
-    <label>Who Participated?</label>
-    <div class="members-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem;">
-      <label *ngFor="let member of familyMembers" style="display: flex; align-items: center; gap: 0.5rem; font-weight: normal;">
-        <input type="checkbox" 
-               [checked]="selectedMembers.includes(member.name)"
-               (change)="toggleMember(member.name)" />
-        {{ member.name }}
-      </label>
-    </div>
-  </div>
-
-  <div class="locations-section">
-    <div class="form-group">
-      <label>Start Location *</label>
-      <input type="text" [(ngModel)]="startQuery" placeholder="e.g. Spokane, WA" />
-    </div>
-
-    <div cdkDropList class="stops-list" (cdkDropListDropped)="drop($event)">
-      <div
-        class="stop-box"
-        *ngFor="let stop of stopsQueries; let i = index; trackBy: trackByIndex"
-        cdkDrag
-      >
-        <div class="drag-handle" cdkDragHandle>☰</div>
-        <input type="text" [(ngModel)]="stopsQueries[i]" placeholder="Stop Location" />
-        <button class="danger-btn" (click)="removeStop(i)">X</button>
+<div class="route-builder-container relative h-full flex flex-col">
+  
+  <!-- Inline Form Accordion -->
+  <div *ngIf="isFormExpanded" class="form-accordion bg-stone-50 border-b border-stone-200 flex-shrink-0 shadow-inner">
+    <div class="p-4 md:p-5">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold text-stone-800">{{ isEditing ? 'Edit Road Trip' : 'Plan a Road Trip' }}</h2>
+        <button (click)="closeModal()" class="text-stone-400 hover:text-stone-600 p-1 rounded hover:bg-stone-200 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
       </div>
-    </div>
 
-    <button class="secondary-btn" (click)="addStop()">+ Add Stop</button>
-
-    <div class="form-group" style="margin-top: 1rem">
-      <label>End Location *</label>
-      <input type="text" [(ngModel)]="endQuery" placeholder="e.g. Seattle, WA" />
-    </div>
-  </div>
-
-  <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
-
-  <button class="primary-btn" (click)="calculateRoute()" [disabled]="isCalculating">
-    {{ isCalculating ? 'Calculating...' : 'Calculate Route' }}
-  </button>
-
-  <div class="route-options" *ngIf="routeOptions.length > 0">
-    <h3>Select a Route</h3>
-    <div
-      class="option-card"
-      *ngFor="let opt of routeOptions; let i = index"
-      [class.selected]="selectedOptionIndex === i"
-      (click)="selectedOptionIndex = i; previewSelectedOption()"
-    >
-      <div class="option-header">Option {{ i + 1 }}</div>
-      <div class="option-details">
-        Distance: {{ formatDistance(opt.distance) }} miles<br />
-        Duration: {{ formatDuration(opt.duration) }} hrs
-      </div>
-    </div>
-
-    <div class="actions">
-      <button class="primary-btn" (click)="saveRoute()">Save Trip</button>
-      <button class="secondary-btn" (click)="cancelEdit()">Cancel</button>
-    </div>
-  </div>
-
-  <hr />
-
-  <div class="saved-routes-section">
-    <div style="display: flex; justify-content: space-between; align-items: center;">
-      <h3>Saved Road Trips</h3>
-      <button class="secondary-btn" (click)="loadAllRoutes()">
-        🚗 Load All Routes on Map
-      </button>
-    </div>
-    <div class="saved-route-card cursor-pointer border rounded-lg p-3 transition-all duration-200 hover:bg-yellow-50 hover:border-yellow-400 bg-white" 
-         *ngFor="let route of savedRoutes"
-         [class.border-yellow-500]="(stateService.selectedRoute$ | async)?.id === route.id"
-         [class.border-stone-200]="(stateService.selectedRoute$ | async)?.id !== route.id"
-         [class.bg-yellow-50]="(stateService.selectedRoute$ | async)?.id === route.id"
-         [class.border-2]="(stateService.selectedRoute$ | async)?.id === route.id"
-         (click)="stateService.setSelectedRoute(route)">
-      <div class="route-info">
-        <strong>{{ route.name }}</strong>
-        <div class="route-meta">
-          {{ formatDistance(route.distance) }} miles
-          <span *ngIf="route.startDate"> • {{ route.startDate }}</span>
+      <!-- Form row 1: Ultra Compact Name, Status, Dates -->
+      <div class="flex flex-wrap gap-3 mb-3 items-end">
+        <div class="flex-1 min-w-[140px]">
+          <label class="text-xs font-semibold text-stone-600">Trip Name *</label>
+          <input type="text" [(ngModel)]="name" placeholder="e.g. Summer Trip" required class="w-full mt-1 border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+        </div>
+        <div class="w-28">
+          <label class="text-xs font-semibold text-stone-600">Status</label>
+          <select [(ngModel)]="status" class="w-full mt-1 border border-stone-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:outline-none focus:border-green-600">
+            <option value="planned">Planned</option>
+            <option value="completed">Completed</option>
+          </select>
+        </div>
+        <div class="w-32">
+          <label class="text-xs font-semibold text-stone-600">Start Date</label>
+          <input type="date" [(ngModel)]="startDate" (change)="onStartDateChange()" class="w-full mt-1 border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+        </div>
+        <div class="w-32">
+          <label class="text-xs font-semibold text-stone-600">End Date</label>
+          <input type="date" [(ngModel)]="endDate" class="w-full mt-1 border border-stone-300 rounded-lg px-2 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
         </div>
       </div>
-      <div class="route-actions">
-        <button class="secondary-btn" (click)="editRoute(route)">Edit</button>
-        <button class="danger-btn" (click)="deleteRoute(route.id)">Delete</button>
+
+      <!-- Participants Autocomplete -->
+      <div class="mb-3">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-semibold text-stone-600">Who Participated?</label>
+          <button class="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wider" (click)="selectAllMembers()">Select All</button>
+        </div>
+        
+        <div class="border border-stone-300 rounded-lg p-1 mt-1 bg-white focus-within:border-green-600 focus-within:ring-1 focus-within:ring-green-600 flex flex-wrap gap-1 items-center relative">
+          <!-- Selected Chips -->
+          <span *ngFor="let member of selectedMembers" class="px-2 py-0.5 bg-stone-100 border border-stone-200 rounded-full text-[10px] font-medium text-stone-700 flex items-center gap-1">
+            {{ member }}
+            <button class="text-stone-400 hover:text-red-500 leading-none" (click)="toggleMember(member)">✕</button>
+          </span>
+          <!-- Autocomplete Input -->
+          <input type="text" [(ngModel)]="participantSearchQuery" placeholder="Add participants..." class="flex-1 min-w-[120px] outline-none text-xs p-1 bg-transparent border-none" />
+          
+          <!-- Dropdown -->
+          <div *ngIf="participantSearchQuery && filteredAvailableMembers.length > 0" class="absolute top-full left-0 right-0 mt-1 bg-white border border-stone-200 rounded-lg shadow-lg z-10 max-h-40 overflow-y-auto">
+            <div *ngFor="let m of filteredAvailableMembers" (click)="toggleMember(m.name)" class="px-3 py-2 text-sm hover:bg-stone-100 cursor-pointer text-stone-700">
+              {{ m.name }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden Notes Toggle -->
+      <div class="mb-4">
+        <button *ngIf="!showNotes" (click)="showNotes = true" class="text-xs font-bold text-stone-500 hover:text-stone-700 flex items-center gap-1 transition">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          Add Notes
+        </button>
+        
+        <div *ngIf="showNotes" class="animate-in slide-in-from-top-2 fade-in duration-200">
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-semibold text-stone-600">Notes</label>
+            <button (click)="showNotes = false; description = ''" class="text-[10px] text-red-400 hover:text-red-600 uppercase tracking-wider font-bold">Remove Notes</button>
+          </div>
+          <textarea [(ngModel)]="description" placeholder="Any special instructions..." class="w-full h-12 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none resize-none"></textarea>
+        </div>
+      </div>
+
+      <hr class="my-4 border-stone-200" />
+
+      <!-- Locations -->
+      <div class="locations-section mb-4">
+        <div class="flex gap-3 mb-2">
+          <div class="flex-1">
+            <label class="text-[10px] uppercase tracking-wider font-bold text-stone-500">Start Location *</label>
+            <input type="text" [(ngModel)]="startQuery" placeholder="e.g. Spokane, WA" class="w-full mt-1 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+          </div>
+          <div class="flex-1">
+            <label class="text-[10px] uppercase tracking-wider font-bold text-stone-500">End Location *</label>
+            <input type="text" [(ngModel)]="endQuery" placeholder="e.g. Seattle, WA" class="w-full mt-1 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+          </div>
+        </div>
+
+        <div class="bg-white border border-stone-200 rounded-lg p-3">
+          <label class="text-[10px] uppercase tracking-wider font-bold text-stone-500 block mb-2">Stops Along the Way</label>
+          <div cdkDropList class="stops-list mb-2" (cdkDropListDropped)="drop($event)">
+            <div class="flex items-center gap-2 mb-2" *ngFor="let stop of stopsQueries; let i = index; trackBy: trackByIndex" cdkDrag>
+              <div class="text-stone-300 hover:text-stone-500 cursor-grab px-1 transition" cdkDragHandle>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+              </div>
+              <input type="text" [(ngModel)]="stopsQueries[i]" placeholder="Stop Location" class="flex-1 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+              <button class="text-stone-400 hover:text-red-500 p-1.5 transition" (click)="removeStop(i)">✕</button>
+            </div>
+            <div *ngIf="stopsQueries.length === 0" class="text-xs text-stone-400 italic mb-2">No stops added yet.</div>
+          </div>
+          <button class="text-xs font-bold text-blue-600 hover:text-blue-800 transition flex items-center gap-1" (click)="addStop()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+            Add Stop
+          </button>
+        </div>
+      </div>
+
+      <div class="text-red-600 text-sm mb-3 font-medium" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2">
+        <ng-container *ngIf="!isEditing">
+          <button class="primary-btn flex-1 py-2 text-sm" (click)="calculateRoute()" [disabled]="isCalculating">
+            {{ isCalculating ? 'Calculating...' : 'Calculate Route' }}
+          </button>
+        </ng-container>
+
+        <ng-container *ngIf="isEditing">
+          <button class="primary-btn flex-1 py-2 text-sm" (click)="saveRoute()">Save Changes</button>
+          <button class="secondary-btn flex-1 py-2 text-sm border-blue-600 text-blue-600 hover:bg-blue-50" (click)="calculateRoute()" [disabled]="isCalculating">
+            {{ isCalculating ? 'Recalculating...' : 'Recalculate Route' }}
+          </button>
+        </ng-container>
+
+        <button class="secondary-btn py-2 px-6 text-sm" (click)="closeModal()">Cancel</button>
+      </div>
+
+      <!-- Route Options -->
+      <div class="mt-4 p-4 bg-white rounded-lg border border-stone-200 shadow-sm" *ngIf="routeOptions.length > 0">
+        <h3 class="text-sm font-bold text-stone-700 mb-2">Select a Route</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+          <div class="p-3 rounded-lg border cursor-pointer hover:border-green-500 bg-stone-50 transition"
+               *ngFor="let opt of routeOptions; let i = index"
+               [class.border-green-600]="selectedOptionIndex === i"
+               [class.bg-green-50]="selectedOptionIndex === i"
+               [class.ring-2]="selectedOptionIndex === i"
+               [class.ring-green-600]="selectedOptionIndex === i"
+               (click)="selectedOptionIndex = i; previewSelectedOption()">
+            <div class="font-bold text-sm mb-0.5 text-stone-800">Option {{ i + 1 }}</div>
+            <div class="text-xs text-stone-600 font-medium">
+              {{ formatDistance(opt.distance) }} miles &bull; {{ formatDuration(opt.duration) }} hrs
+            </div>
+          </div>
+        </div>
+
+        <button class="primary-btn w-full py-2.5 text-sm font-bold" (click)="saveRoute()">{{ isEditing ? 'Save Changes' : 'Save Trip' }}</button>
       </div>
     </div>
-    <div *ngIf="savedRoutes.length === 0" class="empty-state">No saved road trips yet.</div>
   </div>
+
+  <div class="saved-routes-section flex-1 overflow-y-auto p-4" *ngIf="!isFormExpanded">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h3 class="m-0 text-lg font-bold text-stone-800">Saved Road Trips</h3>
+      <div class="flex gap-2">
+        <button class="secondary-btn active:scale-95 active:bg-stone-300 transition text-xs px-2 py-1" (click)="loadAllRoutes()">
+          🚗 Load All Routes
+        </button>
+        <button class="primary-btn active:scale-95 transition text-xs px-2 py-1" (click)="isEditing = false; openModal()">
+          + Plan Trip
+        </button>
+      </div>
+    </div>
+    <ng-container *ngIf="savedRoutes.length === 0">
+      <div class="empty-state p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No saved road trips yet.</div>
+    </ng-container>
+
+    <ng-template #routeItemTemplate let-route="route">
+      <div class="p-3 bg-white border border-stone-200 hover:bg-stone-50 rounded-lg flex justify-between items-start cursor-pointer transition shadow-sm mb-2"
+           [class.bg-blue-50]="(stateService.selectedRoute$ | async)?.id === route.id"
+           [class.border-blue-500]="(stateService.selectedRoute$ | async)?.id === route.id"
+           [class.border-2]="(stateService.selectedRoute$ | async)?.id === route.id"
+           (click)="stateService.setSelectedRoute(route)">
+        <div class="space-y-1.5 flex-1 min-w-0 pr-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                <strong class="text-stone-800 text-sm font-semibold truncate max-w-[180px]">{{ route.name }}</strong>
+                <span class="px-2 py-0.5 border rounded-full text-[10px] font-bold uppercase tracking-wider"
+                      [ngClass]="route.status === 'planned' ? 'bg-blue-100 text-blue-700 border-blue-200' : 'bg-green-100 text-green-700 border-green-200'">
+                  {{ route.status }}
+                </span>
+            </div>
+            <div class="text-xs text-stone-500 flex flex-wrap items-center gap-x-2 gap-y-1">
+                <span>{{ formatDistance(route.distance) }} miles</span>
+                <span class="text-stone-300">•</span>
+                <span>{{ formatDuration(route.duration) }} hrs</span>
+                <span class="text-stone-300">•</span>
+                <span class="uppercase font-semibold text-[10px]">{{ route.engine }}</span>
+                <ng-container *ngIf="route.startDate">
+                  <span class="text-stone-300">•</span>
+                  <span class="text-stone-500 font-medium">{{ route.startDate }}{{ route.endDate ? ' to ' + route.endDate : '' }}</span>
+                </ng-container>
+            </div>
+            <div class="flex flex-wrap gap-1 items-center pt-0.5">
+                <ng-container *ngIf="route.members?.length > 0; else noMembers">
+                  <span *ngFor="let member of route.members" class="px-1.5 py-0.5 bg-stone-100 border border-stone-200 rounded-full text-[10px] text-stone-600 font-medium">
+                    {{ member }}
+                  </span>
+                </ng-container>
+                <ng-template #noMembers>
+                  <span class="text-[10px] text-stone-400 italic">No members added</span>
+                </ng-template>
+            </div>
+            <p *ngIf="route.description" class="text-xs text-stone-400 italic mt-1 line-clamp-2">{{ route.description }}</p>
+        </div>
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button (click)="$event.stopPropagation(); editRoute(route)" class="text-stone-400 hover:text-stone-600 p-1 rounded hover:bg-stone-100 transition" title="Edit trip details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </button>
+            <button (click)="$event.stopPropagation(); deleteRoute(route.id)" class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-stone-100 transition" title="Delete route">✕</button>
+        </div>
+      </div>
+    </ng-template>
+
+    <div *ngIf="plannedRoutes.length > 0" class="mb-4">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-blue-600 mb-2 mt-1">Planned Trips ({{ plannedRoutes.length }})</h4>
+      <div class="flex flex-col">
+        <ng-container *ngFor="let route of plannedRoutes">
+          <ng-container *ngTemplateOutlet="routeItemTemplate; context: { route: route }"></ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngFor="let year of completedByYearKeys" class="mb-4 border-b border-stone-100 pb-3 last:border-0">
+      <div (click)="toggleYear(year)" class="flex justify-between items-center cursor-pointer select-none py-1 hover:text-green-700 transition-colors">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-green-700 flex items-center gap-1.5">
+            <span class="text-[10px] text-stone-400 font-normal">{{ isYearCollapsed(year) ? '▶' : '▼' }}</span>
+            Completed Trips - {{ year }}
+        </h4>
+        <span class="text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full shadow-sm">{{ getCompletedRoutesForYear(year).length }}</span>
+      </div>
+      <div *ngIf="!isYearCollapsed(year)" class="flex flex-col mt-2 pl-2 border-l border-stone-200/50">
+        <ng-container *ngFor="let route of getCompletedRoutesForYear(year)">
+          <ng-container *ngTemplateOutlet="routeItemTemplate; context: { route: route }"></ng-container>
+        </ng-container>
+      </div>
+    </div>
+
+    <div *ngIf="completedUndated.length > 0" class="mb-4">
+      <h4 class="text-xs font-bold uppercase tracking-wider text-stone-500 mb-2 mt-1">Completed Trips - Undated ({{ completedUndated.length }})</h4>
+      <div class="flex flex-col">
+        <ng-container *ngFor="let route of completedUndated">
+          <ng-container *ngTemplateOutlet="routeItemTemplate; context: { route: route }"></ng-container>
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
 </div>
