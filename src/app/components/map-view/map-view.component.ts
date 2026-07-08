@@ -9,30 +9,31 @@ import * as L from 'leaflet';
   selector: 'app-map-view',
   standalone: true,
   templateUrl: './map-view.component.html',
-  styleUrls: ['./map-view.component.css']
+  styleUrls: ['./map-view.component.css'],
 })
 export class MapViewComponent implements OnInit, OnDestroy {
   private map!: L.Map;
   private destroy$ = new Subject<void>();
-  
+
   // Dummy markers for demonstration. In a real app, these come from another service.
-  private allMarkers: { lat: number, lng: number, title: string }[] = [
+  private allMarkers: { lat: number; lng: number; title: string }[] = [
     { lat: 37.8651, lng: -119.5383, title: 'Yosemite' },
     { lat: 36.0544, lng: -112.1401, title: 'Grand Canyon' },
-    { lat: 44.4280, lng: -110.5885, title: 'Yellowstone' },
+    { lat: 44.428, lng: -110.5885, title: 'Yellowstone' },
   ];
   private currentLayerGroup!: L.LayerGroup;
 
-  constructor(private stateService: StateService, private el: ElementRef) {}
+  constructor(
+    private stateService: StateService,
+    private el: ElementRef,
+  ) {}
 
   ngOnInit() {
     this.initMap();
-    
-    this.stateService.searchTerm$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(term => {
-        this.filterMarkers(term);
-      });
+
+    this.stateService.searchTerm$.pipe(takeUntil(this.destroy$)).subscribe((term) => {
+      this.filterMarkers(term);
+    });
   }
 
   private initMap() {
@@ -42,7 +43,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
-      attribution: '© OpenStreetMap'
+      attribution: '© OpenStreetMap',
     }).addTo(this.map);
 
     this.currentLayerGroup = L.layerGroup().addTo(this.map);
@@ -50,13 +51,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   private filterMarkers(term: string) {
     if (!this.map) return;
-    
+
     this.currentLayerGroup.clearLayers();
-    
+
     const lowerTerm = term.toLowerCase();
-    const filtered = this.allMarkers.filter(m => m.title.toLowerCase().includes(lowerTerm));
-    
-    filtered.forEach(m => {
+    const filtered = this.allMarkers.filter((m) => m.title.toLowerCase().includes(lowerTerm));
+
+    filtered.forEach((m) => {
       L.marker([m.lat, m.lng]).bindPopup(m.title).addTo(this.currentLayerGroup);
     });
   }

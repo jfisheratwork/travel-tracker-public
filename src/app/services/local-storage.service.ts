@@ -2,39 +2,59 @@
 import { Injectable } from '@angular/core';
 // DOCS: https://rxjs.dev/api/index/class/BehaviorSubject
 import { BehaviorSubject } from 'rxjs';
+import { StateService } from './state.service';
+import { AppSettings, DEFAULT_SETTINGS } from '../models/settings.model';
 
-/**
- * OpenSpec: 01 LocalStorage & State Service
- * This is the reference implementation demonstrating strict doc links and reactive state.
- */
 @Injectable({
   providedIn: 'root',
 })
 export class LocalStorageService {
-  // State for the currently active tab in the UI
   private activeTabSubject = new BehaviorSubject<string>('parks');
-  // DOCS: https://rxjs.dev/api/index/function/asObservable
   public activeTab$ = this.activeTabSubject.asObservable();
 
-  // State for the global search term
-  private searchTermSubject = new BehaviorSubject<string>('');
-  public searchTerm$ = this.searchTermSubject.asObservable();
-
-  constructor() {
+  constructor(private stateService: StateService) {
     this.loadInitialState();
+
+    // Subscribe to settings changes from state service and sync them to local storage
+    this.stateService.settings$.subscribe((settings: AppSettings) => {
+      // Don't save if it's the exact DEFAULT_SETTINGS instance on startup
+      // Actually, saving on every emit is fine, it keeps storage in sync.
+      try {
+        localStorage.setItem('np_travel_settings', JSON.stringify(settings));
+      } catch (e) {
+        console.error('Failed to save settings to localStorage', e);
+      }
+    });
   }
 
   private loadInitialState(): void {
-    // DOCS: https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage
     const savedSettings = localStorage.getItem('np_travel_settings');
     if (savedSettings) {
       try {
-        // DOCS: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/parse
         const parsed = JSON.parse(savedSettings);
-        // We will expand on deserialization as per openspec later.
+
+        // Merge with defaults to ensure all properties exist
+        // Note: The legacy app stored strings in familyMembers, we need to handle migration
+        // if they are strings.
+        const migratedSettings: AppSettings = {
+          ...DEFAULT_SETTINGS,
+          ...parsed,
+          familyMembers: Array.isArray(parsed.familyMembers)
+            ? parsed.familyMembers.map((member: unknown) =>
+                typeof member === 'string'
+                  ? { id: crypto.randomUUID(), name: member, color: this.getRandomColor() }
+                  : member,
+              )
+            : [],
+        };
+
+        this.stateService.updateSettings(migratedSettings);
       } catch (e) {
         console.error('Failed to parse saved settings', e);
+        this.stateService.updateSettings(DEFAULT_SETTINGS);
       }
+    } else {
+      this.stateService.updateSettings(DEFAULT_SETTINGS);
     }
   }
 
@@ -42,7 +62,19 @@ export class LocalStorageService {
     this.activeTabSubject.next(tab);
   }
 
-  public setSearchTerm(term: string): void {
-    this.searchTermSubject.next(term);
+  private getRandomColor(): string {
+    const palette = [
+      'blue',
+      'pink',
+      'orange',
+      'purple',
+      'teal',
+      'red',
+      'green',
+      'yellow',
+      'indigo',
+      'cyan',
+    ];
+    return palette[Math.floor(Math.random() * palette.length)];
   }
 }

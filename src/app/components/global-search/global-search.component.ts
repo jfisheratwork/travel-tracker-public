@@ -10,7 +10,7 @@ import { StateService } from '../../services/state.service';
   standalone: true,
   imports: [ReactiveFormsModule],
   templateUrl: './global-search.component.html',
-  styleUrls: ['./global-search.component.css']
+  styleUrls: ['./global-search.component.css'],
 })
 export class GlobalSearchComponent implements OnDestroy {
   searchControl = new FormControl('');
@@ -18,11 +18,7 @@ export class GlobalSearchComponent implements OnDestroy {
 
   constructor(private stateService: StateService) {
     this.searchControl.valueChanges
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
       .subscribe((term) => {
         this.stateService.setSearchTerm(term || '');
       });

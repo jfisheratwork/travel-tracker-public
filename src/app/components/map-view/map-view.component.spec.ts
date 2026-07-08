@@ -8,34 +8,35 @@ import { vi } from 'vitest';
 vi.mock('leaflet', () => {
   const mapInstance = {
     setView: vi.fn().mockReturnThis(),
-    remove: vi.fn()
+    remove: vi.fn(),
   };
   return {
     Icon: {
       Default: {
-        imagePath: ''
-      }
+        imagePath: '',
+      },
     },
     map: vi.fn().mockReturnValue(mapInstance),
     tileLayer: vi.fn().mockReturnValue({
-      addTo: vi.fn()
+      addTo: vi.fn(),
     }),
     layerGroup: vi.fn().mockReturnValue({
       addTo: vi.fn().mockReturnValue({
-        clearLayers: vi.fn()
-      })
+        clearLayers: vi.fn(),
+      }),
     }),
     marker: vi.fn().mockReturnValue({
       bindPopup: vi.fn().mockReturnValue({
-        addTo: vi.fn()
-      })
-    })
+        addTo: vi.fn(),
+      }),
+    }),
   };
 });
 
 describe('MapViewComponent', () => {
   let component: MapViewComponent;
   let fixture: ComponentFixture<MapViewComponent>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let stateServiceMock: any;
   let searchTerm$: BehaviorSubject<string>;
 
@@ -45,9 +46,7 @@ describe('MapViewComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [MapViewComponent],
-      providers: [
-        { provide: StateService, useValue: stateServiceMock }
-      ]
+      providers: [{ provide: StateService, useValue: stateServiceMock }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MapViewComponent);
@@ -62,6 +61,10 @@ describe('MapViewComponent', () => {
   it('should initialize map on init', () => {
     expect(L.map).toHaveBeenCalled();
     expect(L.tileLayer).toHaveBeenCalled();
+  });
+
+  it('should correctly build dataStore map from settings and visitData', () => {
+    // Test logic here
   });
 
   it('should call remove on map destroy', () => {

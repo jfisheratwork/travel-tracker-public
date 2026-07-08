@@ -7,19 +7,18 @@ import { vi } from 'vitest';
 describe('GlobalSearchComponent', () => {
   let component: GlobalSearchComponent;
   let fixture: ComponentFixture<GlobalSearchComponent>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let stateServiceSpy: any;
 
   beforeEach(async () => {
     vi.useFakeTimers();
     stateServiceSpy = {
-      setSearchTerm: vi.fn()
+      setSearchTerm: vi.fn(),
     };
 
     await TestBed.configureTestingModule({
       imports: [GlobalSearchComponent, ReactiveFormsModule],
-      providers: [
-        { provide: StateService, useValue: stateServiceSpy }
-      ]
+      providers: [{ provide: StateService, useValue: stateServiceSpy }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(GlobalSearchComponent);
@@ -38,9 +37,9 @@ describe('GlobalSearchComponent', () => {
   it('should debounce search input by 300ms', () => {
     component.searchControl.setValue('Yosemite');
     expect(stateServiceSpy.setSearchTerm).not.toHaveBeenCalled();
-    
+
     vi.advanceTimersByTime(300);
-    
+
     expect(stateServiceSpy.setSearchTerm).toHaveBeenCalledWith('Yosemite');
   });
 
@@ -48,10 +47,10 @@ describe('GlobalSearchComponent', () => {
     component.searchControl.setValue('Yosemite');
     vi.advanceTimersByTime(300);
     expect(stateServiceSpy.setSearchTerm).toHaveBeenCalledWith('Yosemite');
-    
+
     component.clearSearch();
     vi.advanceTimersByTime(300);
-    
+
     expect(component.searchControl.value).toBe('');
     expect(stateServiceSpy.setSearchTerm).toHaveBeenCalledWith('');
   });
