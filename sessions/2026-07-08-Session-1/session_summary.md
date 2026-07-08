@@ -7,6 +7,7 @@ Transformed the Road Trip planning interface from a static sidebar form into a h
 - **New UI**: Replaced clunky sidebar and modal flows with an ultra-compact inline accordion.
 - **Data Optimization**: Fixed local storage quota exceeded errors by stripping large `coordinates` arrays and relying on the `RoutingService` dynamically.
 - **Improved UX**: Added tactile button feedback, a dynamic scroll-to-top handler for better map visibility, and an auto-complete participant selection.
+- **CI/CD Fixes**: Resolved GitHub Actions deploy failure by generating `environment.ts` before the Angular build step.
 
 ## Fine-grained Details
 ### Tasks Done
@@ -18,6 +19,8 @@ Transformed the Road Trip planning interface from a static sidebar form into a h
 - Improved the map drawing colors (blue for planned, green for done) and thickness.
 - Stripped heavy coordinates before storing in `localStorage`.
 - Updated `walkthrough.md` with redesign details.
+- Added a `make generate-env` step to `.github/workflows/deploy.yml` to resolve module not found errors.
+- Created a `build-action` target in the `Makefile` to simulate the GitHub Actions pipeline locally.
 
 ### Tasks Not Done
 - None. All requested UX features for the route builder are completed.
@@ -30,3 +33,6 @@ Transformed the Road Trip planning interface from a static sidebar form into a h
 - "we are getting visual clipping on the modal"
 - "we need to see the map when choosing options. Use a hide /show accordian when we need the add/edit pane."
 - "update session, commit, push , merge"
+- "build failed in github actions...check our git deploy action"
+- "create a makefile entry that simulates the github action buiild"
+- "push that to main lets try again"

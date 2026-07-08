@@ -33,6 +33,13 @@ build:
 build-local:
 	npm run build -- --base-href /
 
+# Simulate the GitHub action build
+build-action: generate-env
+	npm run build -- --base-href /travel-tracker-public/newsite/
+	@mkdir -p docs/newsite
+	@rm -rf docs/newsite/*
+	@cp -r dist/travel-tracker-public/browser/* docs/newsite/
+
 # Run unit tests via Vitest
 test:
 	npm test
