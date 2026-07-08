@@ -1,10 +1,7 @@
 ---
 name: TypeScript Conventions
 description: Coding and typing conventions for TypeScript files.
-globs:
-  - "**/*.ts"
-  - "**/*.tsx"
-  - "tsconfig*.json"
+globs: "**/*.ts, **/*.tsx, tsconfig*.json"
 ---
 
 # TypeScript Conventions

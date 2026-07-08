@@ -1,11 +1,7 @@
 ---
 name: Node.js Guidelines
 description: Coding and architecture conventions for Node.js scripts and backend services.
-globs:
-  - "**/*.js"
-  - "**/*.mjs"
-  - "**/*.cjs"
-  - "package.json"
+globs: "**/*.js, **/*.mjs, **/*.cjs, package.json"
 ---
 
 # Node.js Guidelines

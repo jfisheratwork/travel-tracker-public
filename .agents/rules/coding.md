@@ -1,8 +1,6 @@
 ---
-name: General Coding Principles
+trigger: always_on
 description: Always-on general coding principles for modern best practices, security, and quality assurance.
-globs:
-  - "**/*"
 ---
 
 # General Coding Principles
@@ -16,6 +14,7 @@ These principles apply universally across the entire codebase and must be follow
 
 ## 2. Quality Assurance & Tooling
 - Always run linters and code formatters (e.g., ESLint, Prettier) before finalizing code changes.
+ - Agent Workflow: After modifying any source code, you MUST execute make lint and fix all warnings before presenting the work to the user.
 - Ensure all automated tests (unit, integration, and feature tests) pass locally.
 - Write tests alongside new feature development.
 

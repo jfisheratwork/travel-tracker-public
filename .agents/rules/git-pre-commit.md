@@ -1,8 +1,7 @@
 ---
 name: Git Pre-Commit Hook Guidelines
 description: Requirements and steps for agentic pre-commit checks to ensure code quality, compliance with best practices, dependency updates, and automated test suite verification.
-globs:
-  - "**/*"
+globs: "*"
 ---
 
 # Agentic Pre-Commit Hook Guidelines
