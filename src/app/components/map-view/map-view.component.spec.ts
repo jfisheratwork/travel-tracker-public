@@ -4,6 +4,7 @@ import { StateService } from '../../services/state.service';
 import { BehaviorSubject } from 'rxjs';
 import * as L from 'leaflet';
 import { vi } from 'vitest';
+import { LocationDataService } from '../../services/location-data.service';
 
 vi.mock('leaflet', () => {
   const mapInstance = {
@@ -39,14 +40,24 @@ describe('MapViewComponent', () => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let stateServiceMock: any;
   let searchTerm$: BehaviorSubject<string>;
+  let selectedRoute$: BehaviorSubject<any>;
 
   beforeEach(async () => {
     searchTerm$ = new BehaviorSubject<string>('');
-    stateServiceMock = { searchTerm$ };
+    selectedRoute$ = new BehaviorSubject<any>(null);
+    stateServiceMock = { searchTerm$, selectedRoute$ };
+    
+    const locationDataServiceMock = {
+      parks$: new BehaviorSubject([]),
+      states$: new BehaviorSubject([])
+    };
 
     await TestBed.configureTestingModule({
       imports: [MapViewComponent],
-      providers: [{ provide: StateService, useValue: stateServiceMock }],
+      providers: [
+        { provide: StateService, useValue: stateServiceMock },
+        { provide: LocationDataService, useValue: locationDataServiceMock }
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MapViewComponent);

@@ -1,9 +1,11 @@
-import { Component, EventEmitter, OnInit, Output, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { AppSettings, DEFAULT_SETTINGS } from '../../models/settings.model';
 import { Subscription } from 'rxjs';
+import { LoggerService } from '../../core/services/logger.service';
+import { API_ENDPOINTS } from '../../core/constants/api.constants';
 
 @Component({
   selector: 'app-settings-modal',
@@ -24,6 +26,7 @@ export class SettingsModal implements OnInit, OnDestroy {
   hometownQuery: string = '';
   hometownSearchResults: { name: string; lat: number; lng: number }[] = [];
   isSearching: boolean = false;
+  private logger = inject(LoggerService);
 
   draggedIndex: number | null = null;
   draggedType: 'family' | 'hometown' | null = null;
@@ -121,9 +124,8 @@ export class SettingsModal implements OnInit, OnDestroy {
     try {
       if (this.viewModel.routingEngine === 'mapbox' && this.viewModel.mapboxKey) {
         // Mapbox Forward Geocoding
-        const response = await fetch(
-          `https://api.mapbox.com/search/geocode/v6/forward?q=${encodeURIComponent(query)}&access_token=${this.viewModel.mapboxKey}`,
-        );
+        const url = `${API_ENDPOINTS.MAPBOX_GEOCODE}?q=${encodeURIComponent(query)}&access_token=${this.viewModel.mapboxKey}`;
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           this.hometownSearchResults = data.features.map(
@@ -139,9 +141,8 @@ export class SettingsModal implements OnInit, OnDestroy {
         }
       } else {
         // Fallback to Nominatim
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`,
-        );
+        const url = `${API_ENDPOINTS.NOMINATIM_SEARCH}?q=${encodeURIComponent(query)}&format=json&limit=5`;
+        const response = await fetch(url);
         if (response.ok) {
           const data = await response.json();
           this.hometownSearchResults = data.map(
@@ -153,8 +154,8 @@ export class SettingsModal implements OnInit, OnDestroy {
           );
         }
       }
-    } catch (e) {
-      console.error('Geocoding failed', e);
+    } catch (e: any) {
+      this.logger.error('Geocoding failed', e);
     } finally {
       this.isSearching = false;
     }

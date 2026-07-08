@@ -88,6 +88,43 @@ To reduce reliance on complex global CSS, style your components using standard `
 
 ---
 
+## 4. State Management & RxJS
+
+In our application, we use **RxJS** (Reactive Extensions for JavaScript) to manage global application state and handle asynchronous events. If you are new to RxJS, the core concept is the **Observable** — a stream of data that components can subscribe to over time.
+
+### The Role of `BehaviorSubject`
+In our `StateService` (e.g., line 16), we heavily rely on the `BehaviorSubject`. A `BehaviorSubject` is a special type of Observable that:
+1. **Requires an initial value**: When instantiated, you must provide a default starting value (e.g., `new BehaviorSubject<RouteObject | null>(null)`).
+2. **Remembers the current value**: It holds onto the latest value emitted. When a new component navigates into view and subscribes to it, that component will *immediately* receive the "current" value, rather than having to wait for a future update.
+3. **Acts as both an Observer and Observable**: You can push new values into it using `.next(newValue)`, and you can subscribe to it to read values.
+
+### How We Use It (e.g., `selectedRouteSubject`)
+Here is the typical pattern used in our `StateService`:
+
+```typescript
+// 1. Private BehaviorSubject holds the actual mutable state.
+private selectedRouteSubject = new BehaviorSubject<RouteObject | null>(null);
+
+// 2. Public read-only Observable exposed to components. 
+// The `$` suffix is a standard naming convention for Observables.
+public readonly selectedRoute$ = this.selectedRouteSubject.asObservable();
+
+// 3. Public setter method to update the state.
+public setSelectedRoute(route: RouteObject | null): void {
+  this.selectedRouteSubject.next(route);
+}
+```
+
+**Why this pattern?**
+- **Encapsulation**: Components cannot arbitrarily push data by calling `.next()` on `selectedRoute$`. They must use the designated `setSelectedRoute()` method. This ensures state changes are predictable.
+- **Reactivity**: Any component that subscribes to `selectedRoute$` via the `async` pipe in HTML (e.g., `*ngIf="stateService.selectedRoute$ | async as route"`) will automatically re-render whenever `setSelectedRoute()` is called anywhere else in the app.
+
+### Best Practices
+- **Use the `async` pipe**: Subscribe to Observables directly in your HTML templates using `| async`. This automatically handles subscribing and **unsubscribing** when the component is destroyed, preventing memory leaks.
+- **`firstValueFrom`**: If you just need a one-off result (like an HTTP API request), you can use `firstValueFrom(observable)` to convert the stream into a standard Promise for use with `async/await`.
+
+---
+
 ## Appendix A: Learning Resources
 
 If you are new to the stack, start here:

@@ -16,6 +16,7 @@ export default tseslint.config(
     rules: {
       ...eslintPluginPrettier.configs.recommended.rules,
       'prettier/prettier': 'error',
+      'no-console': ['error', { allow: ['info', 'error'] }], // Enforce LoggerService abstraction, but allow basic fallback for absolute failures
     },
   },
   eslintConfigPrettier,

@@ -1,3 +1,5 @@
+import { RouteObject } from './route.model';
+
 export interface FamilyMember {
   id: string;
   name: string;
@@ -13,18 +15,13 @@ export interface Hometown {
   endDate?: string; // e.g. "2020-08", omitted if current
 }
 
-export interface SavedRoute {
-  name: string;
-  route: [number, number][]; // Array of [lat, lng] coordinates
-}
-
 export interface AppSettings {
   familyMembers: FamilyMember[];
   hometowns: Hometown[];
   routingEngine: 'osrm' | 'mapbox';
   mapboxKey?: string; // Stored only locally, excluded from any future backend syncs
   routeReduction: number;
-  savedRoutes: SavedRoute[];
+  savedRoutes: RouteObject[];
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
