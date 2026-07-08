@@ -3,9 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { AppSettings, DEFAULT_SETTINGS } from '../../models/settings.model';
-import { Subscription } from 'rxjs';
+import { Subscription, firstValueFrom } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
-import { API_ENDPOINTS } from '../../core/constants/api.constants';
+import { GeocodingService } from '../../services/routing/geocoding.service';
 
 @Component({
   selector: 'app-settings-modal',
@@ -33,7 +33,10 @@ export class SettingsModal implements OnInit, OnDestroy {
 
   private sub?: Subscription;
 
-  constructor(private stateService: StateService) {}
+  constructor(
+    private stateService: StateService,
+    private geocodingService: GeocodingService
+  ) {}
 
   ngOnInit(): void {
     // Clone the current settings state when opening the modal
@@ -122,38 +125,12 @@ export class SettingsModal implements OnInit, OnDestroy {
     this.hometownSearchResults = [];
 
     try {
-      if (this.viewModel.routingEngine === 'mapbox' && this.viewModel.mapboxKey) {
-        // Mapbox Forward Geocoding
-        const url = `${API_ENDPOINTS.MAPBOX_GEOCODE}?q=${encodeURIComponent(query)}&access_token=${this.viewModel.mapboxKey}`;
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          this.hometownSearchResults = data.features.map(
-            (f: {
-              properties: { full_address?: string; name: string };
-              geometry: { coordinates: number[] };
-            }) => ({
-              name: f.properties.full_address || f.properties.name,
-              lat: f.geometry.coordinates[1],
-              lng: f.geometry.coordinates[0],
-            }),
-          );
-        }
-      } else {
-        // Fallback to Nominatim
-        const url = `${API_ENDPOINTS.NOMINATIM_SEARCH}?q=${encodeURIComponent(query)}&format=json&limit=5`;
-        const response = await fetch(url);
-        if (response.ok) {
-          const data = await response.json();
-          this.hometownSearchResults = data.map(
-            (item: { display_name: string; lat: string; lon: string }) => ({
-              name: item.display_name,
-              lat: parseFloat(item.lat),
-              lng: parseFloat(item.lon),
-            }),
-          );
-        }
-      }
+      const results = await firstValueFrom(this.geocodingService.searchLocations(query, 5));
+      this.hometownSearchResults = results.map(r => ({
+        name: r.name || 'Unknown Location',
+        lat: r.lat,
+        lng: r.lng,
+      }));
     } catch (e: any) {
       this.logger.error('Geocoding failed', e);
     } finally {
