@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - feature/moving-to-angular-and-typescript
     paths-ignore:
       - 'docs/newsite/**'
 
