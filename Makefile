@@ -1,15 +1,23 @@
-.PHONY: install dev build test lint format clean run-old run-new
+.PHONY: install dev build test lint format clean run-old run-new generate-env
+
+-include .env
+export
+
+# Generate environment files dynamically
+generate-env:
+	@mkdir -p src/environments
+	@echo "export const environment = { production: false, networkTimeoutMs: 10000, mapboxKey: '$$MAPBOX_API_KEY' };" > src/environments/environment.ts
 
 # Install all dependencies
 install:
 	npm install
 
 # Start the local development server
-dev:
+dev: generate-env
 	npm start
 
 # Start the Angular development server and open in browser
-run-new:
+run-new: generate-env
 	npm start -- --open
 
 # Start the legacy site (docs/) and open in browser

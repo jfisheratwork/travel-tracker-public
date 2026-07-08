@@ -1,178 +1,277 @@
 <!-- Settings Modal Overlay -->
-<div class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm no-print">
-  <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] m-4">
-    
+<div
+  class="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm no-print"
+>
+  <div
+    class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh] m-4"
+  >
     <!-- Header -->
-    <div class="p-5 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+    <div
+      class="p-5 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0"
+    >
       <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">⚙️ Settings</h2>
       <button (click)="cancel()" class="text-stone-400 hover:text-stone-600 focus:outline-none">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 6 6 18" />
-            <path d="m6 6 12 12" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M18 6 6 18" />
+          <path d="m6 6 12 12" />
         </svg>
       </button>
     </div>
 
     <!-- Tabs Navigation -->
-    <div class="flex border-b border-stone-200 bg-stone-50 overflow-x-auto hide-scrollbar flex-shrink-0 px-2">
-      <button 
-        (click)="activeTab = 'locations'" 
-        [class.border-green-600]="activeTab === 'locations'" 
+    <div
+      class="flex border-b border-stone-200 bg-stone-50 overflow-x-auto hide-scrollbar flex-shrink-0 px-2"
+    >
+      <button
+        (click)="activeTab = 'locations'"
+        [class.border-green-600]="activeTab === 'locations'"
         [class.text-green-700]="activeTab === 'locations'"
         [class.font-bold]="activeTab === 'locations'"
         [class.border-transparent]="activeTab !== 'locations'"
         [class.text-stone-500]="activeTab !== 'locations'"
-        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-stone-800 transition">
+        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-stone-800 transition"
+      >
         Locations
       </button>
-      <button 
-        (click)="activeTab = 'family'" 
-        [class.border-green-600]="activeTab === 'family'" 
+      <button
+        (click)="activeTab = 'family'"
+        [class.border-green-600]="activeTab === 'family'"
         [class.text-green-700]="activeTab === 'family'"
         [class.font-bold]="activeTab === 'family'"
         [class.border-transparent]="activeTab !== 'family'"
         [class.text-stone-500]="activeTab !== 'family'"
-        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-stone-800 transition">
+        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-stone-800 transition"
+      >
         Family
       </button>
-      <button 
-        (click)="activeTab = 'routing'" 
-        [class.border-green-600]="activeTab === 'routing'" 
+      <button
+        (click)="activeTab = 'routing'"
+        [class.border-green-600]="activeTab === 'routing'"
         [class.text-green-700]="activeTab === 'routing'"
         [class.font-bold]="activeTab === 'routing'"
         [class.border-transparent]="activeTab !== 'routing'"
         [class.text-stone-500]="activeTab !== 'routing'"
-        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-stone-800 transition">
+        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-stone-800 transition"
+      >
         Routing
       </button>
-      <button 
-        (click)="activeTab = 'danger'" 
-        [class.border-red-600]="activeTab === 'danger'" 
+      <button
+        (click)="activeTab = 'danger'"
+        [class.border-red-600]="activeTab === 'danger'"
         [class.text-red-600]="activeTab === 'danger'"
         [class.font-bold]="activeTab === 'danger'"
         [class.border-transparent]="activeTab !== 'danger'"
         [class.text-stone-500]="activeTab !== 'danger'"
-        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-red-500 transition">
+        class="flex-1 py-3 px-4 text-sm whitespace-nowrap border-b-2 hover:text-red-500 transition"
+      >
         Danger
       </button>
     </div>
 
     <!-- Scrollable Content Area -->
     <div class="p-6 overflow-y-auto flex-1">
-      
       <!-- LOCATIONS TAB -->
       <div *ngIf="activeTab === 'locations'" class="space-y-6">
         <div>
           <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Hometowns</h3>
-          <p class="text-xs text-stone-500 mb-4">Add your hometowns. They will be plotted on the map. Reorder them using the arrows.</p>
-          
+          <p class="text-xs text-stone-500 mb-4">
+            Add your hometowns. They will be plotted on the map. Reorder them using the arrows.
+          </p>
+
           <div class="flex gap-2 mb-4">
-            <input type="text" [(ngModel)]="hometownQuery" placeholder="e.g. Seattle, WA"
-                   class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
-                   (keydown.enter)="searchHometown()">
-            <button (click)="searchHometown()" [disabled]="isSearching"
-                    class="bg-stone-100 text-stone-700 border border-stone-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-stone-200 transition disabled:opacity-50">
+            <input
+              type="text"
+              [(ngModel)]="hometownQuery"
+              placeholder="e.g. Seattle, WA"
+              class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+              (keydown.enter)="searchHometown()"
+            />
+            <button
+              (click)="searchHometown()"
+              [disabled]="isSearching"
+              class="bg-stone-100 text-stone-700 border border-stone-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-stone-200 transition disabled:opacity-50"
+            >
               {{ isSearching ? 'Searching...' : 'Search' }}
             </button>
           </div>
 
           <!-- Search Results -->
-          <div *ngIf="hometownSearchResults.length > 0" class="mb-4 bg-stone-50 border border-stone-200 rounded-lg overflow-hidden">
-            <div *ngFor="let result of hometownSearchResults" class="p-2 border-b border-stone-100 last:border-0 hover:bg-stone-100 flex justify-between items-center">
+          <div
+            *ngIf="hometownSearchResults.length > 0"
+            class="mb-4 bg-stone-50 border border-stone-200 rounded-lg overflow-hidden"
+          >
+            <div
+              *ngFor="let result of hometownSearchResults"
+              class="p-2 border-b border-stone-100 last:border-0 hover:bg-stone-100 flex justify-between items-center"
+            >
               <span class="text-xs truncate mr-2">{{ result.name }}</span>
-              <button (click)="addHometown(result)" class="text-green-600 text-xs font-bold whitespace-nowrap hover:underline">Add</button>
+              <button
+                (click)="addHometown(result)"
+                class="text-green-600 text-xs font-bold whitespace-nowrap hover:underline"
+              >
+                Add
+              </button>
             </div>
           </div>
 
           <!-- Added Hometowns -->
           <div class="space-y-2">
-            <div *ngFor="let h of viewModel.hometowns; let i = index" 
-                 class="flex items-center justify-between bg-stone-50 p-2 rounded border border-stone-200 cursor-move"
-                 draggable="true"
-                 (dragstart)="onDragStart(i, 'hometown')"
-                 (dragover)="$event.preventDefault()"
-                 (drop)="onDrop(i, 'hometown')">
+            <div
+              *ngFor="let h of viewModel.hometowns; let i = index"
+              class="flex items-center justify-between bg-stone-50 p-2 rounded border border-stone-200 cursor-move"
+              draggable="true"
+              (dragstart)="onDragStart(i, 'hometown')"
+              (dragover)="$event.preventDefault()"
+              (drop)="onDrop(i, 'hometown')"
+            >
               <div class="flex flex-col overflow-hidden pointer-events-none">
                 <span class="text-sm font-bold truncate">{{ h.name }}</span>
                 <div class="flex gap-2 mt-1 pointer-events-auto">
-                  <input type="text" [(ngModel)]="h.startDate" placeholder="Start Date" class="text-xs border rounded px-1 py-0.5 w-24">
-                  <input type="text" [(ngModel)]="h.endDate" placeholder="End Date" class="text-xs border rounded px-1 py-0.5 w-24">
+                  <input
+                    type="text"
+                    [(ngModel)]="h.startDate"
+                    placeholder="Start Date"
+                    class="text-xs border rounded px-1 py-0.5 w-24"
+                  />
+                  <input
+                    type="text"
+                    [(ngModel)]="h.endDate"
+                    placeholder="End Date"
+                    class="text-xs border rounded px-1 py-0.5 w-24"
+                  />
                 </div>
               </div>
               <div class="flex items-center gap-1 ml-2">
-                <button (click)="removeHometown(h.id)" class="text-red-500 hover:text-red-700 ml-1">✕</button>
+                <button (click)="removeHometown(h.id)" class="text-red-500 hover:text-red-700 ml-1">
+                  ✕
+                </button>
               </div>
             </div>
           </div>
-          <div *ngIf="viewModel.hometowns.length === 0" class="text-sm text-stone-400 italic">No hometowns added yet.</div>
+          <div *ngIf="viewModel.hometowns.length === 0" class="text-sm text-stone-400 italic">
+            No hometowns added yet.
+          </div>
         </div>
       </div>
 
       <!-- FAMILY TAB -->
       <div *ngIf="activeTab === 'family'" class="space-y-6">
         <div>
-          <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Manage Family Members</h3>
-          <p class="text-xs text-stone-500 mb-4">Add members to track who has visited which locations.</p>
-          
+          <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">
+            Manage Family Members
+          </h3>
+          <p class="text-xs text-stone-500 mb-4">
+            Add members to track who has visited which locations.
+          </p>
+
           <div class="flex gap-2 mb-4">
-            <input type="text" [(ngModel)]="newMemberName" placeholder="Enter name"
-                   class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
-                   (keydown.enter)="addFamilyMember()">
-            <button (click)="addFamilyMember()"
-                    class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition">Add</button>
+            <input
+              type="text"
+              [(ngModel)]="newMemberName"
+              placeholder="Enter name"
+              class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+              (keydown.enter)="addFamilyMember()"
+            />
+            <button
+              (click)="addFamilyMember()"
+              class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition"
+            >
+              Add
+            </button>
           </div>
 
           <div class="space-y-2">
-            <div *ngFor="let member of viewModel.familyMembers; let i = index" 
-                 class="flex items-center justify-between bg-stone-50 p-3 rounded border border-stone-200 cursor-move"
-                 draggable="true"
-                 (dragstart)="onDragStart(i, 'family')"
-                 (dragover)="$event.preventDefault()"
-                 (drop)="onDrop(i, 'family')">
+            <div
+              *ngFor="let member of viewModel.familyMembers; let i = index"
+              class="flex items-center justify-between bg-stone-50 p-3 rounded border border-stone-200 cursor-move"
+              draggable="true"
+              (dragstart)="onDragStart(i, 'family')"
+              (dragover)="$event.preventDefault()"
+              (drop)="onDrop(i, 'family')"
+            >
               <div class="flex items-center gap-2 pointer-events-none">
                 <!-- Color indicator -->
-                <div class="w-4 h-4 rounded-full" [ngStyle]="{'background-color': member.color}"></div>
+                <div
+                  class="w-4 h-4 rounded-full"
+                  [ngStyle]="{ 'background-color': member.color }"
+                ></div>
                 <span class="text-sm font-bold">{{ member.name }}</span>
               </div>
-              <button (click)="removeFamilyMember(member.id)" class="text-red-500 hover:text-red-700">✕</button>
+              <button
+                (click)="removeFamilyMember(member.id)"
+                class="text-red-500 hover:text-red-700"
+              >
+                ✕
+              </button>
             </div>
           </div>
-          <div *ngIf="viewModel.familyMembers.length === 0" class="text-sm text-stone-400 italic">No family members added.</div>
+          <div *ngIf="viewModel.familyMembers.length === 0" class="text-sm text-stone-400 italic">
+            No family members added.
+          </div>
         </div>
       </div>
 
       <!-- ROUTING TAB -->
       <div *ngIf="activeTab === 'routing'" class="space-y-6">
         <div>
-          <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Routing Preferences</h3>
-          
+          <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">
+            Routing Preferences
+          </h3>
+
           <div class="space-y-4">
             <div>
-                <label class="block text-sm font-semibold text-stone-800 mb-1">Routing Engine</label>
-                <select [(ngModel)]="viewModel.routingEngine" class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:border-green-600">
-                    <option value="osrm">OSRM Public (Free, Throttled)</option>
-                    <option value="mapbox">Mapbox API (Requires Key)</option>
-                </select>
+              <label class="block text-sm font-semibold text-stone-800 mb-1">Routing Engine</label>
+              <select
+                [(ngModel)]="viewModel.routingEngine"
+                class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:border-green-600"
+              >
+                <option value="osrm">OSRM Public (Free, Throttled)</option>
+                <option value="mapbox">Mapbox API (Requires Key)</option>
+              </select>
             </div>
-            
+
             <div *ngIf="viewModel.routingEngine === 'mapbox'">
-                <label class="block text-sm font-semibold text-stone-800 mb-1">Mapbox API Key</label>
-                <input type="text" [(ngModel)]="viewModel.mapboxKey" placeholder="pk.ey..." class="w-full border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-green-600">
-                <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
-                    Sign up at <a href="https://www.mapbox.com/" target="_blank" class="text-blue-600 underline">mapbox.com</a>. Copy your Default public token and paste it above.
-                </p>
+              <label class="block text-sm font-semibold text-stone-800 mb-1">Mapbox API Key</label>
+              <input
+                type="text"
+                [(ngModel)]="viewModel.mapboxKey"
+                placeholder="pk.ey..."
+                class="w-full border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-green-600"
+              />
+              <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
+                Sign up at
+                <a href="https://www.mapbox.com/" target="_blank" class="text-blue-600 underline"
+                  >mapbox.com</a
+                >. Copy your Default public token and paste it above.
+              </p>
             </div>
-            
+
             <div>
-                <label class="block text-sm font-semibold text-stone-800 mb-1">Point Reduction Level</label>
-                <select [(ngModel)]="viewModel.routeReduction" class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:border-green-600">
-                    <option [ngValue]="0">None (Exact Path)</option>
-                    <option [ngValue]="0.001">Low (Minimal simplification)</option>
-                    <option [ngValue]="0.01">Medium (Good balance)</option>
-                    <option [ngValue]="0.05">High (Straighten curves)</option>
-                </select>
-                <p class="text-xs text-stone-500 mt-1">Higher reduction lowers storage usage but smooths out tight curves.</p>
+              <label class="block text-sm font-semibold text-stone-800 mb-1"
+                >Point Reduction Level</label
+              >
+              <select
+                [(ngModel)]="viewModel.routeReduction"
+                class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:border-green-600"
+              >
+                <option [ngValue]="0">None (Exact Path)</option>
+                <option [ngValue]="0.001">Low (Minimal simplification)</option>
+                <option [ngValue]="0.01">Medium (Good balance)</option>
+                <option [ngValue]="0.05">High (Straighten curves)</option>
+              </select>
+              <p class="text-xs text-stone-500 mt-1">
+                Higher reduction lowers storage usage but smooths out tight curves.
+              </p>
             </div>
           </div>
         </div>
@@ -183,27 +282,35 @@
         <div>
           <h3 class="text-sm font-bold uppercase tracking-wider text-red-500 mb-4">Danger Zone</h3>
           <div class="bg-red-50 border border-red-100 rounded-xl p-4">
-              <h4 class="font-bold text-red-900 text-sm">Reset All Data</h4>
-              <p class="text-xs text-red-700 mt-1 mb-4">Clears all settings and visit data. This cannot be undone.</p>
-              <button (click)="confirmReset()"
-                  class="bg-white text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-600 hover:text-white transition shadow-sm">
-                  Reset Data
-              </button>
+            <h4 class="font-bold text-red-900 text-sm">Reset All Data</h4>
+            <p class="text-xs text-red-700 mt-1 mb-4">
+              Clears all settings and visit data. This cannot be undone.
+            </p>
+            <button
+              (click)="confirmReset()"
+              class="bg-white text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-600 hover:text-white transition shadow-sm"
+            >
+              Reset Data
+            </button>
           </div>
         </div>
       </div>
-
     </div>
 
     <!-- Footer Actions -->
     <div class="p-5 border-t border-stone-100 bg-stone-50 flex justify-end gap-3 flex-shrink-0">
-      <button (click)="cancel()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 transition">
+      <button
+        (click)="cancel()"
+        class="px-5 py-2.5 rounded-lg text-sm font-bold text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 transition"
+      >
         Cancel
       </button>
-      <button (click)="save()" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-green-700 hover:bg-green-800 shadow-sm transition">
+      <button
+        (click)="save()"
+        class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-green-700 hover:bg-green-800 shadow-sm transition"
+      >
         Save Settings
       </button>
     </div>
-    
   </div>
 </div>

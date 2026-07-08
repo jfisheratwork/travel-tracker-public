@@ -1,9 +1,10 @@
 // DOCS: https://angular.io/api/core/Injectable
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 // DOCS: https://rxjs.dev/api/index/class/BehaviorSubject
 import { BehaviorSubject } from 'rxjs';
 import { StateService } from './state.service';
 import { AppSettings, DEFAULT_SETTINGS } from '../models/settings.model';
+import { LoggerService } from '../core/services/logger.service';
 
 @Injectable({
   providedIn: 'root',
@@ -11,6 +12,7 @@ import { AppSettings, DEFAULT_SETTINGS } from '../models/settings.model';
 export class LocalStorageService {
   private activeTabSubject = new BehaviorSubject<string>('parks');
   public activeTab$ = this.activeTabSubject.asObservable();
+  private logger = inject(LoggerService);
 
   constructor(private stateService: StateService) {
     this.loadInitialState();
@@ -22,7 +24,7 @@ export class LocalStorageService {
       try {
         localStorage.setItem('np_travel_settings', JSON.stringify(settings));
       } catch (e) {
-        console.error('Failed to save settings to localStorage', e);
+        this.logger.error('Failed to save settings to localStorage', e);
       }
     });
   }
@@ -50,7 +52,7 @@ export class LocalStorageService {
 
         this.stateService.updateSettings(migratedSettings);
       } catch (e) {
-        console.error('Failed to parse saved settings', e);
+        this.logger.error('Failed to parse saved settings', e);
         this.stateService.updateSettings(DEFAULT_SETTINGS);
       }
     } else {

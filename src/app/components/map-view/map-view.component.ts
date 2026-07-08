@@ -4,6 +4,11 @@ import { StateService } from '../../services/state.service';
 import { Subject, takeUntil } from 'rxjs';
 // DOCS: https://leafletjs.com/reference.html
 import * as L from 'leaflet';
+import { RouteObject } from '../../models/route.model';
+import { MAP_THEME } from '../../core/constants/map.constants';
+import { LocationDataService } from '../../services/location-data.service';
+import { LocationPoint } from '../../models/location.model';
+import { API_ENDPOINTS } from '../../core/constants/api.constants';
 
 @Component({
   selector: 'app-map-view',
@@ -15,16 +20,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private map!: L.Map;
   private destroy$ = new Subject<void>();
 
-  // Dummy markers for demonstration. In a real app, these come from another service.
-  private allMarkers: { lat: number; lng: number; title: string }[] = [
-    { lat: 37.8651, lng: -119.5383, title: 'Yosemite' },
-    { lat: 36.0544, lng: -112.1401, title: 'Grand Canyon' },
-    { lat: 44.428, lng: -110.5885, title: 'Yellowstone' },
-  ];
   private currentLayerGroup!: L.LayerGroup;
+  private currentPolyline: L.Polyline | null = null;
+  private allLocations: LocationPoint[] = [];
+  private currentSearchTerm = '';
 
   constructor(
     private stateService: StateService,
+    private locationDataService: LocationDataService,
     private el: ElementRef,
   ) {}
 
@@ -32,7 +35,29 @@ export class MapViewComponent implements OnInit, OnDestroy {
     this.initMap();
 
     this.stateService.searchTerm$.pipe(takeUntil(this.destroy$)).subscribe((term) => {
+      this.currentSearchTerm = term;
       this.filterMarkers(term);
+    });
+
+    this.stateService.selectedRoute$.pipe(takeUntil(this.destroy$)).subscribe((route) => {
+      this.renderRoute(route);
+    });
+
+    // Combine parks and states
+    this.locationDataService.parks$.pipe(takeUntil(this.destroy$)).subscribe((parks) => {
+      this.allLocations = [
+        ...this.allLocations.filter((loc) => !loc.id.includes('park')),
+        ...parks,
+      ];
+      this.filterMarkers(this.currentSearchTerm);
+    });
+
+    this.locationDataService.states$.pipe(takeUntil(this.destroy$)).subscribe((states) => {
+      this.allLocations = [
+        ...this.allLocations.filter((loc) => !loc.id.includes('state')),
+        ...states,
+      ];
+      this.filterMarkers(this.currentSearchTerm);
     });
   }
 
@@ -41,7 +66,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     const mapContainer = this.el.nativeElement.querySelector('#map');
     this.map = L.map(mapContainer).setView([39.8283, -98.5795], 4);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer(API_ENDPOINTS.OSM_TILE_LAYER, {
       maxZoom: 19,
       attribution: '© OpenStreetMap',
     }).addTo(this.map);
@@ -50,16 +75,50 @@ export class MapViewComponent implements OnInit, OnDestroy {
   }
 
   private filterMarkers(term: string) {
-    if (!this.map) return;
+    if (!this.map || !this.currentLayerGroup) return;
 
     this.currentLayerGroup.clearLayers();
 
     const lowerTerm = term.toLowerCase();
-    const filtered = this.allMarkers.filter((m) => m.title.toLowerCase().includes(lowerTerm));
+    const filtered = this.allLocations.filter((m) => m.name.toLowerCase().includes(lowerTerm));
 
     filtered.forEach((m) => {
-      L.marker([m.lat, m.lng]).bindPopup(m.title).addTo(this.currentLayerGroup);
+      if (m.lat === 0 && m.lng === 0) return; // Skip if no coordinates
+
+      const color = m.visited ? '#22c55e' : '#94a3b8'; // Green if visited, slate if unvisited
+      const popupHtml = `
+        <strong>${m.name}</strong><br>
+        ${m.visited ? `Visited by: ${m.visitedBy.join(', ')}` : 'Not visited yet'}
+      `;
+
+      L.circleMarker([m.lat, m.lng], {
+        radius: 8,
+        fillColor: color,
+        color: '#ffffff',
+        weight: 1,
+        opacity: 1,
+        fillOpacity: 0.8,
+      })
+        .bindPopup(popupHtml)
+        .addTo(this.currentLayerGroup);
     });
+  }
+
+  private renderRoute(route: RouteObject | null) {
+    if (this.currentPolyline) {
+      this.currentPolyline.remove();
+      this.currentPolyline = null;
+    }
+
+    if (route && route.coordinates && route.coordinates.length > 0) {
+      this.currentPolyline = L.polyline(route.coordinates, {
+        color: MAP_THEME.ROUTE_POLYLINE_COLOR,
+        weight: MAP_THEME.ROUTE_POLYLINE_WEIGHT,
+        opacity: MAP_THEME.ROUTE_POLYLINE_OPACITY,
+      }).addTo(this.map);
+
+      this.map.fitBounds(this.currentPolyline.getBounds(), { padding: [50, 50] });
+    }
   }
 
   ngOnDestroy() {

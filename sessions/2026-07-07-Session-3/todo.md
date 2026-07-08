@@ -10,12 +10,8 @@ We need to build a comprehensive tool for planning, editing, and saving road tri
 - **Map Interaction:** Ensure the map view can receive and visually differentiate selected route polylines.
 - **Persistence:** Save calculated distance, duration, and coordinates to local storage using our new `LocalStorageService`.
 
-## 2. Cleanup steps
+## 2. Future Steps (Later)
+- Step 06: Stats Widget
+- Step 07: Data Tables
+- Backend integration and caching
 - Add E2E tests for Settings and Search (missed in previous session)
-Missing Step (Let's call it Step 05.5 - Foundational Data): We need a dedicated step to migrate docs/js/parks.js and docs/js/states.js into proper Angular Data Services or Constants.
-Map Integration: During that missing step, we will update the MapViewComponent to subscribe to this new data stream and finally render all the green/yellow/gray pins for the states and parks based on the visited status.
-
-## 3. Future Steps (Later)
-- Step 06: [Stats Widget](../../openspec/06-stats-widget.md)
-- Step 07: [Data Tables](../../openspec/07-data-tables.md)
-- Step 08: [Backend & API](../../openspec/08-backend-api.md)

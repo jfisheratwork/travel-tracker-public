@@ -1,0 +1,97 @@
+<div class="route-builder-container">
+  <h2>{{ isEditing ? 'Edit Road Trip' : 'Plan a Road Trip' }}</h2>
+
+  <div class="form-group">
+    <label>Trip Name *</label>
+    <input type="text" [(ngModel)]="name" placeholder="e.g. Summer West Coast Trip" required />
+  </div>
+
+  <div class="form-group">
+    <label>Notes</label>
+    <textarea [(ngModel)]="description" placeholder="Any special instructions..."></textarea>
+  </div>
+
+  <div class="form-row">
+    <div class="form-group">
+      <label>Start Date</label>
+      <input type="date" [(ngModel)]="startDate" />
+    </div>
+    <div class="form-group">
+      <label>End Date</label>
+      <input type="date" [(ngModel)]="endDate" />
+    </div>
+  </div>
+
+  <div class="locations-section">
+    <div class="form-group">
+      <label>Start Location *</label>
+      <input type="text" [(ngModel)]="startQuery" placeholder="e.g. Spokane, WA" />
+    </div>
+
+    <div cdkDropList class="stops-list" (cdkDropListDropped)="drop($event)">
+      <div
+        class="stop-box"
+        *ngFor="let stop of stopsQueries; let i = index; trackBy: trackByIndex"
+        cdkDrag
+      >
+        <div class="drag-handle" cdkDragHandle>☰</div>
+        <input type="text" [(ngModel)]="stopsQueries[i]" placeholder="Stop Location" />
+        <button class="danger-btn" (click)="removeStop(i)">X</button>
+      </div>
+    </div>
+
+    <button class="secondary-btn" (click)="addStop()">+ Add Stop</button>
+
+    <div class="form-group" style="margin-top: 1rem">
+      <label>End Location *</label>
+      <input type="text" [(ngModel)]="endQuery" placeholder="e.g. Seattle, WA" />
+    </div>
+  </div>
+
+  <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <button class="primary-btn" (click)="calculateRoute()" [disabled]="isCalculating">
+    {{ isCalculating ? 'Calculating...' : 'Calculate Route' }}
+  </button>
+
+  <div class="route-options" *ngIf="routeOptions.length > 0">
+    <h3>Select a Route</h3>
+    <div
+      class="option-card"
+      *ngFor="let opt of routeOptions; let i = index"
+      [class.selected]="selectedOptionIndex === i"
+      (click)="selectedOptionIndex = i; previewSelectedOption()"
+    >
+      <div class="option-header">Option {{ i + 1 }}</div>
+      <div class="option-details">
+        Distance: {{ formatDistance(opt.distance) }} miles<br />
+        Duration: {{ formatDuration(opt.duration) }} hrs
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="primary-btn" (click)="saveRoute()">Save Trip</button>
+      <button class="secondary-btn" (click)="cancelEdit()">Cancel</button>
+    </div>
+  </div>
+
+  <hr />
+
+  <div class="saved-routes-section">
+    <h3>Saved Road Trips</h3>
+    <div class="saved-route-card" *ngFor="let route of savedRoutes">
+      <div class="route-info" (click)="stateService.setSelectedRoute(route)">
+        <strong>{{ route.name }}</strong>
+        <div class="route-meta">
+          {{ formatDistance(route.distance) }} miles
+          <span *ngIf="route.startDate"> • {{ route.startDate }}</span>
+        </div>
+      </div>
+      <div class="route-actions">
+        <button class="secondary-btn" (click)="editRoute(route)">Edit</button>
+        <button class="danger-btn" (click)="deleteRoute(route.id)">Delete</button>
+      </div>
+    </div>
+    <div *ngIf="savedRoutes.length === 0" class="empty-state">No saved road trips yet.</div>
+  </div>
+</div>
