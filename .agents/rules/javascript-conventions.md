@@ -1,7 +1,10 @@
 ---
 name: JavaScript Conventions
 description: Coding and naming conventions for the project, including rules for semantic naming, avoiding core type name conflicts, event parameters, exceptions, and abbreviations.
-globs: "docs/js/**/*.js"
+globs:
+  - "**/*.js"
+  - "**/*.mjs"
+  - "**/*.cjs"
 ---
 
 # JavaScript Naming & Coding Conventions
