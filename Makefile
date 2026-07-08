@@ -22,7 +22,7 @@ run-new: generate-env
 
 # Start the legacy site (docs/) and open in browser
 run-old:
-	npx -y http-server docs -p 8081 -o
+	npx -y http-server docs -p 8082 -o
 
 
 # Build the Angular application for production (using default angular.json baseHref if any)

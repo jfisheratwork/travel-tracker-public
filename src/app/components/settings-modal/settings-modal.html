@@ -134,21 +134,14 @@
               (dragover)="$event.preventDefault()"
               (drop)="onDrop(i, 'hometown')"
             >
-              <div class="flex flex-col overflow-hidden pointer-events-none">
-                <span class="text-sm font-bold truncate">{{ h.name }}</span>
-                <div class="flex gap-2 mt-1 pointer-events-auto">
-                  <input
-                    type="text"
-                    [(ngModel)]="h.startDate"
-                    placeholder="Start Date"
-                    class="text-xs border rounded px-1 py-0.5 w-24"
-                  />
-                  <input
-                    type="text"
-                    [(ngModel)]="h.endDate"
-                    placeholder="End Date"
-                    class="text-xs border rounded px-1 py-0.5 w-24"
-                  />
+              <div class="flex flex-col overflow-hidden pointer-events-none w-full">
+                <div class="flex items-center gap-2">
+                  <!-- Hamburger SVG -->
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-stone-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  <span class="text-sm font-bold truncate max-w-[200px]" [title]="h.name">{{ h.name }}</span>
+                  <span *ngIf="i === viewModel.hometowns.length - 1" class="bg-green-100 text-green-800 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider">Active</span>
                 </div>
               </div>
               <div class="flex items-center gap-1 ml-2">

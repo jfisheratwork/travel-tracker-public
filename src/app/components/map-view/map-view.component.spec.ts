@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MapViewComponent } from './map-view.component';
 import { StateService } from '../../services/state.service';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import * as L from 'leaflet';
 import { vi } from 'vitest';
 import { LocationDataService } from '../../services/location-data.service';
@@ -26,10 +26,24 @@ vi.mock('leaflet', () => {
         clearLayers: vi.fn(),
       }),
     }),
+    divIcon: vi.fn().mockReturnValue({}),
     marker: vi.fn().mockReturnValue({
       bindPopup: vi.fn().mockReturnValue({
         addTo: vi.fn(),
       }),
+    }),
+    circleMarker: vi.fn().mockReturnValue({
+      bindPopup: vi.fn().mockReturnValue({
+        addTo: vi.fn(),
+      }),
+    }),
+    circle: vi.fn().mockReturnValue({
+      getBounds: vi.fn().mockReturnValue('mocked_bounds'),
+    }),
+    polyline: vi.fn().mockReturnValue({
+      addTo: vi.fn().mockReturnThis(),
+      getBounds: vi.fn().mockReturnValue('mocked_bounds'),
+      remove: vi.fn(),
     }),
   };
 });
@@ -41,22 +55,26 @@ describe('MapViewComponent', () => {
   let stateServiceMock: any;
   let searchTerm$: BehaviorSubject<string>;
   let selectedRoute$: BehaviorSubject<any>;
+  let settings$: BehaviorSubject<any>;
+  let mapMode$: BehaviorSubject<string>;
 
   beforeEach(async () => {
     searchTerm$ = new BehaviorSubject<string>('');
     selectedRoute$ = new BehaviorSubject<any>(null);
-    stateServiceMock = { searchTerm$, selectedRoute$ };
-    
+    settings$ = new BehaviorSubject<any>({ hometowns: [] });
+    mapMode$ = new BehaviorSubject<string>('parks');
+    stateServiceMock = { searchTerm$, selectedRoute$, settings$, mapMode$ };
+
     const locationDataServiceMock = {
       parks$: new BehaviorSubject([]),
-      states$: new BehaviorSubject([])
+      states$: new BehaviorSubject([]),
     };
 
     await TestBed.configureTestingModule({
       imports: [MapViewComponent],
       providers: [
         { provide: StateService, useValue: stateServiceMock },
-        { provide: LocationDataService, useValue: locationDataServiceMock }
+        { provide: LocationDataService, useValue: locationDataServiceMock },
       ],
     }).compileComponents();
 

@@ -50,4 +50,16 @@ describe('SettingsModal', () => {
     expect(currentState.familyMembers.length).toBe(1);
     expect(currentState.familyMembers[0].name).toBe('Test Member');
   });
+
+  it('should add multiple hometowns without crashing', () => {
+    component.hometownQuery = 'Seattle';
+    component.addHometown({ name: 'Seattle, WA', lat: 47, lng: -122 });
+
+    expect(component.viewModel.hometowns.length).toBe(1);
+
+    component.hometownQuery = 'Portland';
+    component.addHometown({ name: 'Portland, OR', lat: 45, lng: -122 });
+
+    expect(component.viewModel.hometowns.length).toBe(2);
+  });
 });
