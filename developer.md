@@ -19,6 +19,17 @@ npm install
 
 ## 2. Build, Test, and Debug Flows
 
+### Makefile Commands
+For convenience, we provide a `Makefile` with common development commands:
+- `make install` - Installs NPM dependencies.
+- `make dev` - Starts the Angular dev server (same as `npm start`).
+- `make build` - Compiles the app for production.
+- `make test` - Runs the Vitest test suite.
+- `make lint` - Runs ESLint.
+- `make format` - Runs Prettier to format source files.
+- `make clean` - Cleans the `dist/` and `.angular/cache/` directories.
+
+
 ### Local Development Server
 To run the app locally with Hot Module Replacement (HMR):
 ```bash
