@@ -22,6 +22,7 @@ Transformed the Road Trip planning interface from a static sidebar form into a h
 - Added a `make generate-env` step to `.github/workflows/deploy.yml` to resolve module not found errors.
 - Created a `build-action` target in the `Makefile` to simulate the GitHub Actions pipeline locally.
 - Added a Husky pre-commit hook to prevent accidental local commits to the `docs/newsite/` build output directory.
+- Removed Mapbox API Key injection from GitHub Actions, requiring users to configure it via local storage on the deployed site.
 
 ### Tasks Not Done
 - None. All requested UX features for the route builder are completed.
@@ -38,3 +39,4 @@ Transformed the Road Trip planning interface from a static sidebar form into a h
 - "create a makefile entry that simulates the github action buiild"
 - "push that to main lets try again"
 - "seems docs/newsite should be blocked from being committed localy. would use .gitignore but that would break our github action. maybe a precommit hook local only"
+- "@[/Users/jacobfisher/coding/traveltracker/travel-tracker-public/.github/workflows/deploy.yml:L31] never to be used in github for any reason.... users of the deployed version must add thier own in lcoal stoarage"

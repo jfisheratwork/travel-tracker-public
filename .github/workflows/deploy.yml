@@ -27,8 +27,6 @@ jobs:
 
       - name: Generate environment
         run: make generate-env
-        env:
-          MAPBOX_API_KEY: ${{ secrets.MAPBOX_API_KEY }}
 
       - name: Build Angular app
         run: npm run build -- --base-href /travel-tracker-public/newsite/
