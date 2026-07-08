@@ -80,12 +80,10 @@
       <div class="locations-section mb-4">
         <div class="flex gap-3 mb-2">
           <div class="flex-1">
-            <label class="text-[10px] uppercase tracking-wider font-bold text-stone-500">Start Location *</label>
-            <input type="text" [(ngModel)]="startQuery" placeholder="e.g. Spokane, WA" class="w-full mt-1 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+            <app-location-autocomplete [(query)]="startQuery" label="Start Location *" placeholder="e.g. Spokane, WA"></app-location-autocomplete>
           </div>
           <div class="flex-1">
-            <label class="text-[10px] uppercase tracking-wider font-bold text-stone-500">End Location *</label>
-            <input type="text" [(ngModel)]="endQuery" placeholder="e.g. Seattle, WA" class="w-full mt-1 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+            <app-location-autocomplete [(query)]="endQuery" label="End Location *" placeholder="e.g. Seattle, WA"></app-location-autocomplete>
           </div>
         </div>
 
@@ -96,7 +94,9 @@
               <div class="text-stone-300 hover:text-stone-500 cursor-grab px-1 transition" cdkDragHandle>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"/><circle cx="9" cy="5" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="15" cy="19" r="1"/></svg>
               </div>
-              <input type="text" [(ngModel)]="stopsQueries[i]" placeholder="Stop Location" class="flex-1 border border-stone-300 rounded-lg px-3 py-1.5 text-sm focus:border-green-600 focus:outline-none" />
+              <div class="flex-1">
+                <app-location-autocomplete [(query)]="stopsQueries[i]" placeholder="Stop Location"></app-location-autocomplete>
+              </div>
               <button class="text-stone-400 hover:text-red-500 p-1.5 transition" (click)="removeStop(i)">✕</button>
             </div>
             <div *ngIf="stopsQueries.length === 0" class="text-xs text-stone-400 italic mb-2">No stops added yet.</div>

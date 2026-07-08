@@ -10,10 +10,12 @@ import { RouteObject, Waypoint } from '../../models/route.model';
 import { firstValueFrom } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
 
+import { LocationAutocompleteComponent } from '../location-autocomplete/location-autocomplete.component';
+
 @Component({
   selector: 'app-route-builder',
   standalone: true,
-  imports: [CommonModule, FormsModule, DragDropModule],
+  imports: [CommonModule, FormsModule, DragDropModule, LocationAutocompleteComponent],
   templateUrl: './route-builder.html',
   styleUrls: ['./route-builder.css'],
 })
