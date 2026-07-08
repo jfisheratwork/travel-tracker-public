@@ -1,0 +1,854 @@
+[
+  {
+    "id": "alabama",
+    "name": "Alabama",
+    "region": "USA",
+    "lat": 37.4267311857392,
+    "lng": -114.3948985286613,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "alaska",
+    "name": "Alaska",
+    "region": "USA",
+    "lat": 39.19538496320202,
+    "lng": -93.0459660729555,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "arizona",
+    "name": "Arizona",
+    "region": "USA",
+    "lat": 32.818499582162204,
+    "lng": -109.75764920168635,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "arkansas",
+    "name": "Arkansas",
+    "region": "USA",
+    "lat": 44.724728360849134,
+    "lng": -118.38608918385215,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "california",
+    "name": "California",
+    "region": "USA",
+    "lat": 38.19812442318078,
+    "lng": -90.81415337695469,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "colorado",
+    "name": "Colorado",
+    "region": "USA",
+    "lat": 33.3829004995324,
+    "lng": -116.44600039437479,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "connecticut",
+    "name": "Connecticut",
+    "region": "USA",
+    "lat": 37.461823803538365,
+    "lng": -94.55285319823228,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "delaware",
+    "name": "Delaware",
+    "region": "USA",
+    "lat": 39.04714368735153,
+    "lng": -88.76493717622267,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "florida",
+    "name": "Florida",
+    "region": "USA",
+    "lat": 34.49454975815008,
+    "lng": -107.76726157133108,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "georgia",
+    "name": "Georgia",
+    "region": "USA",
+    "lat": 36.32455656416795,
+    "lng": -96.28589455727243,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "hawaii",
+    "name": "Hawaii",
+    "region": "USA",
+    "lat": 44.80384302613335,
+    "lng": -85.95524274976064,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "idaho",
+    "name": "Idaho",
+    "region": "USA",
+    "lat": 30.99965405356265,
+    "lng": -96.82843657925042,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "illinois",
+    "name": "Illinois",
+    "region": "USA",
+    "lat": 30.7731728996378,
+    "lng": -83.38374654734777,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "indiana",
+    "name": "Indiana",
+    "region": "USA",
+    "lat": 38.59936114223312,
+    "lng": -86.15971411927559,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "iowa",
+    "name": "Iowa",
+    "region": "USA",
+    "lat": 33.84740187726372,
+    "lng": -115.09141478463067,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "kansas",
+    "name": "Kansas",
+    "region": "USA",
+    "lat": 41.784436539928194,
+    "lng": -102.81595212246181,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "kentucky",
+    "name": "Kentucky",
+    "region": "USA",
+    "lat": 40.17526749607387,
+    "lng": -79.00865178501536,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "louisiana",
+    "name": "Louisiana",
+    "region": "USA",
+    "lat": 39.40125327267282,
+    "lng": -84.42310714068617,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "maine",
+    "name": "Maine",
+    "region": "USA",
+    "lat": 31.493914337437346,
+    "lng": -114.1091719098091,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "maryland",
+    "name": "Maryland",
+    "region": "USA",
+    "lat": 33.79195058924213,
+    "lng": -83.34620997493457,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "massachusetts",
+    "name": "Massachusetts",
+    "region": "USA",
+    "lat": 30.00729482741483,
+    "lng": -85.00358770615672,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "michigan",
+    "name": "Michigan",
+    "region": "USA",
+    "lat": 31.846931301202343,
+    "lng": -102.77192618914285,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "minnesota",
+    "name": "Minnesota",
+    "region": "USA",
+    "lat": 36.5756482845827,
+    "lng": -90.04567594515869,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "mississippi",
+    "name": "Mississippi",
+    "region": "USA",
+    "lat": 30.915108624442,
+    "lng": -114.7135659422726,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "missouri",
+    "name": "Missouri",
+    "region": "USA",
+    "lat": 33.136929525218726,
+    "lng": -98.08410282961927,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "montana",
+    "name": "Montana",
+    "region": "USA",
+    "lat": 37.37814046077517,
+    "lng": -117.39648130761816,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "nebraska",
+    "name": "Nebraska",
+    "region": "USA",
+    "lat": 33.106200589006185,
+    "lng": -113.67570468706562,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "nevada",
+    "name": "Nevada",
+    "region": "USA",
+    "lat": 32.731236613334616,
+    "lng": -107.37620852793697,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "new-hampshire",
+    "name": "New Hampshire",
+    "region": "USA",
+    "lat": 34.578377283886056,
+    "lng": -83.03612427419162,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "new-jersey",
+    "name": "New Jersey",
+    "region": "USA",
+    "lat": 30.859073233513165,
+    "lng": -91.26815826597254,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "new-mexico",
+    "name": "New Mexico",
+    "region": "USA",
+    "lat": 42.15395161917462,
+    "lng": -92.82982369172191,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "new-york",
+    "name": "New York",
+    "region": "USA",
+    "lat": 34.89805524065872,
+    "lng": -105.42495877640965,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "north-carolina",
+    "name": "North Carolina",
+    "region": "USA",
+    "lat": 32.52214044191466,
+    "lng": -109.02479617850874,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "north-dakota",
+    "name": "North Dakota",
+    "region": "USA",
+    "lat": 33.75071406414678,
+    "lng": -95.25220183698075,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "ohio",
+    "name": "Ohio",
+    "region": "USA",
+    "lat": 31.610895113834584,
+    "lng": -113.49116010540284,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "oklahoma",
+    "name": "Oklahoma",
+    "region": "USA",
+    "lat": 43.48644526899146,
+    "lng": -88.30481100249236,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "oregon",
+    "name": "Oregon",
+    "region": "USA",
+    "lat": 42.70554460608338,
+    "lng": -117.5358525116253,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "pennsylvania",
+    "name": "Pennsylvania",
+    "region": "USA",
+    "lat": 30.79255853313438,
+    "lng": -92.70773686749999,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "rhode-island",
+    "name": "Rhode Island",
+    "region": "USA",
+    "lat": 37.592657967355755,
+    "lng": -83.01256951258281,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "south-carolina",
+    "name": "South Carolina",
+    "region": "USA",
+    "lat": 36.496983001413106,
+    "lng": -111.63559784162142,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "south-dakota",
+    "name": "South Dakota",
+    "region": "USA",
+    "lat": 44.1284263529556,
+    "lng": -82.93244514674709,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "tennessee",
+    "name": "Tennessee",
+    "region": "USA",
+    "lat": 35.70717798496647,
+    "lng": -118.1599148915185,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "texas",
+    "name": "Texas",
+    "region": "USA",
+    "lat": 41.515527402033264,
+    "lng": -118.97429219332827,
+    "visitedBy": [
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "utah",
+    "name": "Utah",
+    "region": "USA",
+    "lat": 32.98121467646128,
+    "lng": -103.73539964242849,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "vermont",
+    "name": "Vermont",
+    "region": "USA",
+    "lat": 32.76115045982071,
+    "lng": -103.00859172659284,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis"
+    ],
+    "visited": true
+  },
+  {
+    "id": "virginia",
+    "name": "Virginia",
+    "region": "USA",
+    "lat": 44.93786518421679,
+    "lng": -84.03756742996796,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "washington",
+    "name": "Washington",
+    "region": "USA",
+    "lat": 40.21800328992882,
+    "lng": -114.3180553058552,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "west-virginia",
+    "name": "West Virginia",
+    "region": "USA",
+    "lat": 35.23658545293433,
+    "lng": -91.6279693790848,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "wisconsin",
+    "name": "Wisconsin",
+    "region": "USA",
+    "lat": 30.721474804997698,
+    "lng": -94.94890197794615,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "wyoming",
+    "name": "Wyoming",
+    "region": "USA",
+    "lat": 30.44344160653842,
+    "lng": -90.43904652118437,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "alberta",
+    "name": "Alberta",
+    "region": "Canada",
+    "lat": 31.42577955453374,
+    "lng": -88.20666065060173,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "british-columbia",
+    "name": "British Columbia",
+    "region": "Canada",
+    "lat": 30.82401150795522,
+    "lng": -95.03651329495383,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "manitoba",
+    "name": "Manitoba",
+    "region": "Canada",
+    "lat": 40.81656078252125,
+    "lng": -109.3494037666272,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "new-brunswick",
+    "name": "New Brunswick",
+    "region": "Canada",
+    "lat": 41.840011427032834,
+    "lng": -110.98375025162085,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "newfoundland-and-labrador",
+    "name": "Newfoundland and Labrador",
+    "region": "Canada",
+    "lat": 35.82200396361705,
+    "lng": -102.78322115274977,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "nova-scotia",
+    "name": "Nova Scotia",
+    "region": "Canada",
+    "lat": 30.862796987045797,
+    "lng": -96.05029872807228,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "ontario",
+    "name": "Ontario",
+    "region": "Canada",
+    "lat": 35.204794171656005,
+    "lng": -116.61613173546064,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "prince-edward-island",
+    "name": "Prince Edward Island",
+    "region": "Canada",
+    "lat": 37.56699942068519,
+    "lng": -100.0712895460966,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "quebec",
+    "name": "Quebec",
+    "region": "Canada",
+    "lat": 35.09646830036067,
+    "lng": -118.29472564438953,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "saskatchewan",
+    "name": "Saskatchewan",
+    "region": "Canada",
+    "lat": 32.29321087070292,
+    "lng": -80.77914149021494,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "northwest-territories",
+    "name": "Northwest Territories",
+    "region": "Canada",
+    "lat": 32.97535442035837,
+    "lng": -102.5250673195113,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "nunavut",
+    "name": "Nunavut",
+    "region": "Canada",
+    "lat": 37.140240951762216,
+    "lng": -77.14652943104991,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "yukon",
+    "name": "Yukon",
+    "region": "Canada",
+    "lat": 38.41776255799204,
+    "lng": -113.06717443376111,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  }
+]
