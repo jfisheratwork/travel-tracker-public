@@ -1,31 +1,19 @@
 <div class="max-w-6xl mx-auto px-3 py-4 md:px-6 md:py-6 relative">
-  <!-- Page Title -->
-  <h1 class="text-4xl font-extrabold text-stone-800 mb-6 tracking-tight">
-    🌎 New Family Travel Tracker
-  </h1>
-
-  <div class="flex flex-wrap items-center gap-3 mb-6 border-b border-stone-200 pb-6 no-print">
-    <app-global-search class="flex-1 min-w-[200px] max-w-md"></app-global-search>
-    <button
-      class="px-4 py-2.5 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm font-bold hover:bg-green-100 transition flex items-center gap-1.5 shadow-sm"
-    >
-      🌲 Add Parks
-    </button>
-    <button
-      class="px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-sm font-bold hover:bg-blue-100 transition flex items-center gap-1.5 shadow-sm"
-    >
-      ⭐ Add States
-    </button>
-    <!-- Spacer -->
-    <div class="flex-1"></div>
+  <!-- Page Title and Settings -->
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-4xl font-extrabold text-stone-800 tracking-tight m-0">
+      🌎 New Family Travel Tracker
+    </h1>
     <button
       (click)="showSettingsModal = true"
-      class="px-3 py-2.5 bg-white text-stone-600 border border-stone-200 rounded-xl text-sm font-bold hover:bg-stone-50 transition flex items-center gap-1.5 shadow-sm"
+      class="px-3 py-2.5 bg-white text-stone-600 border border-stone-200 rounded-xl text-sm font-bold hover:bg-stone-50 transition flex items-center gap-1.5 shadow-sm no-print"
       title="Settings"
     >
       ⚙️
     </button>
   </div>
+
+
 
   <!-- Main Display Container: Stacked Map and Route Builder -->
   <div class="flex flex-col gap-6">
@@ -36,13 +24,47 @@
       <app-map-view #mapView></app-map-view>
     </div>
 
-    <!-- Route Builder Underneath -->
+    <!-- Mode Selector Tabs -->
+    <div *ngIf="stateService.mapMode$ | async as mode" class="flex gap-2">
+      <button 
+        (click)="stateService.setMapMode('roads')"
+        [class.bg-blue-600]="mode === 'roads'"
+        [class.text-white]="mode === 'roads'"
+        [class.bg-white]="mode !== 'roads'"
+        [class.text-stone-600]="mode !== 'roads'"
+        class="flex-1 py-3 px-4 rounded-xl text-sm font-bold shadow-sm transition border border-stone-200"
+      >
+        🚗 Routes
+      </button>
+      <button 
+        (click)="stateService.setMapMode('parks')"
+        [class.bg-green-700]="mode === 'parks'"
+        [class.text-white]="mode === 'parks'"
+        [class.bg-white]="mode !== 'parks'"
+        [class.text-stone-600]="mode !== 'parks'"
+        class="flex-1 py-3 px-4 rounded-xl text-sm font-bold shadow-sm transition border border-stone-200"
+      >
+        🌲 Parks
+      </button>
+      <button 
+        (click)="stateService.setMapMode('states')"
+        [class.bg-indigo-600]="mode === 'states'"
+        [class.text-white]="mode === 'states'"
+        [class.bg-white]="mode !== 'states'"
+        [class.text-stone-600]="mode !== 'states'"
+        class="flex-1 py-3 px-4 rounded-xl text-sm font-bold shadow-sm transition border border-stone-200"
+      >
+        ⭐ States
+      </button>
+    </div>
+
+    <!-- Active Mode Content -->
     <div
       *ngIf="stateService.mapMode$ | async as mode"
       class="w-full bg-white rounded-xl shadow-lg border border-stone-200 flex-shrink-0"
-      [class.hidden]="mode !== 'roads'"
     >
-      <app-route-builder></app-route-builder>
+      <app-route-builder *ngIf="mode === 'roads'"></app-route-builder>
+      <app-locations-tracker *ngIf="mode === 'parks' || mode === 'states'"></app-locations-tracker>
     </div>
   </div>
 </div>
@@ -52,6 +74,13 @@
   *ngIf="showSettingsModal"
   (close)="showSettingsModal = false"
 ></app-settings-modal>
+
+<app-location-detail-modal
+  *ngIf="stateService.editingLocation$ | async as editingLoc"
+  [locationId]="editingLoc.id"
+  [mode]="editingLoc.mode"
+  (close)="stateService.setEditingLocation(null)"
+></app-location-detail-modal>
 
 <app-toast-container></app-toast-container>
 <app-loading-spinner></app-loading-spinner>

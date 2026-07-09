@@ -1,4 +1,13 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, ElementRef, HostListener } from '@angular/core';
+import {
+  Component,
+  Input,
+  Output,
+  EventEmitter,
+  OnInit,
+  OnDestroy,
+  ElementRef,
+  HostListener,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Subject, Subscription, of } from 'rxjs';
@@ -10,42 +19,42 @@ import { Waypoint } from '../../models/route.model';
   selector: 'app-location-autocomplete',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './location-autocomplete.component.html'
+  templateUrl: './location-autocomplete.component.html',
 })
 export class LocationAutocompleteComponent implements OnInit, OnDestroy {
   @Input() label: string = '';
   @Input() placeholder: string = '';
-  
+
   @Input() query: string = '';
   @Output() queryChange = new EventEmitter<string>();
 
   suggestions: Waypoint[] = [];
   showDropdown = false;
-  
+
   private searchSubject = new Subject<string>();
   private subscription?: Subscription;
 
   constructor(
     private geocodingService: GeocodingService,
-    private elementRef: ElementRef
+    private elementRef: ElementRef,
   ) {}
 
   ngOnInit() {
-    this.subscription = this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(query => {
-        if (!query || query.length < 3) {
-          return of([]);
-        }
-        return this.geocodingService.searchLocations(query).pipe(
-          catchError(() => of([]))
-        );
-      })
-    ).subscribe(results => {
-      this.suggestions = results;
-      this.showDropdown = this.suggestions.length > 0;
-    });
+    this.subscription = this.searchSubject
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((query) => {
+          if (!query || query.length < 3) {
+            return of([]);
+          }
+          return this.geocodingService.searchLocations(query).pipe(catchError(() => of([])));
+        }),
+      )
+      .subscribe((results) => {
+        this.suggestions = results;
+        this.showDropdown = this.suggestions.length > 0;
+      });
   }
 
   ngOnDestroy() {

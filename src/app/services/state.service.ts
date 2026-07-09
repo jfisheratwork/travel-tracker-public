@@ -23,6 +23,12 @@ export class StateService {
   private isLoadingSubject = new BehaviorSubject<boolean>(false);
   public isLoading$ = this.isLoadingSubject.asObservable();
 
+  private editingLocationSubject = new BehaviorSubject<{
+    id: string;
+    mode: 'parks' | 'states';
+  } | null>(null);
+  public editingLocation$ = this.editingLocationSubject.asObservable();
+
   setSearchTerm(term: string): void {
     this.searchTermSubject.next(term);
   }
@@ -46,5 +52,9 @@ export class StateService {
       this.loadingCount = Math.max(0, this.loadingCount - 1);
     }
     this.isLoadingSubject.next(this.loadingCount > 0);
+  }
+
+  setEditingLocation(location: { id: string; mode: 'parks' | 'states' } | null): void {
+    this.editingLocationSubject.next(location);
   }
 }

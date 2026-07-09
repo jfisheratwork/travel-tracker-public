@@ -97,7 +97,7 @@ export class RouteBuilderComponent implements OnInit {
     return this.familyMembers.filter(
       (m) =>
         !this.selectedMembers.includes(m.name) &&
-        m.name.toLowerCase().includes(this.participantSearchQuery.toLowerCase())
+        m.name.toLowerCase().includes(this.participantSearchQuery.toLowerCase()),
     );
   }
 
@@ -111,11 +111,24 @@ export class RouteBuilderComponent implements OnInit {
       this.startDate = d.toISOString().split('T')[0];
 
       // Default Name
-      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+      const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
       const baseName = `${monthNames[d.getMonth()]} ${d.getFullYear()} - Trip`;
       let finalName = baseName;
       let counter = 1;
-      while (this.savedRoutes.some(r => r.name === finalName)) {
+      while (this.savedRoutes.some((r) => r.name === finalName)) {
         finalName = `${baseName} (${counter})`;
         counter++;
       }
@@ -330,7 +343,12 @@ export class RouteBuilderComponent implements OnInit {
 
   get completedUndated() {
     return this.savedRoutes
-      .filter((r) => r.status === 'completed' && (!r.startDate || r.startDate.trim() === '') && (!r.endDate || r.endDate.trim() === ''))
+      .filter(
+        (r) =>
+          r.status === 'completed' &&
+          (!r.startDate || r.startDate.trim() === '') &&
+          (!r.endDate || r.endDate.trim() === ''),
+      )
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }
 

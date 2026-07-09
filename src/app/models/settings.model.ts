@@ -6,6 +6,12 @@ export interface FamilyMember {
   color: string;
 }
 
+export interface VisitDetail {
+  memberId: string;
+  dateVisited?: string; // YYYY-MM-DD
+  notes?: string;
+}
+
 export interface Hometown {
   id: string;
   name: string;
@@ -22,6 +28,8 @@ export interface AppSettings {
   mapboxKey?: string; // Stored only locally, excluded from any future backend syncs
   routeReduction: number;
   savedRoutes: RouteObject[];
+  visitedStates?: Record<string, VisitDetail[]>;
+  visitedParks?: Record<string, VisitDetail[]>;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -30,4 +38,6 @@ export const DEFAULT_SETTINGS: AppSettings = {
   routingEngine: 'osrm',
   routeReduction: 0.01,
   savedRoutes: [],
+  visitedStates: {},
+  visitedParks: {},
 };
