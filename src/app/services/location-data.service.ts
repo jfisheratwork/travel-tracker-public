@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { LocationPoint } from '../models/location.model';
 import { LoggerService } from '../core/services/logger.service';
+import { NATIONAL_PARKS, STATES } from '../core/constants/geography.constants';
 
 @Injectable({
   providedIn: 'root',
@@ -23,20 +24,28 @@ export class LocationDataService {
   }
 
   private loadData() {
-    this.http
-      .get<LocationPoint[]>('assets/data/parks.json')
-      .pipe(tap((parks) => this.logger.info(`Loaded ${parks.length} parks`)))
-      .subscribe({
-        next: (data) => this.parksSubject.next(data),
-        error: (err) => this.logger.error('Failed to load parks.json', err),
-      });
+    this.parksSubject.next(
+      NATIONAL_PARKS.map((p) => ({
+        id: `park-${p.id}`,
+        name: p.name,
+        lat: p.lat,
+        lng: p.lng,
+        region: p.sub || '',
+        visited: false,
+        visitedBy: [],
+      })),
+    );
 
-    this.http
-      .get<LocationPoint[]>('assets/data/states.json')
-      .pipe(tap((states) => this.logger.info(`Loaded ${states.length} states`)))
-      .subscribe({
-        next: (data) => this.statesSubject.next(data),
-        error: (err) => this.logger.error('Failed to load states.json', err),
-      });
+    this.statesSubject.next(
+      STATES.map((s) => ({
+        id: `state-${s.id}`,
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng,
+        region: s.sub || '',
+        visited: false,
+        visitedBy: [],
+      })),
+    );
   }
 }

@@ -35,7 +35,7 @@ export class SettingsModal implements OnInit, OnDestroy {
 
   constructor(
     private stateService: StateService,
-    private geocodingService: GeocodingService
+    private geocodingService: GeocodingService,
   ) {}
 
   ngOnInit(): void {
@@ -126,7 +126,7 @@ export class SettingsModal implements OnInit, OnDestroy {
 
     try {
       const results = await firstValueFrom(this.geocodingService.searchLocations(query, 5));
-      this.hometownSearchResults = results.map(r => ({
+      this.hometownSearchResults = results.map((r) => ({
         name: r.name || 'Unknown Location',
         lat: r.lat,
         lng: r.lng,

@@ -37,17 +37,36 @@ export class LocalStorageService {
 
         // Merge with defaults to ensure all properties exist
         // Note: The legacy app stored strings in familyMembers, we need to handle migration
-        // if they are strings.
+        const familyMembers = Array.isArray(parsed.familyMembers)
+          ? parsed.familyMembers.map((member: unknown) =>
+              typeof member === 'string'
+                ? { id: crypto.randomUUID(), name: member, color: this.getRandomColor() }
+                : member,
+            )
+          : [];
+
+        // Helper to convert legacy structures to VisitDetail[]
+        const convertToVisitDetails = (record: Record<string, any[]>) => {
+          const newRecord: Record<string, import('../models/settings.model').VisitDetail[]> = {};
+          if (!record) return newRecord;
+          for (const [key, items] of Object.entries(record)) {
+            newRecord[key] = items.map((item) => {
+              if (typeof item === 'string') {
+                const found = familyMembers.find((m: any) => m.name === item || m.id === item);
+                return { memberId: found ? found.id : item };
+              }
+              return item; // already VisitDetail
+            });
+          }
+          return newRecord;
+        };
+
         const migratedSettings: AppSettings = {
           ...DEFAULT_SETTINGS,
           ...parsed,
-          familyMembers: Array.isArray(parsed.familyMembers)
-            ? parsed.familyMembers.map((member: unknown) =>
-                typeof member === 'string'
-                  ? { id: crypto.randomUUID(), name: member, color: this.getRandomColor() }
-                  : member,
-              )
-            : [],
+          familyMembers,
+          visitedStates: convertToVisitDetails(parsed.visitedStates),
+          visitedParks: convertToVisitDetails(parsed.visitedParks),
         };
 
         this.stateService.updateSettings(migratedSettings);

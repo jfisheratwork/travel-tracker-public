@@ -1,11 +1,7 @@
 <div class="flex flex-col h-full bg-white relative">
   <!-- Top Bar -->
   <div class="flex flex-wrap justify-between items-center gap-3 p-4 border-b border-stone-100 z-[1000] bg-white relative">
-    <div class="flex gap-2">
-      <button (click)="setMapMode('parks')" [ngClass]="mapMode === 'parks' ? 'text-white bg-green-700 shadow-sm' : 'text-stone-600 hover:bg-stone-100'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all">National Parks</button>
-      <button (click)="setMapMode('states')" [ngClass]="mapMode === 'states' ? 'text-white bg-green-700 shadow-sm' : 'text-stone-600 hover:bg-stone-100'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all">States & Provinces</button>
-      <button (click)="setMapMode('roads')" [ngClass]="mapMode === 'roads' ? 'text-white bg-green-700 shadow-sm' : 'text-stone-600 hover:bg-stone-100'" class="px-4 py-2 rounded-lg text-sm font-medium transition-all">Road Trips</button>
-    </div>
+    <app-global-search class="w-full md:flex-1 lg:max-w-md"></app-global-search>
     <button class="px-4 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center gap-1.5 shadow-sm">
       📊 Show Statistics
     </button>

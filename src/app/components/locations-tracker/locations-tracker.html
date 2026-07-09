@@ -1,0 +1,53 @@
+<div class="flex flex-col h-full">
+  <div class="flex items-center justify-between p-4 border-b border-stone-200 bg-stone-50 rounded-t-xl flex-shrink-0">
+    <div>
+      <h2 class="text-lg font-bold text-stone-800">
+        {{ mode === 'parks' ? '🌲 Visited Parks' : '⭐ Visited States & Provinces' }}
+      </h2>
+      <p class="text-xs text-stone-500 mt-1">Locations visited by your family members</p>
+    </div>
+    
+    <button
+      (click)="openEditModal()"
+      class="px-4 py-2 bg-white border border-stone-200 rounded-lg text-sm font-bold text-stone-700 hover:bg-stone-50 transition shadow-sm flex items-center gap-2"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+      </svg>
+      Edit {{ mode === 'parks' ? 'Parks' : 'States' }}
+    </button>
+  </div>
+
+  <div class="p-4 overflow-y-auto flex-1 bg-white rounded-b-xl">
+    <div *ngIf="visitedLocations.length === 0" class="text-center p-8 border-2 border-dashed border-stone-200 rounded-xl">
+      <p class="text-stone-500 mb-2">No {{ mode === 'parks' ? 'parks' : 'states' }} visited yet.</p>
+      <p class="text-sm text-stone-400">Click the Edit button to add some!</p>
+    </div>
+
+    <div *ngIf="visitedLocations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div *ngFor="let item of visitedLocations" class="p-3 border border-stone-200 rounded-xl bg-stone-50 flex flex-col justify-between">
+        <div class="flex items-start justify-between mb-2 border-b border-stone-200 pb-2">
+          <div>
+            <h3 class="font-bold text-stone-800 text-sm leading-tight">{{ item.location.name }}</h3>
+            <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{{ item.location.sub }}</span>
+          </div>
+        </div>
+        
+        <div class="flex flex-wrap gap-1.5">
+          <div *ngFor="let member of item.members" 
+               class="px-2 py-0.5 rounded-full text-xs font-bold bg-white border shadow-sm flex items-center gap-1.5"
+               [ngStyle]="{'border-color': member.color}">
+            <div class="w-1.5 h-1.5 rounded-full" [ngStyle]="{'background-color': member.color}"></div>
+            {{ member.name }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<app-parks-states-modal
+  *ngIf="showModal"
+  [mode]="mode"
+  (close)="showModal = false"
+></app-parks-states-modal>

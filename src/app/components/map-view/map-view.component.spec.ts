@@ -10,6 +10,7 @@ vi.mock('leaflet', () => {
   const mapInstance = {
     setView: vi.fn().mockReturnThis(),
     remove: vi.fn(),
+    on: vi.fn(),
   };
   return {
     Icon: {

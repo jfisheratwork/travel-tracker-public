@@ -1,0 +1,87 @@
+<div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm no-print">
+  <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] m-4">
+    <!-- Header -->
+    <div class="p-6 border-b border-stone-100 flex justify-between items-start flex-shrink-0 bg-stone-50 rounded-t-2xl">
+      <div>
+        <h2 class="text-2xl font-extrabold text-stone-800 tracking-tight flex items-center gap-2">
+          {{ location?.name }}
+        </h2>
+        <p class="text-sm font-bold text-stone-500 uppercase tracking-widest mt-1">
+          {{ mode === 'parks' ? 'National Park' : 'State / Province' }} • {{ location?.sub || location?.country }}
+        </p>
+      </div>
+      <button (click)="cancel()" class="text-stone-400 hover:text-stone-600 focus:outline-none p-1 transition bg-white rounded-full shadow-sm border border-stone-200">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="overflow-y-auto flex-1 p-6 relative bg-white">
+      <div *ngIf="!viewModel?.familyMembers?.length" class="text-center p-8">
+        <p class="text-stone-500">No family members added yet.</p>
+      </div>
+
+      <div *ngIf="viewModel?.familyMembers?.length" class="space-y-6">
+        <div *ngFor="let member of viewModel?.familyMembers" class="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm transition-all duration-200" [class.ring-2]="isVisited(member.id)" [class.ring-green-500]="isVisited(member.id)" [class.border-green-500]="isVisited(member.id)">
+          
+          <!-- Member Header -->
+          <div class="px-5 py-4 flex items-center justify-between" [class.bg-green-50]="isVisited(member.id)" [class.bg-stone-50]="!isVisited(member.id)">
+            <div class="flex items-center gap-3">
+              <div class="w-4 h-4 rounded-full border border-stone-300 shadow-inner" [ngStyle]="{'background-color': member.color}"></div>
+              <h3 class="font-bold text-stone-800 text-lg">{{ member.name }}</h3>
+            </div>
+            <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-stone-200 shadow-sm hover:bg-stone-50 transition">
+              <input 
+                type="checkbox" 
+                [checked]="isVisited(member.id)"
+                (change)="toggleVisit(member.id, $event)"
+                class="w-5 h-5 rounded border-stone-300 text-green-600 focus:ring-green-500 cursor-pointer"
+              />
+              <span class="text-sm font-bold text-stone-700 select-none">Visited</span>
+            </label>
+          </div>
+
+          <!-- Edit Details (Only visible if visited) -->
+          <div *ngIf="isVisited(member.id)" class="p-5 border-t border-stone-200 space-y-4 bg-white">
+            <div>
+              <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">Date Visited</label>
+              <input 
+                type="date" 
+                [(ngModel)]="editingVisits[member.id].dateVisited"
+                (change)="updateDetails(member.id)"
+                class="w-full max-w-[200px] border border-stone-300 rounded-lg px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 transition"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">Notes & Memories</label>
+              <textarea 
+                [(ngModel)]="editingVisits[member.id].notes"
+                (change)="updateDetails(member.id)"
+                rows="2"
+                placeholder="What was memorable about this visit?"
+                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 transition resize-y"
+              ></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-6 border-t border-stone-100 bg-stone-50 flex justify-end gap-3 flex-shrink-0 rounded-b-2xl">
+      <button
+        (click)="cancel()"
+        class="px-6 py-2.5 rounded-lg text-sm font-bold text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 shadow-sm transition"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="save()"
+        class="px-8 py-2.5 rounded-lg text-sm font-bold text-white bg-green-700 hover:bg-green-800 shadow-sm transition flex items-center gap-2"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+        Save Changes
+      </button>
+    </div>
+  </div>
+</div>

@@ -25,7 +25,7 @@ export class GeocodingService {
             lng: f.geometry.coordinates[0],
             name: f.properties.full_address || f.properties.name,
           }));
-        })
+        }),
       );
     }
 
