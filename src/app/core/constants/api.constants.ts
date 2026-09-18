@@ -4,4 +4,5 @@ export const API_ENDPOINTS = {
   MAPBOX_GEOCODE: 'https://api.mapbox.com/search/geocode/v6/forward',
   NOMINATIM_SEARCH: 'https://nominatim.openstreetmap.org/search',
   OSM_TILE_LAYER: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  CARTO_TILE_LAYER: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
 };

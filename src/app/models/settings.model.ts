@@ -6,10 +6,18 @@ export interface FamilyMember {
   color: string;
 }
 
+export interface VisitLogEntry {
+  id: string;
+  dateVisited: string; // YYYY-MM-DD
+  comments?: string;
+}
+
 export interface VisitDetail {
   memberId: string;
-  dateVisited?: string; // YYYY-MM-DD
+  dateVisited?: string; // YYYY-MM-DD (legacy / first visit)
+  firstVisitedDate?: string; // YYYY-MM-DD
   notes?: string;
+  visits?: VisitLogEntry[];
 }
 
 export interface Hometown {
@@ -26,10 +34,12 @@ export interface AppSettings {
   hometowns: Hometown[];
   routingEngine: 'osrm' | 'mapbox';
   mapboxKey?: string; // Stored only locally, excluded from any future backend syncs
+  cartoKey?: string; // CARTO basemap API Key
   routeReduction: number;
   savedRoutes: RouteObject[];
   visitedStates?: Record<string, VisitDetail[]>;
   visitedParks?: Record<string, VisitDetail[]>;
+  locationVisits?: Record<string, VisitLogEntry[]>;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {

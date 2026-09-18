@@ -191,6 +191,16 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     }
   }
 
+  hasLocationDetails(locationId: string): boolean {
+    if (!this.viewModel) return false;
+    if (this.viewModel.locationVisits?.[locationId]?.length) return true;
+
+    const visits =
+      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const locVisits = visits[locationId] || [];
+    return locVisits.some((v) => !!v.firstVisitedDate || !!v.dateVisited || !!v.notes);
+  }
+
   openExternal(name: string): void {
     window.open(`https://www.google.com/search?q=${encodeURIComponent(name)}`, '_blank');
   }

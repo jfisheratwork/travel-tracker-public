@@ -1,0 +1,355 @@
+<div
+  (click)="onBackdropClick($event)"
+  class="fixed inset-0 z-[2500] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 no-print overflow-y-auto cursor-pointer"
+>
+  <div
+    (click)="$event.stopPropagation()"
+    class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] border border-stone-200 cursor-default"
+  >
+    <!-- Top Header & Tabs Bar (Matching Screenshot) -->
+    <div
+      class="px-6 py-4 border-b border-stone-200 bg-white flex flex-wrap items-center justify-between gap-3 flex-shrink-0"
+    >
+      <div class="flex items-center gap-2">
+        <button
+          (click)="activeTab = 'parks'"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs"
+          [class.bg-green-700]="activeTab === 'parks'"
+          [class.text-white]="activeTab === 'parks'"
+          [class.text-stone-600]="activeTab !== 'parks'"
+          [class.hover:bg-stone-100]="activeTab !== 'parks'"
+        >
+          National Parks
+        </button>
+        <button
+          (click)="activeTab = 'states'"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs"
+          [class.bg-indigo-600]="activeTab === 'states'"
+          [class.text-white]="activeTab === 'states'"
+          [class.text-stone-600]="activeTab !== 'states'"
+          [class.hover:bg-stone-100]="activeTab !== 'states'"
+        >
+          States & Provinces
+        </button>
+        <button
+          (click)="activeTab = 'roads'"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs"
+          [class.bg-blue-600]="activeTab === 'roads'"
+          [class.text-white]="activeTab === 'roads'"
+          [class.text-stone-600]="activeTab !== 'roads'"
+          [class.hover:bg-stone-100]="activeTab !== 'roads'"
+        >
+          Road Trips
+        </button>
+      </div>
+
+      <button
+        (click)="close.emit()"
+        class="px-4 py-2 bg-white border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition shadow-sm flex items-center gap-1.5"
+      >
+        <span>📊</span>
+        <span>Hide Statistics</span>
+      </button>
+    </div>
+
+    <!-- Scrollable Body with Border Container (Matching Screenshot) -->
+    <div class="p-6 overflow-y-auto flex-1 bg-stone-100/50">
+      <div class="border border-stone-200 rounded-2xl bg-white p-5 shadow-xs">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <!-- ================= LEFT COLUMN ================= -->
+          <div class="lg:col-span-1 space-y-4">
+            <!-- 1. Total Visited Metric Card -->
+            <div
+              class="bg-stone-50/80 p-5 rounded-2xl shadow-xs border border-stone-200 text-center"
+            >
+              <span class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">
+                <ng-container *ngIf="activeTab === 'parks'">Parks Visited</ng-container>
+                <ng-container *ngIf="activeTab === 'states'">States & Prov. Visited</ng-container>
+                <ng-container *ngIf="activeTab === 'roads'">Road Trips Completed</ng-container>
+              </span>
+
+              <span *ngIf="activeTab === 'parks'" class="text-3xl font-extrabold text-green-700">
+                {{ totalParksVisited }} / {{ TOTAL_PARKS }}
+              </span>
+              <span *ngIf="activeTab === 'states'" class="text-3xl font-extrabold text-indigo-700">
+                {{ totalStatesVisited }} / {{ TOTAL_STATES }}
+              </span>
+              <span *ngIf="activeTab === 'roads'" class="text-3xl font-extrabold text-blue-700">
+                {{ completedRoutesCount }} completed
+              </span>
+            </div>
+
+            <!-- 2. Regional / Sub-metrics Breakdown Card -->
+            <div
+              class="bg-stone-50/80 p-4 rounded-2xl shadow-xs border border-stone-200 space-y-3.5"
+            >
+              <!-- Parks Regional Split -->
+              <ng-container *ngIf="activeTab === 'parks'">
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-stone-600">
+                    <span>US Parks</span>
+                    <span>{{ visitedUSParksCount }}/{{ TOTAL_US_PARKS }}</span>
+                  </div>
+                  <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      class="bg-blue-600 h-full rounded-full transition-all duration-500"
+                      [style.width.%]="visitedUSParksPct"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-stone-600">
+                    <span>CA Parks</span>
+                    <span>{{ visitedCAParksCount }}/{{ TOTAL_CA_PARKS }}</span>
+                  </div>
+                  <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      class="bg-red-500 h-full rounded-full transition-all duration-500"
+                      [style.width.%]="visitedCAParksPct"
+                    ></div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- States Regional Split -->
+              <ng-container *ngIf="activeTab === 'states'">
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-stone-600">
+                    <span>US States</span>
+                    <span>{{ visitedUSStatesCount }}/{{ TOTAL_US_STATES }}</span>
+                  </div>
+                  <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      class="bg-blue-600 h-full rounded-full transition-all duration-500"
+                      [style.width.%]="visitedUSStatesPct"
+                    ></div>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-stone-600">
+                    <span>CA Provinces</span>
+                    <span>{{ visitedCAProvincesCount }}/{{ TOTAL_CA_PROVINCES }}</span>
+                  </div>
+                  <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      class="bg-red-500 h-full rounded-full transition-all duration-500"
+                      [style.width.%]="visitedCAProvincesPct"
+                    ></div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- Roads Sub-metrics -->
+              <ng-container *ngIf="activeTab === 'roads'">
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-stone-600">
+                    <span>Total Distance</span>
+                    <span>{{ totalCompletedMiles }} mi</span>
+                  </div>
+                  <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div class="bg-blue-600 h-full rounded-full w-full"></div>
+                  </div>
+                </div>
+
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-stone-600">
+                    <span>Total Duration</span>
+                    <span>{{ totalCompletedHours }} hrs</span>
+                  </div>
+                  <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div class="bg-amber-500 h-full rounded-full w-full"></div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+
+            <!-- 3. Remaining / Secondary Metric Card -->
+            <div
+              class="bg-stone-50/80 p-5 rounded-2xl shadow-xs border border-stone-200 text-center"
+            >
+              <span class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">
+                {{ activeTab === 'roads' ? 'Planned Trips' : 'Remaining' }}
+              </span>
+              <span class="text-3xl font-extrabold text-stone-500">
+                <ng-container *ngIf="activeTab === 'parks'">{{ remainingParks }}</ng-container>
+                <ng-container *ngIf="activeTab === 'states'">{{ remainingStates }}</ng-container>
+                <ng-container *ngIf="activeTab === 'roads'">{{ plannedRoutesCount }}</ng-container>
+              </span>
+            </div>
+          </div>
+
+          <!-- ================= RIGHT AREA ================= -->
+          <div
+            class="lg:col-span-3 bg-stone-50/40 p-6 rounded-2xl border border-stone-200 flex flex-col justify-between"
+          >
+            <!-- Overall Detailed Progress Header & Bar -->
+            <div class="mb-5">
+              <div class="flex justify-between items-end mb-1.5">
+                <span class="text-xs font-extrabold text-stone-700 uppercase tracking-wider">
+                  Detailed Progress
+                </span>
+                <span class="text-sm font-bold text-stone-700">
+                  <ng-container *ngIf="activeTab === 'parks'">{{ totalParksPct }}%</ng-container>
+                  <ng-container *ngIf="activeTab === 'states'">{{ totalStatesPct }}%</ng-container>
+                  <ng-container *ngIf="activeTab === 'roads'"
+                    >{{ completedRoutesCount }}/{{ totalRoutesCount }} ({{
+                      routesCompletionPct
+                    }}%)</ng-container
+                  >
+                </span>
+              </div>
+              <div class="w-full bg-stone-200 rounded-full h-3.5 overflow-hidden shadow-inner">
+                <div
+                  *ngIf="activeTab === 'parks'"
+                  class="bg-green-600 h-full rounded-full transition-all duration-700"
+                  [style.width.%]="totalParksPct"
+                ></div>
+                <div
+                  *ngIf="activeTab === 'states'"
+                  class="bg-indigo-600 h-full rounded-full transition-all duration-700"
+                  [style.width.%]="totalStatesPct"
+                ></div>
+                <div
+                  *ngIf="activeTab === 'roads'"
+                  class="bg-blue-600 h-full rounded-full transition-all duration-700"
+                  [style.width.%]="routesCompletionPct"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Family Member Progress Cards (2-Column Grid Matching Screenshot) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+              <div
+                *ngFor="let stat of memberStats"
+                class="bg-white p-4 rounded-xl border border-stone-200 shadow-xs flex flex-col justify-between"
+              >
+                <!-- Member Header -->
+                <div class="flex items-center justify-between pb-2 border-b border-stone-100">
+                  <div class="flex items-center gap-2">
+                    <span
+                      class="w-3 h-3 rounded-full border border-stone-300"
+                      [style.background-color]="stat.member.color"
+                    ></span>
+                    <span class="font-bold text-stone-800 text-sm">{{ stat.member.name }}</span>
+                  </div>
+
+                  <!-- Header Fraction / Count -->
+                  <span class="text-xs font-bold text-stone-500">
+                    <ng-container *ngIf="activeTab === 'parks'"
+                      >{{ stat.parksTotal }}/{{ TOTAL_PARKS }}</ng-container
+                    >
+                    <ng-container *ngIf="activeTab === 'states'"
+                      >{{ stat.statesTotal }}/{{ TOTAL_STATES }}</ng-container
+                    >
+                    <ng-container *ngIf="activeTab === 'roads'"
+                      >{{ stat.routesCount }} trips</ng-container
+                    >
+                  </span>
+                </div>
+
+                <!-- Parks Breakout (USA / CAN) -->
+                <div *ngIf="activeTab === 'parks'" class="space-y-2 mt-3">
+                  <div class="flex flex-col gap-1">
+                    <div
+                      class="flex justify-between text-[10px] uppercase font-bold text-stone-400"
+                    >
+                      <span>USA</span>
+                      <span>{{ stat.usParks }}/{{ TOTAL_US_PARKS }}</span>
+                    </div>
+                    <div
+                      class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden border border-stone-200/50"
+                    >
+                      <div
+                        class="bg-blue-600 h-full rounded-full transition-all"
+                        [style.width.%]="stat.usParksPct"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-1">
+                    <div
+                      class="flex justify-between text-[10px] uppercase font-bold text-stone-400"
+                    >
+                      <span>CAN</span>
+                      <span>{{ stat.caParks }}/{{ TOTAL_CA_PARKS }}</span>
+                    </div>
+                    <div
+                      class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden border border-stone-200/50"
+                    >
+                      <div
+                        class="bg-red-500 h-full rounded-full transition-all"
+                        [style.width.%]="stat.caParksPct"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- States Breakout (USA / CAN) -->
+                <div *ngIf="activeTab === 'states'" class="space-y-2 mt-3">
+                  <div class="flex flex-col gap-1">
+                    <div
+                      class="flex justify-between text-[10px] uppercase font-bold text-stone-400"
+                    >
+                      <span>USA</span>
+                      <span>{{ stat.usStates }}/{{ TOTAL_US_STATES }}</span>
+                    </div>
+                    <div
+                      class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden border border-stone-200/50"
+                    >
+                      <div
+                        class="bg-blue-600 h-full rounded-full transition-all"
+                        [style.width.%]="stat.usStatesPct"
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-1">
+                    <div
+                      class="flex justify-between text-[10px] uppercase font-bold text-stone-400"
+                    >
+                      <span>CAN</span>
+                      <span>{{ stat.caStates }}/{{ TOTAL_CA_PROVINCES }}</span>
+                    </div>
+                    <div
+                      class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden border border-stone-200/50"
+                    >
+                      <div
+                        class="bg-red-500 h-full rounded-full transition-all"
+                        [style.width.%]="stat.caStatesPct"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Road Trips Breakout -->
+                <div *ngIf="activeTab === 'roads'" class="space-y-2 mt-3">
+                  <div class="flex flex-col gap-1">
+                    <div
+                      class="flex justify-between text-[10px] uppercase font-bold text-stone-400"
+                    >
+                      <span>Participation</span>
+                      <span>{{ stat.routesCount }}/{{ completedRoutesCount }} completed</span>
+                    </div>
+                    <div
+                      class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden border border-stone-200/50"
+                    >
+                      <div
+                        class="bg-blue-600 h-full rounded-full transition-all"
+                        [style.width.%]="stat.routesPct"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="text-[11px] font-semibold text-stone-500 pt-0.5">
+                    🚗 {{ stat.routesMiles }} miles driven
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output, OnDestroy } from '@angu
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
-import { AppSettings, VisitDetail } from '../../models/settings.model';
+import { AppSettings, VisitDetail, VisitLogEntry } from '../../models/settings.model';
 import { Subscription } from 'rxjs';
 import { NATIONAL_PARKS, STATES, GeoLocation } from '../../core/constants/geography.constants';
 
@@ -22,6 +22,7 @@ export class LocationDetailModal implements OnInit, OnDestroy {
 
   // Local state for editing visits before saving
   editingVisits: Record<string, VisitDetail> = {};
+  locationVisitLogs: VisitLogEntry[] = [];
 
   private sub?: Subscription;
 
@@ -29,7 +30,22 @@ export class LocationDetailModal implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     const list = this.mode === 'parks' ? NATIONAL_PARKS : STATES;
-    this.location = list.find((l) => l.id === this.locationId) || null;
+    const cleanId = this.locationId
+      .replace(/^park-/, '')
+      .replace(/^state-/, '')
+      .toLowerCase();
+    this.location =
+      list.find(
+        (l) =>
+          l.id === this.locationId ||
+          l.id.toLowerCase() === cleanId ||
+          l.name.toLowerCase() === cleanId ||
+          l.name.toLowerCase() === this.locationId.toLowerCase(),
+      ) || null;
+
+    if (this.location) {
+      this.locationId = this.location.id;
+    }
 
     this.sub = this.stateService.settings$.subscribe((settings) => {
       this.viewModel = JSON.parse(JSON.stringify(settings));
@@ -51,11 +67,23 @@ export class LocationDetailModal implements OnInit, OnDestroy {
     for (const member of this.viewModel.familyMembers) {
       const existing = locVisits.find((v) => v.memberId === member.id);
       if (existing) {
-        this.editingVisits[member.id] = { ...existing };
+        this.editingVisits[member.id] = {
+          ...existing,
+          firstVisitedDate: existing.firstVisitedDate || existing.dateVisited || '',
+        };
       } else {
-        this.editingVisits[member.id] = { memberId: member.id, dateVisited: '', notes: '' };
+        this.editingVisits[member.id] = {
+          memberId: member.id,
+          dateVisited: '',
+          firstVisitedDate: '',
+          notes: '',
+        };
       }
     }
+
+    // Initialize visits list for this specific location
+    const storedLogs = this.viewModel.locationVisits?.[this.locationId] || [];
+    this.locationVisitLogs = storedLogs.map((l) => ({ ...l }));
   }
 
   isVisited(memberId: string): boolean {
@@ -92,14 +120,51 @@ export class LocationDetailModal implements OnInit, OnDestroy {
 
     const idx = locVisits.findIndex((v) => v.memberId === memberId);
     if (idx !== -1) {
-      locVisits[idx] = { ...this.editingVisits[memberId] };
+      const detail = this.editingVisits[memberId];
+      locVisits[idx] = {
+        ...detail,
+        dateVisited: detail.firstVisitedDate || detail.dateVisited,
+      };
     }
   }
 
+  addVisitLog(): void {
+    const today = new Date().toISOString().split('T')[0];
+    this.locationVisitLogs.push({
+      id: crypto.randomUUID(),
+      dateVisited: today,
+      comments: '',
+    });
+  }
+
+  removeVisitLog(index: number): void {
+    this.locationVisitLogs.splice(index, 1);
+  }
+
   save(): void {
-    if (this.viewModel) {
-      this.stateService.updateSettings(this.viewModel);
+    if (!this.viewModel) return;
+
+    // Save location-level visit logs
+    if (!this.viewModel.locationVisits) {
+      this.viewModel.locationVisits = {};
     }
+    this.viewModel.locationVisits[this.locationId] = this.locationVisitLogs;
+
+    // Update visited details per member
+    const visits =
+      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const locVisits = visits[this.locationId] || [];
+
+    locVisits.forEach((v) => {
+      const edit = this.editingVisits[v.memberId];
+      if (edit) {
+        v.firstVisitedDate = edit.firstVisitedDate;
+        v.dateVisited = edit.firstVisitedDate || edit.dateVisited;
+        v.notes = edit.notes;
+      }
+    });
+
+    this.stateService.updateSettings(this.viewModel);
     this.close.emit();
   }
 

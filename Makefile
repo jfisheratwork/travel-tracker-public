@@ -6,7 +6,8 @@ export
 # Generate environment files dynamically
 generate-env:
 	@mkdir -p src/environments
-	@echo "export const environment = { production: false, networkTimeoutMs: 10000, mapboxKey: '$$MAPBOX_API_KEY' };" > src/environments/environment.ts
+	@printf "export const environment = {\n  production: false,\n  networkTimeoutMs: 10000,\n  mapboxKey:\n    '$$MAPBOX_API_KEY',\n  cartoKey: '$$CARTO_API_KEY',\n};\n" > src/environments/environment.ts
+
 
 # Install all dependencies
 install:
@@ -27,22 +28,22 @@ run-old:
 
 # Build the Angular application for production (using default angular.json baseHref if any)
 build:
-	npm run build
+	HOME=$$(pwd)/scratch NG_CLI_ANALYTICS=false npm run build
 
 # Build the Angular application for local HTTP serving (overriding base-href to root)
 build-local:
-	npm run build -- --base-href /
+	HOME=$$(pwd)/scratch NG_CLI_ANALYTICS=false npm run build -- --base-href /
 
 # Simulate the GitHub action build
 build-action: generate-env
-	npm run build -- --base-href /travel-tracker-public/newsite/
+	HOME=$$(pwd)/scratch NG_CLI_ANALYTICS=false npm run build -- --base-href /travel-tracker-public/newsite/
 	@mkdir -p docs/newsite
 	@rm -rf docs/newsite/*
 	@cp -r dist/travel-tracker-public/browser/* docs/newsite/
 
 # Run unit tests via Vitest
 test:
-	npm test
+	HOME=$$(pwd)/scratch NG_CLI_ANALYTICS=false npm test -- --watch=false
 
 # Run ESLint across the source code
 lint:

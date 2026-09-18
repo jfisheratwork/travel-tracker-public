@@ -1,47 +1,109 @@
-<div class="flex flex-col h-full">
-  <div class="flex items-center justify-between p-4 border-b border-stone-200 bg-stone-50 rounded-t-xl flex-shrink-0">
-    <div>
-      <h2 class="text-lg font-bold text-stone-800">
-        {{ mode === 'parks' ? '🌲 Visited Parks' : '⭐ Visited States & Provinces' }}
-      </h2>
-      <p class="text-xs text-stone-500 mt-1">Locations visited by your family members</p>
-    </div>
-    
+<div class="bg-stone-50 border border-stone-200 p-4 rounded-xl shadow-xs">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400">
+      {{ mode === 'parks' ? 'Visited Parks' : 'Visited States & Provinces' }}
+    </h3>
+
     <button
       (click)="openEditModal()"
-      class="px-4 py-2 bg-white border border-stone-200 rounded-lg text-sm font-bold text-stone-700 hover:bg-stone-50 transition shadow-sm flex items-center gap-2"
+      class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center gap-1.5"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-3.5 w-3.5 text-stone-500"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+        />
       </svg>
-      Edit {{ mode === 'parks' ? 'Parks' : 'States' }}
+      <span>Add / Edit {{ mode === 'parks' ? 'Parks' : 'States' }}</span>
     </button>
   </div>
 
-  <div class="p-4 overflow-y-auto flex-1 bg-white rounded-b-xl">
-    <div *ngIf="visitedLocations.length === 0" class="text-center p-8 border-2 border-dashed border-stone-200 rounded-xl">
-      <p class="text-stone-500 mb-2">No {{ mode === 'parks' ? 'parks' : 'states' }} visited yet.</p>
-      <p class="text-sm text-stone-400">Click the Edit button to add some!</p>
+  <div class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto pr-1">
+    <div
+      *ngIf="visitedLocations.length === 0"
+      class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400"
+    >
+      {{
+        searchTerm
+          ? 'No ' + (mode === 'parks' ? 'parks' : 'states') + ' matching "' + searchTerm + '".'
+          : 'No ' +
+            (mode === 'parks' ? 'parks' : 'states') +
+            ' visited yet. Use "Add ' +
+            (mode === 'parks' ? 'Parks' : 'States') +
+            '" to log visits.'
+      }}
     </div>
 
-    <div *ngIf="visitedLocations.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-      <div *ngFor="let item of visitedLocations" class="p-3 border border-stone-200 rounded-xl bg-stone-50 flex flex-col justify-between">
-        <div class="flex items-start justify-between mb-2 border-b border-stone-200 pb-2">
-          <div>
-            <h3 class="font-bold text-stone-800 text-sm leading-tight">{{ item.location.name }}</h3>
-            <span class="text-[10px] uppercase font-bold text-stone-400 tracking-wider">{{ item.location.sub }}</span>
-          </div>
+    <div
+      *ngFor="let item of visitedLocations"
+      class="p-3 bg-white border border-stone-200 rounded-lg flex justify-between items-start hover:bg-stone-50 transition shadow-xs"
+    >
+      <div class="space-y-1.5 flex-1 min-w-0 pr-2">
+        <div class="flex items-center gap-2 flex-wrap">
+          <strong class="text-stone-800 text-sm font-semibold">
+            {{ item.location.name
+            }}{{ mode === 'parks' && !item.location.name.includes('Park') ? ' National Park' : '' }}
+          </strong>
+          <span class="text-xs text-stone-400">{{ getSubtitle(item.location) }}</span>
+          <span
+            *ngIf="item.members.length === totalFamilyMembersCount"
+            class="text-green-600 font-bold text-xs"
+            >✓ All</span
+          >
+          <span
+            *ngIf="item.members.length < totalFamilyMembersCount"
+            class="text-stone-400 text-xs"
+            >{{ item.members.length }}/{{ totalFamilyMembersCount }}</span
+          >
         </div>
-        
-        <div class="flex flex-wrap gap-1.5">
-          <div *ngFor="let member of item.members" 
-               class="px-2 py-0.5 rounded-full text-xs font-bold bg-white border shadow-sm flex items-center gap-1.5"
-               [ngStyle]="{'border-color': member.color}">
-            <div class="w-1.5 h-1.5 rounded-full" [ngStyle]="{'background-color': member.color}"></div>
+
+        <div class="flex flex-wrap gap-1 items-center">
+          <span
+            *ngFor="let member of item.members"
+            class="px-2 py-0.5 bg-green-50 border border-green-200 rounded-full text-xs text-green-700 font-medium"
+          >
             {{ member.name }}
-          </div>
+          </span>
+        </div>
+
+        <div
+          *ngIf="item.visitLogsCount > 0"
+          class="text-[11px] text-stone-500 flex items-center gap-1"
+        >
+          <span
+            >📅 {{ item.visitLogsCount }} visit log{{ item.visitLogsCount === 1 ? '' : 's' }}</span
+          >
         </div>
       </div>
+
+      <button
+        (click)="openLocationDetails(item.location.id)"
+        class="text-stone-400 hover:text-stone-600 p-1.5 rounded hover:bg-stone-100 transition flex-shrink-0"
+        title="Edit details"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+          <path d="m15 5 4 4" />
+        </svg>
+      </button>
     </div>
   </div>
 </div>
@@ -51,3 +113,4 @@
   [mode]="mode"
   (close)="showModal = false"
 ></app-parks-states-modal>
+

@@ -76,6 +76,16 @@ export class RouteBuilderComponent implements OnInit {
         this.startQuery = activeHometown.name;
       }
     });
+
+    this.stateService.newRoadTripTrigger$.subscribe((timestamp) => {
+      if (timestamp > 0) {
+        this.isEditing = false;
+        this.openModal();
+        window.setTimeout(() => {
+          document.querySelector('app-route-builder')?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    });
   }
 
   toggleMember(name: string) {

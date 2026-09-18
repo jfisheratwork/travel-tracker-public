@@ -1,86 +1,195 @@
-<div class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm no-print">
-  <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] m-4">
+<div
+  (click)="cancel()"
+  class="fixed inset-0 z-[3000] flex items-center justify-center bg-black/60 backdrop-blur-sm no-print cursor-pointer"
+>
+  <div
+    (click)="$event.stopPropagation()"
+    class="bg-white w-full max-w-xl rounded-2xl shadow-2xl flex flex-col max-h-[90vh] m-4 overflow-hidden cursor-default"
+  >
     <!-- Header -->
-    <div class="p-6 border-b border-stone-100 flex justify-between items-start flex-shrink-0 bg-stone-50 rounded-t-2xl">
-      <div>
-        <h2 class="text-2xl font-extrabold text-stone-800 tracking-tight flex items-center gap-2">
-          {{ location?.name }}
+    <div
+      class="px-6 py-4 border-b border-stone-100 flex justify-between items-center flex-shrink-0 bg-stone-50"
+    >
+      <div class="flex items-center gap-2">
+        <span class="text-xl">{{ mode === 'parks' ? '🌲' : '⭐' }}</span>
+        <h2 class="text-lg font-bold text-stone-800">
+          Edit {{ mode === 'parks' ? 'National Park' : 'State' }} Details
         </h2>
-        <p class="text-sm font-bold text-stone-500 uppercase tracking-widest mt-1">
-          {{ mode === 'parks' ? 'National Park' : 'State / Province' }} • {{ location?.sub || location?.country }}
-        </p>
       </div>
-      <button (click)="cancel()" class="text-stone-400 hover:text-stone-600 focus:outline-none p-1 transition bg-white rounded-full shadow-sm border border-stone-200">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <button
+        (click)="cancel()"
+        class="text-stone-400 hover:text-stone-600 focus:outline-none p-1 text-xl"
+      >
+        ✕
       </button>
     </div>
 
-    <!-- Main Content -->
-    <div class="overflow-y-auto flex-1 p-6 relative bg-white">
-      <div *ngIf="!viewModel?.familyMembers?.length" class="text-center p-8">
-        <p class="text-stone-500">No family members added yet.</p>
+    <!-- Main Content Area -->
+    <div class="overflow-y-auto flex-1 p-6 space-y-6 bg-white">
+      <div>
+        <h3 class="text-lg font-extrabold text-stone-900">
+          {{ location?.name
+          }}{{ mode === 'parks' && !location?.name?.includes('Park') ? ' National Park' : '' }}
+        </h3>
+        <p class="text-xs text-stone-400 uppercase tracking-wider mt-0.5" *ngIf="location">
+          {{ mode === 'parks' ? 'National Park' : 'State / Province' }} •
+          {{
+            location.sub
+              ? location.sub + (location.country ? ', ' + location.country : '')
+              : location.country || ''
+          }}
+        </p>
       </div>
 
-      <div *ngIf="viewModel?.familyMembers?.length" class="space-y-6">
-        <div *ngFor="let member of viewModel?.familyMembers" class="bg-white border border-stone-200 rounded-xl overflow-hidden shadow-sm transition-all duration-200" [class.ring-2]="isVisited(member.id)" [class.ring-green-500]="isVisited(member.id)" [class.border-green-500]="isVisited(member.id)">
-          
-          <!-- Member Header -->
-          <div class="px-5 py-4 flex items-center justify-between" [class.bg-green-50]="isVisited(member.id)" [class.bg-stone-50]="!isVisited(member.id)">
-            <div class="flex items-center gap-3">
-              <div class="w-4 h-4 rounded-full border border-stone-300 shadow-inner" [ngStyle]="{'background-color': member.color}"></div>
-              <h3 class="font-bold text-stone-800 text-lg">{{ member.name }}</h3>
+      <!-- Section 1: Family Member First Visit Dates -->
+      <div class="space-y-3">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-stone-500">
+          Family Members Visited
+        </h4>
+
+        <div
+          *ngIf="!viewModel?.familyMembers?.length"
+          class="text-sm text-stone-400 italic p-3 bg-stone-50 rounded-lg"
+        >
+          No family members added. Add members in Settings to log individual visits.
+        </div>
+
+        <div
+          *ngIf="viewModel?.familyMembers?.length"
+          class="divide-y divide-stone-200 border border-stone-200 rounded-xl overflow-hidden bg-white shadow-xs"
+        >
+          <div
+            *ngFor="let member of viewModel?.familyMembers"
+            class="p-2.5 px-3.5 flex flex-wrap items-center justify-between gap-2 transition"
+            [class.bg-green-50/40]="isVisited(member.id)"
+            [class.hover:bg-stone-50]="!isVisited(member.id)"
+          >
+            <!-- Member Info -->
+            <div class="flex items-center gap-2.5 min-w-[120px]">
+              <div
+                class="w-3.5 h-3.5 rounded-full border border-stone-300 shrink-0"
+                [ngStyle]="{ 'background-color': member.color }"
+              ></div>
+              <span class="font-bold text-stone-800 text-sm">{{ member.name }}</span>
             </div>
-            <label class="flex items-center gap-2 cursor-pointer bg-white px-3 py-1.5 rounded-lg border border-stone-200 shadow-sm hover:bg-stone-50 transition">
-              <input 
-                type="checkbox" 
-                [checked]="isVisited(member.id)"
-                (change)="toggleVisit(member.id, $event)"
-                class="w-5 h-5 rounded border-stone-300 text-green-600 focus:ring-green-500 cursor-pointer"
-              />
-              <span class="text-sm font-bold text-stone-700 select-none">Visited</span>
-            </label>
+
+            <!-- Checkbox + Date Right Next to It -->
+            <div class="flex items-center gap-2.5">
+              <label
+                class="flex items-center gap-2 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-stone-200 shadow-xs hover:bg-stone-50 transition select-none"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="isVisited(member.id)"
+                  (change)="toggleVisit(member.id, $event)"
+                  class="w-4 h-4 rounded border-stone-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                />
+                <span class="text-xs font-bold text-stone-700">Visited</span>
+              </label>
+
+              <!-- Date Picker Right Next to Checkbox (Only Shown When Visited) -->
+              <div *ngIf="isVisited(member.id)" class="flex items-center gap-1.5">
+                <span class="text-[11px] font-semibold text-stone-400 hidden sm:inline">First:</span>
+                <input
+                  type="date"
+                  [(ngModel)]="editingVisits[member.id].firstVisitedDate"
+                  (change)="updateDetails(member.id)"
+                  class="border border-stone-300 rounded-lg px-2 py-1 text-xs text-stone-700 font-medium focus:border-green-600 focus:outline-none bg-white shadow-xs"
+                  title="First visited date"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Visits & Memories Log (Matching Screenshot) -->
+      <div class="pt-4 border-t border-stone-100 space-y-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h4 class="text-xs font-bold uppercase tracking-wider text-stone-500">
+              Trip Visits & Memories Log
+            </h4>
+            <p class="text-xs text-stone-400">Record specific trips with dates and comments.</p>
+          </div>
+          <button
+            (click)="addVisitLog()"
+            class="px-3 py-1 bg-stone-100 text-stone-700 border border-stone-200 rounded-lg text-xs font-bold hover:bg-stone-200 transition"
+          >
+            + Add Visit
+          </button>
+        </div>
+
+        <div
+          *ngIf="locationVisitLogs.length === 0"
+          class="p-4 border border-dashed border-stone-200 rounded-xl text-center text-xs text-stone-400"
+        >
+          No trip visits logged yet. Click "+ Add Visit" to log a visit date and comments.
+        </div>
+
+        <!-- Visit Entry Cards -->
+        <div
+          *ngFor="let visit of locationVisitLogs; let i = index"
+          class="p-4 border border-stone-200 rounded-xl bg-stone-50 space-y-3 relative"
+        >
+          <div class="flex justify-between items-center">
+            <span class="text-xs font-bold text-stone-600 uppercase tracking-wider"
+              >Visit #{{ i + 1 }}</span
+            >
+            <button
+              (click)="removeVisitLog(i)"
+              class="text-red-400 hover:text-red-600 text-xs font-bold transition"
+              title="Delete visit"
+            >
+              ✕ Remove
+            </button>
           </div>
 
-          <!-- Edit Details (Only visible if visited) -->
-          <div *ngIf="isVisited(member.id)" class="p-5 border-t border-stone-200 space-y-4 bg-white">
-            <div>
-              <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">Date Visited</label>
-              <input 
-                type="date" 
-                [(ngModel)]="editingVisits[member.id].dateVisited"
-                (change)="updateDetails(member.id)"
-                class="w-full max-w-[200px] border border-stone-300 rounded-lg px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 transition"
-              />
+          <div>
+            <label class="block text-[11px] font-bold text-stone-600 uppercase tracking-wider mb-1">
+              DATE VISITED
+            </label>
+            <input
+              type="date"
+              [(ngModel)]="visit.dateVisited"
+              class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:border-blue-600 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <div
+              class="flex justify-between text-[11px] font-bold text-stone-600 uppercase tracking-wider mb-1"
+            >
+              <span>COMMENTS</span>
+              <span class="text-stone-400">{{ visit.comments?.length || 0 }}/500</span>
             </div>
-            <div>
-              <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1.5">Notes & Memories</label>
-              <textarea 
-                [(ngModel)]="editingVisits[member.id].notes"
-                (change)="updateDetails(member.id)"
-                rows="2"
-                placeholder="What was memorable about this visit?"
-                class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:border-green-600 focus:outline-none focus:ring-1 focus:ring-green-600 transition resize-y"
-              ></textarea>
-            </div>
+            <textarea
+              [(ngModel)]="visit.comments"
+              maxlength="500"
+              rows="3"
+              placeholder="What made this visit special..."
+              class="w-full border border-stone-300 rounded-lg p-3 text-sm bg-white focus:border-blue-600 focus:outline-none resize-y"
+            ></textarea>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Footer -->
-    <div class="p-6 border-t border-stone-100 bg-stone-50 flex justify-end gap-3 flex-shrink-0 rounded-b-2xl">
+    <!-- Footer (Matching Screenshot) -->
+    <div
+      class="px-6 py-4 border-t border-stone-100 bg-stone-50 flex justify-end items-center gap-4 flex-shrink-0"
+    >
       <button
         (click)="cancel()"
-        class="px-6 py-2.5 rounded-lg text-sm font-bold text-stone-600 bg-white border border-stone-200 hover:bg-stone-50 shadow-sm transition"
+        class="text-sm font-bold text-stone-600 hover:text-stone-800 transition"
       >
         Cancel
       </button>
       <button
         (click)="save()"
-        class="px-8 py-2.5 rounded-lg text-sm font-bold text-white bg-green-700 hover:bg-green-800 shadow-sm transition flex items-center gap-2"
+        class="px-6 py-2.5 rounded-lg text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-        Save Changes
+        Save Details
       </button>
     </div>
   </div>

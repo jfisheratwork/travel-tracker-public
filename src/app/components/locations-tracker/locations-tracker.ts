@@ -15,6 +15,7 @@ import { NATIONAL_PARKS, STATES, GeoLocation } from '../../core/constants/geogra
 export class LocationsTrackerComponent implements OnInit, OnDestroy {
   mode: 'parks' | 'states' = 'parks';
   settings: AppSettings | null = null;
+  searchTerm = '';
   showModal = false;
 
   private subs = new Subscription();
@@ -35,15 +36,40 @@ export class LocationsTrackerComponent implements OnInit, OnDestroy {
         this.settings = settings;
       }),
     );
+
+    this.subs.add(
+      this.stateService.searchTerm$.subscribe((term) => {
+        this.searchTerm = term ? term.toLowerCase().trim() : '';
+      }),
+    );
   }
 
   ngOnDestroy(): void {
     this.subs.unsubscribe();
   }
 
+  get totalFamilyMembersCount(): number {
+    return this.settings?.familyMembers?.length || 0;
+  }
+
+  getSubtitle(location: GeoLocation): string {
+    const sub = location.sub || '';
+    if (this.mode === 'parks') {
+      return location.country ? (sub ? `${sub}, ${location.country}` : location.country) : sub;
+    }
+    return sub;
+  }
+
   get visitedLocations(): {
     location: GeoLocation;
     members: import('../../models/settings.model').FamilyMember[];
+    memberDetails: {
+      member: import('../../models/settings.model').FamilyMember;
+      firstVisitedDate?: string;
+      notes?: string;
+    }[];
+    visitLogsCount: number;
+    hasDetails: boolean;
   }[] {
     if (!this.settings) return [];
 
@@ -63,15 +89,62 @@ export class LocationsTrackerComponent implements OnInit, OnDestroy {
               (m): m is import('../../models/settings.model').FamilyMember => m !== undefined,
             );
 
-          result.push({ location: location!, members });
+          const memberDetails: {
+            member: import('../../models/settings.model').FamilyMember;
+            firstVisitedDate?: string;
+            notes?: string;
+          }[] = [];
+
+          for (const v of visitDetails) {
+            const mem = this.settings!.familyMembers.find((m) => m.id === v.memberId);
+            if (mem) {
+              memberDetails.push({
+                member: mem,
+                firstVisitedDate: v.firstVisitedDate || v.dateVisited,
+                notes: v.notes,
+              });
+            }
+          }
+
+          const visitLogs = this.settings.locationVisits?.[locId] || [];
+          const hasDetails =
+            visitLogs.length > 0 || memberDetails.some((m) => !!m.firstVisitedDate || !!m.notes);
+
+          result.push({
+            location: location!,
+            members,
+            memberDetails,
+            visitLogsCount: visitLogs.length,
+            hasDetails,
+          });
         }
       }
     }
 
-    return result.sort((a, b) => a.location.name.localeCompare(b.location.name));
+    let filtered = result;
+    if (this.searchTerm) {
+      const matchedMember = this.settings.familyMembers.find((m) =>
+        m.name.toLowerCase().includes(this.searchTerm),
+      );
+      if (matchedMember) {
+        filtered = filtered.filter((item) => item.members.some((m) => m.id === matchedMember.id));
+      } else {
+        filtered = filtered.filter(
+          (item) =>
+            item.location.name.toLowerCase().includes(this.searchTerm) ||
+            (item.location.sub && item.location.sub.toLowerCase().includes(this.searchTerm)),
+        );
+      }
+    }
+
+    return filtered.sort((a, b) => a.location.name.localeCompare(b.location.name));
   }
 
   openEditModal(): void {
     this.showModal = true;
+  }
+
+  openLocationDetails(locationId: string): void {
+    this.stateService.setEditingLocation({ id: locationId, mode: this.mode });
   }
 }

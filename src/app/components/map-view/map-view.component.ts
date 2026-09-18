@@ -14,17 +14,41 @@ import { LocationPoint } from '../../models/location.model';
 import { API_ENDPOINTS } from '../../core/constants/api.constants';
 import { RoutingService } from '../../services/routing/routing.service';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '../../../environments/environment';
+import { StatsModal } from '../stats-modal/stats-modal';
+import { ParksStatesModal } from '../parks-states-modal/parks-states-modal';
 
 @Component({
   selector: 'app-map-view',
   standalone: true,
-  imports: [CommonModule, GlobalSearchComponent],
+  imports: [CommonModule, GlobalSearchComponent, StatsModal, ParksStatesModal],
   templateUrl: './map-view.component.html',
   styleUrls: ['./map-view.component.css'],
 })
 export class MapViewComponent implements OnInit, OnDestroy {
   private map!: L.Map;
+  private baseTileLayer!: L.TileLayer;
   private destroy$ = new Subject<void>();
+  showStatsModal = false;
+  showParksStatesModal = false;
+  parksStatesModalMode: 'parks' | 'states' = 'parks';
+
+  openParksModal(): void {
+    this.stateService.setMapMode('parks');
+    this.parksStatesModalMode = 'parks';
+    this.showParksStatesModal = true;
+  }
+
+  openStatesModal(): void {
+    this.stateService.setMapMode('states');
+    this.parksStatesModalMode = 'states';
+    this.showParksStatesModal = true;
+  }
+
+  openRoads(): void {
+    this.stateService.setMapMode('roads');
+    this.stateService.triggerNewRoadTrip();
+  }
 
   private currentLayerGroup!: L.LayerGroup;
   private currentPolyline: L.Polyline | null = null;
@@ -77,18 +101,46 @@ export class MapViewComponent implements OnInit, OnDestroy {
           const originalId = p.id.replace('park-', '');
           const visitDetails = settings.visitedParks?.[originalId] || [];
           const visitors = visitDetails
-            .map((v) => settings.familyMembers.find((m) => m.id === v.memberId))
-            .filter(Boolean) as any[]; // keep full member object to render nice list
-          return { ...p, visited: visitDetails.length > 0, visitedByMembers: visitors };
+            .map((v) => {
+              const mem = settings.familyMembers.find((m) => m.id === v.memberId);
+              if (!mem) return null;
+              return {
+                ...mem,
+                date: v.firstVisitedDate || v.dateVisited,
+                notes: v.notes,
+              };
+            })
+            .filter(Boolean);
+          const locationLogs = settings.locationVisits?.[originalId] || [];
+          return {
+            ...p,
+            visited: visitDetails.length > 0 || locationLogs.length > 0,
+            visitedByMembers: visitors,
+            visitLogs: locationLogs,
+          };
         });
 
         const mergedStates = states.map((s) => {
           const originalId = s.id.replace('state-', '');
           const visitDetails = settings.visitedStates?.[originalId] || [];
           const visitors = visitDetails
-            .map((v) => settings.familyMembers.find((m) => m.id === v.memberId))
-            .filter(Boolean) as any[]; // keep full member object
-          return { ...s, visited: visitDetails.length > 0, visitedByMembers: visitors };
+            .map((v) => {
+              const mem = settings.familyMembers.find((m) => m.id === v.memberId);
+              if (!mem) return null;
+              return {
+                ...mem,
+                date: v.firstVisitedDate || v.dateVisited,
+                notes: v.notes,
+              };
+            })
+            .filter(Boolean);
+          const locationLogs = settings.locationVisits?.[originalId] || [];
+          return {
+            ...s,
+            visited: visitDetails.length > 0 || locationLogs.length > 0,
+            visitedByMembers: visitors,
+            visitLogs: locationLogs,
+          };
         });
 
         this.allLocations = [...mergedParks, ...mergedStates, ...hometowns];
@@ -118,7 +170,16 @@ export class MapViewComponent implements OnInit, OnDestroy {
           }, 100);
         }
 
-        this.renderRoutes(settings.savedRoutes, selectedRoute, settings.routeReduction);
+        const effectiveCartoKey = settings.cartoKey || environment.cartoKey;
+        if (this.baseTileLayer && effectiveCartoKey && effectiveCartoKey !== 'YOUR_CARTO_API_KEY') {
+          this.baseTileLayer.setUrl(
+            `${API_ENDPOINTS.CARTO_TILE_LAYER}?api_key=${effectiveCartoKey}`,
+          );
+        } else if (this.baseTileLayer) {
+          this.baseTileLayer.setUrl(API_ENDPOINTS.OSM_TILE_LAYER);
+        }
+
+        this.renderRoutes(settings.savedRoutes, selectedRoute);
       });
   }
 
@@ -127,9 +188,15 @@ export class MapViewComponent implements OnInit, OnDestroy {
     const mapContainer = this.el.nativeElement.querySelector('#map');
     this.map = L.map(mapContainer).setView([39.8283, -98.5795], 4);
 
-    L.tileLayer(API_ENDPOINTS.OSM_TILE_LAYER, {
+    const cartoKey = environment.cartoKey;
+    const tileUrl =
+      cartoKey && cartoKey !== 'YOUR_CARTO_API_KEY'
+        ? `${API_ENDPOINTS.CARTO_TILE_LAYER}?api_key=${cartoKey}`
+        : API_ENDPOINTS.OSM_TILE_LAYER;
+
+    this.baseTileLayer = L.tileLayer(tileUrl, {
       maxZoom: 19,
-      attribution: '© OpenStreetMap',
+      attribution: '© OpenStreetMap, © CARTO',
     }).addTo(this.map);
 
     this.currentLayerGroup = L.layerGroup().addTo(this.map);
@@ -209,11 +276,21 @@ export class MapViewComponent implements OnInit, OnDestroy {
           })
           .join('');
 
+        const visitLogsBadge =
+          m.visitLogs && m.visitLogs.length > 0
+            ? `<div style="font-size: 11px; color: #2563eb; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 6px; padding: 3px 6px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+                 <span>📅</span>
+                 <strong>${m.visitLogs.length} trip visit${m.visitLogs.length > 1 ? 's' : ''} logged</strong>
+               </div>`
+            : '';
+
         popupHtml = `
             <div style="font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; min-width: 240px; padding: 4px;">
                 <strong style="font-size: 14px; display: block; color: #292524;">${m.name}</strong>
                 <span style="font-size: 12px; color: #78716c; display: block; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; margin-bottom: 4px;">${subLabel}</span>
                 
+                ${visitLogsBadge}
+
                 <div style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; margin-bottom: 8px;">
                     ${membersHtml}
                 </div>
@@ -223,8 +300,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
                         <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
                         Wikipedia
                     </a>
-                    <button class="edit-location-btn" data-id="${originalId}" data-mode="${isPark ? 'parks' : 'states'}" style="font-size: 10px; color: #15803d; font-weight: bold; background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 2px 8px; border-radius: 4px; cursor: pointer;">
-                        ✏️ Edit
+                    <button class="edit-location-btn" data-id="${originalId}" data-mode="${isPark ? 'parks' : 'states'}" style="font-size: 11px; color: #15803d; font-weight: bold; background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                        ✏️ Details
                     </button>
                 </div>
             </div>
@@ -259,11 +336,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
   }
 
-  private async renderRoutes(
-    savedRoutes: RouteObject[] = [],
-    selectedRoute: RouteObject | null,
-    routeReduction: number = 0.01,
-  ) {
+  private async renderRoutes(savedRoutes: RouteObject[] = [], selectedRoute: RouteObject | null) {
     this.currentPolylines.forEach((p) => p.remove());
     this.currentPolylines = [];
 

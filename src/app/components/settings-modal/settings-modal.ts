@@ -6,6 +6,9 @@ import { AppSettings, DEFAULT_SETTINGS } from '../../models/settings.model';
 import { Subscription, firstValueFrom } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
 import { GeocodingService } from '../../services/routing/geocoding.service';
+import { LocalStorageService } from '../../services/local-storage.service';
+import { ToastService } from '../../core/services/toast.service';
+import { AppErrorType } from '../../core/models/app-error.model';
 
 @Component({
   selector: 'app-settings-modal',
@@ -17,7 +20,7 @@ import { GeocodingService } from '../../services/routing/geocoding.service';
 export class SettingsModal implements OnInit, OnDestroy {
   @Output() close = new EventEmitter<void>();
 
-  activeTab: 'locations' | 'family' | 'routing' | 'danger' = 'locations';
+  activeTab: 'locations' | 'family' | 'routing' | 'data' | 'danger' = 'locations';
 
   // The intermediate ViewModel
   viewModel: AppSettings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
@@ -26,7 +29,11 @@ export class SettingsModal implements OnInit, OnDestroy {
   hometownQuery: string = '';
   hometownSearchResults: { name: string; lat: number; lng: number }[] = [];
   isSearching: boolean = false;
+  isLoadingPreset: boolean = false;
+
   private logger = inject(LoggerService);
+  private localStorageService = inject(LocalStorageService);
+  private toastService = inject(ToastService);
 
   draggedIndex: number | null = null;
   draggedType: 'family' | 'hometown' | null = null;
@@ -83,16 +90,16 @@ export class SettingsModal implements OnInit, OnDestroy {
 
   private getRandomColor(): string {
     const palette = [
-      'blue',
-      'pink',
-      'orange',
-      'purple',
-      'teal',
-      'red',
-      'green',
-      'yellow',
-      'indigo',
-      'cyan',
+      '#3b82f6',
+      '#ec4899',
+      '#f97316',
+      '#a855f7',
+      '#14b8a6',
+      '#ef4444',
+      '#22c55e',
+      '#eab308',
+      '#6366f1',
+      '#06b6d4',
     ];
     return palette[Math.floor(Math.random() * palette.length)];
   }
@@ -131,7 +138,7 @@ export class SettingsModal implements OnInit, OnDestroy {
         lat: r.lat,
         lng: r.lng,
       }));
-    } catch (e: any) {
+    } catch (e: unknown) {
       this.logger.error('Geocoding failed', e);
     } finally {
       this.isSearching = false;
@@ -151,6 +158,49 @@ export class SettingsModal implements OnInit, OnDestroy {
 
   removeHometown(id: string): void {
     this.viewModel.hometowns = this.viewModel.hometowns.filter((h) => h.id !== id);
+  }
+
+  // --- Data Management (Export / Import / Samples) ---
+  exportData(): void {
+    this.localStorageService.exportBackup();
+    this.toastService.showSuccess('Backup exported successfully!');
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (!content) return;
+      const res = this.localStorageService.importBackup(content);
+      if (res.success) {
+        this.toastService.showSuccess(res.message);
+      } else {
+        this.toastService.showError({
+          type: AppErrorType.UNKNOWN,
+          message: res.message,
+        });
+      }
+    };
+    reader.readAsText(file);
+    input.value = '';
+  }
+
+  async loadSampleData(): Promise<void> {
+    this.isLoadingPreset = true;
+    const res = await this.localStorageService.loadSamplePreset('family1.json');
+    this.isLoadingPreset = false;
+    if (res.success) {
+      this.toastService.showSuccess('Sample data (family1.json) loaded!');
+    } else {
+      this.toastService.showError({
+        type: AppErrorType.UNKNOWN,
+        message: res.message,
+      });
+    }
   }
 
   // --- Danger Zone ---

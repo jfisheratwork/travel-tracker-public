@@ -14,4 +14,4 @@ if [ "$GITHUB_ACTIONS" != "true" ] && [ "$CI" != "true" ]; then
   fi
 fi
 
-npm test
+npm test -- --watch=false

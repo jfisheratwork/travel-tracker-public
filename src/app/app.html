@@ -13,8 +13,6 @@
     </button>
   </div>
 
-
-
   <!-- Main Display Container: Stacked Map and Route Builder -->
   <div class="flex flex-col gap-6">
     <!-- Map Area -->
@@ -26,7 +24,7 @@
 
     <!-- Mode Selector Tabs -->
     <div *ngIf="stateService.mapMode$ | async as mode" class="flex gap-2">
-      <button 
+      <button
         (click)="stateService.setMapMode('roads')"
         [class.bg-blue-600]="mode === 'roads'"
         [class.text-white]="mode === 'roads'"
@@ -36,7 +34,7 @@
       >
         🚗 Routes
       </button>
-      <button 
+      <button
         (click)="stateService.setMapMode('parks')"
         [class.bg-green-700]="mode === 'parks'"
         [class.text-white]="mode === 'parks'"
@@ -46,7 +44,7 @@
       >
         🌲 Parks
       </button>
-      <button 
+      <button
         (click)="stateService.setMapMode('states')"
         [class.bg-indigo-600]="mode === 'states'"
         [class.text-white]="mode === 'states'"
@@ -59,11 +57,13 @@
     </div>
 
     <!-- Active Mode Content -->
-    <div
-      *ngIf="stateService.mapMode$ | async as mode"
-      class="w-full bg-white rounded-xl shadow-lg border border-stone-200 flex-shrink-0"
-    >
-      <app-route-builder *ngIf="mode === 'roads'"></app-route-builder>
+    <div *ngIf="stateService.mapMode$ | async as mode" class="w-full flex-shrink-0">
+      <div
+        *ngIf="mode === 'roads'"
+        class="bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden"
+      >
+        <app-route-builder></app-route-builder>
+      </div>
       <app-locations-tracker *ngIf="mode === 'parks' || mode === 'states'"></app-locations-tracker>
     </div>
   </div>

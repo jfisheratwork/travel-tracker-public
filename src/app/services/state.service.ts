@@ -37,6 +37,10 @@ export class StateService {
     this.mapModeSubject.next(mode);
   }
 
+  getSettings(): AppSettings {
+    return this.settingsSubject.getValue();
+  }
+
   updateSettings(settings: AppSettings): void {
     this.settingsSubject.next(settings);
   }
@@ -56,5 +60,12 @@ export class StateService {
 
   setEditingLocation(location: { id: string; mode: 'parks' | 'states' } | null): void {
     this.editingLocationSubject.next(location);
+  }
+
+  private newRoadTripTriggerSubject = new BehaviorSubject<number>(0);
+  public newRoadTripTrigger$ = this.newRoadTripTriggerSubject.asObservable();
+
+  triggerNewRoadTrip(): void {
+    this.newRoadTripTriggerSubject.next(Date.now());
   }
 }

@@ -525,7 +525,7 @@ export const STATES: GeoLocation[] = [
     lat: 39.7684,
     lng: -86.1581,
   },
-  { id: 'Iowa', name: 'Iowa', sub: 'Iowa', capital: 'Des Moines', lat: 41.5868, lng: -93.625 },
+  { id: 'Iowa', name: 'Iowa', sub: 'USA', capital: 'Des Moines', lat: 41.5868, lng: -93.625 },
   { id: 'Kansas', name: 'Kansas', sub: 'USA', capital: 'Topeka', lat: 39.0473, lng: -95.6752 },
   {
     id: 'Kentucky',

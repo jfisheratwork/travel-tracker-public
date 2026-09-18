@@ -64,7 +64,14 @@ describe('MapViewComponent', () => {
     selectedRoute$ = new BehaviorSubject<any>(null);
     settings$ = new BehaviorSubject<any>({ hometowns: [] });
     mapMode$ = new BehaviorSubject<string>('parks');
-    stateServiceMock = { searchTerm$, selectedRoute$, settings$, mapMode$ };
+    stateServiceMock = {
+      searchTerm$,
+      selectedRoute$,
+      settings$,
+      mapMode$,
+      setMapMode: vi.fn(),
+      triggerNewRoadTrip: vi.fn(),
+    };
 
     const locationDataServiceMock = {
       parks$: new BehaviorSubject([]),
