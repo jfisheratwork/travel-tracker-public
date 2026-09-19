@@ -9,6 +9,11 @@ import { LocationsTrackerComponent } from './components/locations-tracker/locati
 import { ToastContainerComponent } from './core/components/toast-container/toast-container.component';
 import { LoadingSpinnerComponent } from './core/components/loading-spinner/loading-spinner.component';
 import { LocationDetailModal } from './components/location-detail-modal/location-detail-modal';
+import {
+  COLOR_THEMES,
+  DEFAULT_THEME_ID,
+  ColorThemeDefinition,
+} from './core/constants/theme.constants';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +34,7 @@ import { LocationDetailModal } from './components/location-detail-modal/location
 export class App implements OnInit {
   showSettingsModal = false;
   showDetailsDrawer = false;
+  currentTheme: ColorThemeDefinition = COLOR_THEMES[DEFAULT_THEME_ID];
 
   // We inject LocalStorageService here to ensure it's instantiated immediately
   // upon application startup. This guarantees the initial state load.
@@ -37,5 +43,17 @@ export class App implements OnInit {
     public stateService: StateService,
   ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    this.stateService.colorTheme$.subscribe((themeId) => {
+      this.currentTheme = COLOR_THEMES[themeId] || COLOR_THEMES[DEFAULT_THEME_ID];
+      if (typeof document !== 'undefined' && document.body) {
+        document.body.style.backgroundColor = this.currentTheme.canvasBg;
+        if (this.currentTheme.isDark) {
+          document.body.classList.add('dark');
+        } else {
+          document.body.classList.remove('dark');
+        }
+      }
+    });
+  }
 }

@@ -1,5 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, OnInit, OnDestroy, ElementRef, Output, EventEmitter } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ElementRef,
+  Output,
+  EventEmitter,
+  HostListener,
+  ViewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GlobalSearchComponent } from '../global-search/global-search.component';
 import { StateService } from '../../services/state.service';
@@ -23,6 +32,13 @@ import { StatsModal } from '../stats-modal/stats-modal';
 import { ParksStatesModal } from '../parks-states-modal/parks-states-modal';
 import { HelpModalComponent } from '../help-modal/help-modal.component';
 import { LoggerService } from '../../core/services/logger.service';
+import {
+  COLOR_THEMES,
+  DEFAULT_THEME_ID,
+  AVAILABLE_THEMES_LIST,
+  ColorThemeId,
+  ColorThemeDefinition,
+} from '../../core/constants/theme.constants';
 
 const METERS_PER_MILE = 1609.34;
 const ROADS_HOMETOWN_RADIUS_MILES = 300;
@@ -48,6 +64,36 @@ export class MapViewComponent implements OnInit, OnDestroy {
   showParksStatesModal = false;
   showHelpModal = false;
   parksStatesModalMode: 'parks' | 'states' = 'parks';
+  @ViewChild('themeMenuRef') themeMenuRef?: ElementRef;
+  showThemeMenu = false;
+  availableThemes = AVAILABLE_THEMES_LIST;
+  currentThemeId: ColorThemeId = DEFAULT_THEME_ID;
+  currentTheme: ColorThemeDefinition = COLOR_THEMES[DEFAULT_THEME_ID];
+
+  toggleThemeMenu(): void {
+    this.showThemeMenu = !this.showThemeMenu;
+  }
+
+  selectTheme(id: ColorThemeId): void {
+    this.stateService.setColorTheme(id);
+    this.showThemeMenu = false;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showThemeMenu && this.themeMenuRef?.nativeElement) {
+      if (!this.themeMenuRef.nativeElement.contains(event.target as Node)) {
+        this.showThemeMenu = false;
+      }
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showThemeMenu) {
+      this.showThemeMenu = false;
+    }
+  }
 
   openSettings(): void {
     this.settingsClick.emit();
@@ -90,6 +136,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.initMap();
+
+    this.stateService.colorTheme$.pipe(takeUntil(this.destroy$)).subscribe((themeId) => {
+      this.currentThemeId = themeId;
+      this.currentTheme = COLOR_THEMES[themeId] || COLOR_THEMES[DEFAULT_THEME_ID];
+    });
 
     combineLatest([
       this.stateService.settings$,

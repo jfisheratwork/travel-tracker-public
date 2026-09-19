@@ -1,4 +1,5 @@
 import { RouteObject } from './route.model';
+import { ColorThemeId, DEFAULT_THEME_ID } from '../core/constants/theme.constants';
 
 export interface FamilyMember {
   id: string;
@@ -40,6 +41,7 @@ export interface AppSettings {
   visitedStates?: Record<string, VisitDetail[]>;
   visitedParks?: Record<string, VisitDetail[]>;
   locationVisits?: Record<string, VisitLogEntry[]>;
+  colorTheme?: ColorThemeId;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -50,4 +52,5 @@ export const DEFAULT_SETTINGS: AppSettings = {
   savedRoutes: [],
   visitedStates: {},
   visitedParks: {},
+  colorTheme: DEFAULT_THEME_ID,
 };

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { AppSettings, DEFAULT_SETTINGS } from '../models/settings.model';
 import { RouteObject } from '../models/route.model';
+import { ColorThemeId, DEFAULT_THEME_ID } from '../core/constants/theme.constants';
 
 @Injectable({
   providedIn: 'root',
@@ -15,6 +16,9 @@ export class StateService {
 
   private settingsSubject = new BehaviorSubject<AppSettings>(DEFAULT_SETTINGS);
   public settings$ = this.settingsSubject.asObservable();
+
+  private colorThemeSubject = new BehaviorSubject<ColorThemeId>(DEFAULT_THEME_ID);
+  public colorTheme$ = this.colorThemeSubject.asObservable();
 
   private selectedRouteSubject = new BehaviorSubject<RouteObject | null>(null);
   public selectedRoute$ = this.selectedRouteSubject.asObservable();
@@ -43,6 +47,21 @@ export class StateService {
 
   updateSettings(settings: AppSettings): void {
     this.settingsSubject.next(settings);
+    if (settings.colorTheme && settings.colorTheme !== this.colorThemeSubject.getValue()) {
+      this.colorThemeSubject.next(settings.colorTheme);
+    }
+  }
+
+  setColorTheme(themeId: ColorThemeId): void {
+    this.colorThemeSubject.next(themeId);
+    const settings = this.getSettings();
+    if (settings.colorTheme !== themeId) {
+      this.updateSettings({ ...settings, colorTheme: themeId });
+    }
+  }
+
+  getColorTheme(): ColorThemeId {
+    return this.colorThemeSubject.getValue();
   }
 
   setSelectedRoute(route: RouteObject | null): void {

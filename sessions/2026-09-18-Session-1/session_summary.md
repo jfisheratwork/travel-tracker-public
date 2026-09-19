@@ -135,6 +135,26 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
   - Scaled tree glyph font size to 12px and state star glyph font size to 10.5px with 1.5px white borders and 9px center anchors.
 - Verified test suite and lint checks: 9/9 suites passing, 23/23 tests passing, 0 ESLint warnings.
 
+- Generated 4 new UI color scheme mockups blending user requests (Lake Michigan blue & light forest green, Dutch orange, dunes & deep lake, and alpine pine).
+- Implemented **Dynamic Color Theme Selector**:
+  - Created `src/app/core/constants/theme.constants.ts` with 8 curated color themes:
+    1. `Dunes & Deep Lake` (Default)
+    2. `Classic Stone & Clean Slate` (Original)
+    3. `Sage & Forest Ranger`
+    4. `Midnight Slate (Dark)`
+    5. `Terracotta & Sandstone`
+    6. `Lake Michigan & Forest`
+    7. `Vibrant Dutch Orange`
+    8. `Alpine Pine & Dutch Accent`
+  - Integrated theme preference into `AppSettings` model and `StateService` with real-time observable dispatching (`colorTheme$`).
+  - Added persistence in `LocalStorageService` allowing user choice to persist across visits with graceful fallback to `dunes-deep-lake`.
+  - Added Lucide-style color wheel / artist palette SVG icon button in `MapViewComponent` toolbar next to the settings gear.
+  - Built interactive theme dropdown popover with 3-dot color preview swatches, active selection checkmark, "Default" badge, click-outside auto-close (`@HostListener('document:click')`), and Escape key dismissal.
+  - Bound dynamic background colors, border tones, and text contrasts to the main canvas body, title banner, toolbar card, details drawer, and footer.
+  - Fixed unit test mock for `StateService` in `map-view.component.spec.ts`.
+  - Executed `make test` (23/23 tests passing) and `make lint` (0 errors, 0 warnings).
+  - Conducted live Chrome DevTools MCP testing verifying instant theme switching and responsive dark/light styling.
+
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
 - Optional Douglas-Peucker route point simplification slider in RouteBuilder.
@@ -179,6 +199,9 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "balance out the placement here it doesn't feel quite right"
 - "Can those state star icons be about 50% smaller"
 - "State and tree icons make the size half way between their two current respective sizes"
+- "For the mockups a blend of the first and the 3rd with 4 new mockups. I would like mayb e alittle more light forest green and lake michigan blue in that first mockup. For the second I am a horrible sucker for dutch orange. Honestly what we really should do is create a small color wheel icon next to settings gear that lets people select different schemes from the a drop down"
+- "Implement the color wheel picker with the default scheme being 3: dunes and deep lake. This picker is only for color schemes. You generated some GREAT ideas for other UI changes let me think on those and get back to you that might be our next change after the picker. For the picker add the 3 new schemes you gave me, the first 3 you created, plus the original."
+
 
 
 

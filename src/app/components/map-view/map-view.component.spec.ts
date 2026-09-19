@@ -77,11 +77,26 @@ describe('MapViewComponent', () => {
     selectedRoute$ = new BehaviorSubject<any>(null);
     settings$ = new BehaviorSubject<any>({ hometowns: [] });
     mapMode$ = new BehaviorSubject<string>('parks');
+    const initialTheme = {
+      id: 'dunes-deep-lake',
+      name: 'Dunes & Deep Lake',
+      canvasBg: '#f5eee6',
+      titleBg: '#16384c',
+      titleText: '#ffffff',
+      mapCardBg: '#ffffff',
+      mapCardBorder: '#d7c4b7',
+      isDark: false,
+      swatchColors: ['#16384c', '#40707a', '#cb8b44'],
+    };
+    const colorTheme$ = new BehaviorSubject<any>(initialTheme);
     stateServiceMock = {
       searchTerm$,
       selectedRoute$,
       settings$,
       mapMode$,
+      colorTheme$,
+      getColorTheme: vi.fn().mockReturnValue(initialTheme),
+      setColorTheme: vi.fn(),
       setMapMode: vi.fn(),
       triggerNewRoadTrip: vi.fn(),
     };

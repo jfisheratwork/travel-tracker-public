@@ -1,7 +1,15 @@
 <div class="w-full max-w-[96vw] 2xl:max-w-[1700px] mx-auto px-2 py-3 sm:px-4 md:py-4 relative flex flex-col min-h-screen">
   <!-- Page Title (Centered with light rounded border filling whole width) -->
-  <div class="w-full flex justify-center items-center py-2.5 px-6 bg-white border border-stone-200 rounded-2xl shadow-xs mb-3">
-    <h1 class="text-2xl sm:text-3xl font-extrabold text-stone-800 tracking-tight m-0 text-center">
+  <div
+    class="w-full flex justify-center items-center py-2.5 px-6 rounded-2xl shadow-xs mb-3 transition-colors duration-200"
+    [style.backgroundColor]="currentTheme.headerBg"
+    [style.borderColor]="currentTheme.headerBorder"
+    style="border-width: 1px; border-style: solid;"
+  >
+    <h1
+      class="text-2xl sm:text-3xl font-extrabold tracking-tight m-0 text-center transition-colors duration-200"
+      [style.color]="currentTheme.headerText"
+    >
       Family Tracker
     </h1>
   </div>
@@ -10,7 +18,10 @@
   <div class="flex flex-col gap-4">
     <!-- Map Area (Uses full vertical and horizontal screen real estate) -->
     <div
-      class="w-full h-[75vh] min-h-[550px] xl:h-[78vh] bg-white rounded-xl shadow-lg border border-stone-200 relative overflow-hidden"
+      class="w-full h-[75vh] min-h-[550px] xl:h-[78vh] rounded-xl shadow-lg relative overflow-hidden transition-colors duration-200"
+      [style.backgroundColor]="currentTheme.cardBg"
+      [style.borderColor]="currentTheme.cardBorder"
+      style="border-width: 1px; border-style: solid;"
     >
       <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
     </div>
@@ -19,10 +30,14 @@
     <div *ngIf="stateService.mapMode$ | async as mode" class="flex justify-center -mt-1">
       <button
         (click)="showDetailsDrawer = !showDetailsDrawer"
-        class="flex items-center gap-2 px-6 py-2 bg-white text-stone-700 border border-stone-200 rounded-full font-bold text-sm shadow-sm hover:bg-stone-50 hover:border-stone-300 transition-all active:scale-95"
+        class="flex items-center gap-2 px-6 py-2 rounded-full font-bold text-sm shadow-sm hover:opacity-90 transition-all active:scale-95"
+        [style.backgroundColor]="currentTheme.cardBg"
+        [style.borderColor]="currentTheme.cardBorder"
+        [style.color]="currentTheme.isDark ? '#f8fafc' : '#44403c'"
+        style="border-width: 1px; border-style: solid;"
       >
         <span>{{ showDetailsDrawer ? '▲ Hide Details' : '▼ Show Details' }}</span>
-        <span class="text-xs text-stone-400 font-normal">
+        <span class="text-xs opacity-60 font-normal">
           ({{ mode === 'roads' ? 'Road Trips' : (mode === 'parks' ? 'Visited Parks' : 'Visited States') }})
         </span>
       </button>
@@ -35,7 +50,10 @@
     >
       <div
         *ngIf="mode === 'roads'"
-        class="bg-white rounded-xl shadow-lg border border-stone-200 overflow-hidden"
+        class="rounded-xl shadow-lg overflow-hidden transition-colors duration-200"
+        [style.backgroundColor]="currentTheme.cardBg"
+        [style.borderColor]="currentTheme.cardBorder"
+        style="border-width: 1px; border-style: solid;"
       >
         <app-route-builder></app-route-builder>
       </div>
@@ -45,23 +63,27 @@
 
   <!-- Attribution Footer with GitHub link -->
   <footer
-    class="mt-auto pt-8 pb-4 border-t border-stone-200 text-xs text-stone-500 flex flex-col sm:flex-row items-center justify-between gap-2 px-2"
+    class="mt-auto pt-8 pb-4 text-xs flex flex-col sm:flex-row items-center justify-between gap-2 px-2 transition-colors duration-200"
+    [style.borderTopColor]="currentTheme.cardBorder"
+    [style.color]="currentTheme.isDark ? '#94a3b8' : '#78716c'"
+    style="border-top-width: 1px; border-top-style: solid;"
   >
     <div class="flex items-center gap-2">
-      <span class="font-semibold text-stone-700">Family Tracker</span>
+      <span class="font-semibold" [style.color]="currentTheme.isDark ? '#f1f5f9' : '#44403c'">Family Tracker</span>
       <span>&bull;</span>
       <span>Explore National Parks, States &amp; Road Trips</span>
     </div>
     <div class="flex items-center gap-3 sm:gap-4">
-      <span class="italic font-serif text-stone-400 text-xs tracking-wide">
+      <span class="italic font-serif opacity-70 text-xs tracking-wide">
         Made for fun by Jake Fisher
       </span>
-      <span class="text-stone-300 hidden sm:inline">&bull;</span>
+      <span class="opacity-40 hidden sm:inline">&bull;</span>
       <a
         href="https://github.com/jfisheratwork/travel-tracker-public"
         target="_blank"
         rel="noopener noreferrer"
-        class="hover:text-stone-800 transition flex items-center gap-1.5 font-medium text-stone-600"
+        class="hover:opacity-100 transition flex items-center gap-1.5 font-medium"
+        [style.color]="currentTheme.isDark ? '#e2e8f0' : '#44403c'"
       >
         <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
           <path
