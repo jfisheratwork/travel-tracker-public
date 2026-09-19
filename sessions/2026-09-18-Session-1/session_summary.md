@@ -163,6 +163,16 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - Exported total geography constants (`TOTAL_US_STATES`, `TOTAL_CA_PROVINCES`, `TOTAL_US_PARKS`, `TOTAL_CA_PARKS`) in `src/app/core/constants/geography.constants.ts`.
 - Verified test suite and lint checks: 9/9 suites passing, 23/23 tests passing, 0 ESLint warnings.
 - Verified visual rendering and interactions via Chrome DevTools MCP across light, Dutch orange, and default Dunes themes.
+- Enhanced Details Drawer and Visit Disclosure:
+  - Reversed Hide / Show Details toggle button arrows (`▲ Show Details` when closed/collapsed at bottom; `▼ Hide Details` when open/expanded).
+  - Added real-time Search Bar inside the Details Drawer (`LocationsTrackerComponent` and `locations-tracker.html`) with search icon, clear button (`✕`), and multi-field search support (location names, subtitles, family member names, visit dates, and comments).
+  - Added interactive Tree / Menu Disclosure Widget for all visited locations:
+    - Interactive disclosure toggle chevron (`▶` / `▼`) and `Show details ▾` / `Hide details ▴` status indicators per row.
+    - Expandable tree displaying Trip Visits & Dates (specific trip dates and user comments/memories).
+    - Expandable tree displaying Family Member visits with colored member badges, individual first-visit dates, and personal notes.
+    - Quick "✏️ Edit visits, dates & comments for [Location]" link opening the location detail modal directly.
+    - Added `⊞ Expand All` / `⊟ Collapse All` batch toggle button in the drawer header.
+  - Verified linter (0 errors), test suite (23/23 passing), and conducted live browser testing in Chrome DevTools MCP.
 
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
@@ -223,3 +233,5 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "When we did the color wheel mockups we missed the change in color of states, change in button background colors, ... I wouldn;t mind some subtle font shifts between these styles"
 - "these need some color to them"
 - "I think the parks view still needs to show the basic state/provine outlines"
+- "Our hide/show details button the arrows should be reveresed, when we show the hidden drawer we need a search button there, We need to be able to show all details under small tree/menu widget disclose if someone wanted to see all the visits and dates and comments for a state or parks"
+
