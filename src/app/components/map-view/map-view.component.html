@@ -24,12 +24,21 @@
         🚗 Add Roads
       </button>
     </div>
-    <button
-      (click)="showStatsModal = true"
-      class="px-4 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95"
-    >
-      📊 Show Statistics
-    </button>
+    <div class="flex items-center gap-2">
+      <button
+        (click)="showStatsModal = true"
+        class="px-4 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center gap-1.5 shadow-sm whitespace-nowrap active:scale-95"
+      >
+        📊 Show Statistics
+      </button>
+      <button
+        (click)="openSettings()"
+        class="px-3 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center justify-center shadow-sm active:scale-95"
+        title="Settings"
+      >
+        ⚙️
+      </button>
+    </div>
   </div>
 
   <app-stats-modal *ngIf="showStatsModal" (close)="showStatsModal = false"></app-stats-modal>

@@ -28,6 +28,7 @@ import { LocationDetailModal } from './components/location-detail-modal/location
 })
 export class App implements OnInit {
   showSettingsModal = false;
+  showDetailsDrawer = false;
 
   // We inject LocalStorageService here to ensure it's instantiated immediately
   // upon application startup. This guarantees the initial state load.

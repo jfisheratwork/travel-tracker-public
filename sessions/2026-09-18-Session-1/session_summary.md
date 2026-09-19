@@ -99,6 +99,15 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
   - Maintained complete view cleanliness: state polygons automatically activate in States mode and clear in Parks and Roads modes.
   - Ran comprehensive Chrome DevTools MCP verification: confirmed 65 paths loaded, correct colors, polygon clicks opening Arizona details, clean switching to Parks (0 paths) and back, and search dimming.
   - Ran `make test` (19/19 tests passing) and `make lint` (0 errors, 0 warnings).
+- Redesigned and maximized main application layout:
+  - Centered page title as `Family Tracker` with light rounded border and removed the globe icon.
+  - Relocated mode selector tabs (`[🚗 Routes] [🌲 Parks] [⭐ States]`) directly above the map.
+  - Expanded map viewport to utilize maximum screen real estate (`max-w-[96vw] 2xl:max-w-[1700px]` width, `75vh` to `78vh` height).
+  - Implemented collapsible **Show / Hide Details Drawer** (`showDetailsDrawer`) beneath the map: lists are hidden by default and smoothly toggle open via a rounded pill action button (`▼ Show Details` / `▲ Hide Details`).
+  - Relocated settings gear button `⚙️` into the map's control bar directly adjacent to `📊 Show Statistics`.
+  - Added an attribution footer at the very bottom linking to the GitHub repository.
+  - Verified full interaction, modal launching, and drawer toggling via Chrome DevTools MCP.
+  - All 19 unit tests passing and 0 lint warnings.
 
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
@@ -128,4 +137,5 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "commit and push it all"
 - "what about the shading on states visited did that get lost in the shuffle?"
 - "yes"
+- "Move the blue circled tabs above the map. Add a show details drawer to hide the lists unless someone opens the drawer. WOrk to use more of the full vertical and horizontal windo for the map. Change the title to Family Tracker and center it with a light rounderd border. Remove the globe. Moved the gear next to show statistics. add an attribution footer at the very bottom to be able to add a link to the github page"
 

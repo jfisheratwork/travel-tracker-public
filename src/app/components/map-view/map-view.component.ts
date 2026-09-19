@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Component, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { GlobalSearchComponent } from '../global-search/global-search.component';
 import { StateService } from '../../services/state.service';
@@ -27,12 +27,18 @@ import { LoggerService } from '../../core/services/logger.service';
   styleUrls: ['./map-view.component.css'],
 })
 export class MapViewComponent implements OnInit, OnDestroy {
+  @Output() settingsClick = new EventEmitter<void>();
+
   private map!: L.Map;
   private baseTileLayer!: L.TileLayer;
   private destroy$ = new Subject<void>();
   showStatsModal = false;
   showParksStatesModal = false;
   parksStatesModalMode: 'parks' | 'states' = 'parks';
+
+  openSettings(): void {
+    this.settingsClick.emit();
+  }
 
   openParksModal(): void {
     this.stateService.setMapMode('parks');
