@@ -1,7 +1,7 @@
 export type ColorThemeId =
+  | 'forest-ranger'
   | 'dunes-deep-lake'
   | 'classic-stone'
-  | 'forest-ranger'
   | 'midnight-slate'
   | 'desert-sunset'
   | 'lake-forest'
@@ -47,6 +47,39 @@ export interface ColorThemeDefinition {
 }
 
 export const COLOR_THEMES: Record<ColorThemeId, ColorThemeDefinition> = {
+  'forest-ranger': {
+    id: 'forest-ranger',
+    name: 'Sage & Forest Ranger',
+    description: 'Deep national park evergreen with soothing sage mist canvas',
+    fontName: 'Albert Sans',
+    fontFamily: "'Albert Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    swatches: ['#1e3a2f', '#ebeee6', '#2d6a4f'],
+    canvasBg: '#ebeee6',
+    headerBg: '#1e3a2f',
+    headerText: '#ffffff',
+    headerBorder: '#162c23',
+    cardBg: '#fcfdfa',
+    cardBorder: '#d4ded7',
+    toolbarBg: '#fcfdfa',
+    accent: '#1e3a2f',
+    textColor: '#1c1917',
+    subtextColor: '#57534e',
+    buttonBg: '#f2f5ee',
+    buttonBorder: '#cedbd1',
+    buttonText: '#1e3a2f',
+    buttonHoverBg: '#e5ede4',
+    buttonActiveBg: '#1e3a2f',
+    buttonActiveText: '#ffffff',
+    stateVisitedFill: '#2d6a4f',
+    stateVisitedStroke: '#1e4634',
+    statePartialFill: '#d97706',
+    statePartialStroke: '#b45309',
+    stateUnvisitedFill: '#cbd5e1',
+    stateUnvisitedStroke: '#94a3b8',
+    markerVisitedColor: '#2d6a4f',
+    markerPartialColor: '#d97706',
+    markerUnvisitedColor: '#8ba195',
+  },
   'dunes-deep-lake': {
     id: 'dunes-deep-lake',
     name: 'Dunes & Deep Lake',
@@ -112,39 +145,6 @@ export const COLOR_THEMES: Record<ColorThemeId, ColorThemeDefinition> = {
     markerVisitedColor: '#16a34a',
     markerPartialColor: '#f59e0b',
     markerUnvisitedColor: '#94a3b8',
-  },
-  'forest-ranger': {
-    id: 'forest-ranger',
-    name: 'Sage & Forest Ranger',
-    description: 'Deep national park evergreen with soothing sage mist canvas',
-    fontName: 'Albert Sans',
-    fontFamily: "'Albert Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    swatches: ['#1e3a2f', '#ebeee6', '#2d6a4f'],
-    canvasBg: '#ebeee6',
-    headerBg: '#1e3a2f',
-    headerText: '#ffffff',
-    headerBorder: '#162c23',
-    cardBg: '#fcfdfa',
-    cardBorder: '#d4ded7',
-    toolbarBg: '#fcfdfa',
-    accent: '#1e3a2f',
-    textColor: '#1c1917',
-    subtextColor: '#57534e',
-    buttonBg: '#f2f5ee',
-    buttonBorder: '#cedbd1',
-    buttonText: '#1e3a2f',
-    buttonHoverBg: '#e5ede4',
-    buttonActiveBg: '#1e3a2f',
-    buttonActiveText: '#ffffff',
-    stateVisitedFill: '#2d6a4f',
-    stateVisitedStroke: '#1e4634',
-    statePartialFill: '#d97706',
-    statePartialStroke: '#b45309',
-    stateUnvisitedFill: '#cbd5e1',
-    stateUnvisitedStroke: '#94a3b8',
-    markerVisitedColor: '#2d6a4f',
-    markerPartialColor: '#d97706',
-    markerUnvisitedColor: '#8ba195',
   },
   'midnight-slate': {
     id: 'midnight-slate',
@@ -314,5 +314,5 @@ export const COLOR_THEMES: Record<ColorThemeId, ColorThemeDefinition> = {
   },
 };
 
-export const DEFAULT_THEME_ID: ColorThemeId = 'dunes-deep-lake';
+export const DEFAULT_THEME_ID: ColorThemeId = 'forest-ranger';
 export const AVAILABLE_THEMES_LIST: ColorThemeDefinition[] = Object.values(COLOR_THEMES);

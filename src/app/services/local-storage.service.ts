@@ -254,7 +254,7 @@ export class LocalStorageService {
    * Loads a sample preset (e.g. 'family1.json') from docs/examples.
    */
   public async loadSamplePreset(
-    presetFileName: string,
+    presetFileName: string = 'family1.json',
   ): Promise<{ success: boolean; message: string }> {
     try {
       // Try examples/ relative to base, or docs/examples/
@@ -283,6 +283,47 @@ export class LocalStorageService {
 
   public setActiveTab(tab: string): void {
     this.activeTabSubject.next(tab);
+  }
+
+  /**
+   * Determines if the user is visiting for the first time or has no data.
+   */
+  public isFirstVisitOrNoData(): boolean {
+    if (typeof localStorage === 'undefined') return false;
+    const dismissed = localStorage.getItem('np_welcome_dismissed');
+    if (dismissed === 'true') return false;
+
+    const saved = localStorage.getItem('np_travel_settings');
+    if (!saved) return true;
+
+    try {
+      const parsed = JSON.parse(saved) as Partial<AppSettings>;
+      const hasFamily = Array.isArray(parsed.familyMembers) && parsed.familyMembers.length > 0;
+      const hasHometown = Array.isArray(parsed.hometowns) && parsed.hometowns.length > 0;
+      const hasStates = parsed.visitedStates && Object.keys(parsed.visitedStates).length > 0;
+      const hasParks = parsed.visitedParks && Object.keys(parsed.visitedParks).length > 0;
+      return !hasFamily && !hasHometown && !hasStates && !hasParks;
+    } catch {
+      return true;
+    }
+  }
+
+  /**
+   * Marks the welcome modal as dismissed in localStorage.
+   */
+  public markWelcomeDismissed(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('np_welcome_dismissed', 'true');
+    }
+  }
+
+  /**
+   * Resets the welcome dismissed flag to allow reopening the setup wizard.
+   */
+  public resetWelcomeDismissed(): void {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('np_welcome_dismissed');
+    }
   }
 
   private getRandomColor(): string {

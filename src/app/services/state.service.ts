@@ -84,7 +84,19 @@ export class StateService {
   private newRoadTripTriggerSubject = new BehaviorSubject<number>(0);
   public newRoadTripTrigger$ = this.newRoadTripTriggerSubject.asObservable();
 
+  private detailsDrawerOpenSubject = new BehaviorSubject<boolean>(false);
+  public detailsDrawerOpen$ = this.detailsDrawerOpenSubject.asObservable();
+
+  setDetailsDrawerOpen(isOpen: boolean): void {
+    this.detailsDrawerOpenSubject.next(isOpen);
+  }
+
+  isDetailsDrawerOpen(): boolean {
+    return this.detailsDrawerOpenSubject.getValue();
+  }
+
   triggerNewRoadTrip(): void {
+    this.setDetailsDrawerOpen(true);
     this.newRoadTripTriggerSubject.next(Date.now());
   }
 }

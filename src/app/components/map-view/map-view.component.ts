@@ -160,7 +160,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   openRoads(): void {
     this.stateService.setMapMode('roads');
+    this.stateService.setDetailsDrawerOpen(true);
     this.stateService.triggerNewRoadTrip();
+    setTimeout(() => {
+      document.querySelector('app-route-builder')?.scrollIntoView({ behavior: 'smooth' });
+    }, 150);
   }
 
   private currentLayerGroup!: L.LayerGroup;
