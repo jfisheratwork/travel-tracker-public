@@ -4,13 +4,10 @@ if [ "$GITHUB_ACTIONS" != "true" ] && [ "$CI" != "true" ]; then
   STAGED_DOCS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^docs/newsite/' || true)
 
   if [ -n "$STAGED_DOCS_FILES" ]; then
-    echo "❌ Error: You are trying to commit files in docs/newsite/ locally."
-    echo "The docs/newsite directory is automatically built and committed by GitHub Actions."
-    echo "Please unstage these files using: git restore --staged docs/newsite/"
-    echo ""
-    echo "Staged files:"
+    echo "⚠️  Auto-unstaging docs/newsite/ files (built automatically by GitHub Actions):"
     echo "$STAGED_DOCS_FILES"
-    exit 1
+    echo "$STAGED_DOCS_FILES" | xargs git restore --staged
+    echo ""
   fi
 fi
 
