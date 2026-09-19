@@ -1,4 +1,5 @@
 import { FamilyMember } from '../../../models/settings.model';
+import { escapeHtml } from '../../../core/utils/security.utils';
 
 export interface LocationPopupMemberVisit {
   id: string;
@@ -44,8 +45,8 @@ export function buildLocationPopupHtml(
 
       return `
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="color:#57534e;">${member.name}</span>
-          <span style="color:${hasVisited ? '#16a34a' : '#d6d3d1'}; font-weight:${hasVisited ? 'bold' : 'normal'}; font-size:12px;">${visitText}</span>
+          <span style="color:#57534e;">${escapeHtml(member.name)}</span>
+          <span style="color:${hasVisited ? '#16a34a' : '#d6d3d1'}; font-weight:${hasVisited ? 'bold' : 'normal'}; font-size:12px;">${escapeHtml(visitText)}</span>
         </div>
       `;
     })
@@ -61,8 +62,8 @@ export function buildLocationPopupHtml(
 
   return `
     <div style="font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; min-width: 240px; padding: 4px;">
-      <strong style="font-size: 14px; display: block; color: #292524;">${params.name}</strong>
-      <span style="font-size: 12px; color: #78716c; display: block; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; margin-bottom: 4px;">${subLabel}</span>
+      <strong style="font-size: 14px; display: block; color: #292524;">${escapeHtml(params.name)}</strong>
+      <span style="font-size: 12px; color: #78716c; display: block; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; margin-bottom: 4px;">${escapeHtml(subLabel)}</span>
       
       ${visitLogsBadge}
 

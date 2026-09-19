@@ -70,3 +70,16 @@ graph LR
 - `parks$`: 85+ US and Canadian national parks with exact lat/lng coordinates and countries.
 - `states$`: 50 US States and 13 Canadian Provinces/Territories.
 - `statesGeoJson$`: GeoJSON multi-polygons for US states and Canadian provinces used by `MapShadingService`.
+
+---
+
+## 5. AI Trip Delta Ingestion (`TripDeltaService`)
+
+To allow external AI assistants (ChatGPT, Gemini, Claude) or programmatic agents to update travel history without clicking dozens of checkboxes in the UI, the application implements the **Trip Delta format**:
+
+### Data Flow
+1. **Context-Aware Prompt Generation**: [TripDeltaService](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/services/trip-delta.service.ts) dynamically injects current family member names into an LLM prompt template.
+2. **Sanitization & Markdown Stripping**: Extracts JSON from markdown fences (````json ... ````) and conversational text.
+3. **Fuzzy Entity Resolution**: Matches park names (tolerant of common typos like "Grand Tentons"), 2-letter state postal codes (`MT`, `WY`), transit cities, and group members (`"all"`).
+4. **Incremental State Merging**: Mutates `visitedParks` and `visitedStates` in `StateService.settings$` by appending visit logs without overwriting previous trips.
+

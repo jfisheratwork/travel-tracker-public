@@ -1,0 +1,75 @@
+# Traveled Roads Tracker — Comprehensive AI Reference (llms-full.txt)
+
+> Full specification, data dictionaries, security guardrails, and parsing prompt template for Traveled Roads Tracker.
+
+---
+
+## 1. System Prompt for AI Assistants
+
+When an AI assistant receives a natural language travel narrative from a user, it should use this prompt to generate the output:
+
+```text
+You are an AI assistant for the "Traveled Roads Tracker" application.
+The user will describe a trip or vacation in natural language. Your task is to extract the visited National Parks, States/Provinces, group members, approximate date, and trip notes, and output strictly a valid JSON object matching the Trip Delta schema.
+
+### Extraction Rules:
+1. "parks": Extract all US and Canadian National Parks visited. Use canonical names (e.g. "Yellowstone", "Grand Teton", "Banff", "Acadia").
+2. "states": Extract all US States and Canadian Provinces visited, including arrival/departure transit states explicitly mentioned (e.g. "Montana", "Wyoming", "Idaho", or standard 2-letter postal codes like "MT", "WY", "ID").
+3. "members": Array of member names who took part, or ["all"] if everyone attended.
+4. "date": The trip date in YYYY-MM-DD format (use the approximate date if only month/year or "last week" is given).
+5. "name": A concise, descriptive trip title (e.g., "Yellowstone & Grand Tetons Road Trip").
+6. "notes": A brief 1-2 sentence summary of the route or highlights.
+
+### Required Output Schema (JSON Only):
+```json
+{
+  "type": "trip_delta",
+  "version": 1,
+  "trip": {
+    "name": "Trip Title",
+    "date": "YYYY-MM-DD",
+    "members": ["all"],
+    "parks": ["Yellowstone", "Grand Teton"],
+    "states": ["Montana", "Wyoming", "Idaho"],
+    "notes": "Route notes or highlights"
+  }
+}
+```
+
+IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding conversational text.
+```
+
+---
+
+## 2. Security Guardrails & Ingestion Limits
+
+Traveled Roads Tracker enforces strict client-side validation on all imported payloads:
+- **Max Payload Size**: 32 KB (32,768 bytes).
+- **Max Trip Name Length**: 100 characters.
+- **Max Notes Length**: 500 characters.
+- **Max Entities Per Trip**: 60 national parks and 60 states/provinces maximum.
+- **Max Group Members**: 20 members maximum.
+- **Sanitization**: All HTML/XML tags, control characters, and zero-width/bidi override Unicode characters are stripped.
+- **Prototype Pollution**: JSON objects containing `__proto__`, `constructor`, or `prototype` keys are rejected.
+- **Date Validation**: Must be a valid Gregorian calendar date between 1900 and 2100.
+- **Closed Entity Whitelist**: Only canonical parks in the official 85 National Parks registry and 63 US States / Canadian Provinces are accepted. Unmatched entities are safely dropped with warning notices.
+
+---
+
+## 3. Supported National Parks (63 US + 22 Canadian)
+
+### US National Parks (63)
+Acadia, American Samoa, Arches, Badlands, Big Bend, Biscayne, Black Canyon of the Gunnison, Bryce Canyon, Canyonlands, Capitol Reef, Carlsbad Caverns, Channel Islands, Congaree, Crater Lake, Cuyahoga Valley, Death Valley, Denali, Dry Tortugas, Everglades, Gates of the Arctic, Gateway Arch, Glacier, Glacier Bay, Grand Canyon, Grand Teton, Great Basin, Great Sand Dunes, Great Smoky Mountains, Guadalupe Mountains, Haleakala, Hawaii Volcanoes, Hot Springs, Indiana Dunes, Isle Royale, Joshua Tree, Katmai, Kenai Fjords, Kings Canyon, Kobuk Valley, Lake Clark, Lassen Volcanic, Mammoth Cave, Mesa Verde, Mount Rainier, New River Gorge, North Cascades, Olympic, Petrified Forest, Pinnacles, Redwood, Rocky Mountain, Saguaro, Sequoia, Shenandoah, Theodore Roosevelt, Virgin Islands, Voyageurs, White Sands, Wind Cave, Wrangell-St. Elias, Yellowstone, Yosemite, Zion.
+
+### Canadian National Parks (22)
+Banff, Jasper, Yoho, Kootenay, Waterton Lakes, Pacific Rim, Mount Revelstoke, Glacier (Canada), Elk Island, Wood Buffalo, Prince Albert, Riding Mountain, Bruce Peninsula, Point Pelee, Thousand Islands, La Mauricie, Forillon, Cape Breton Highlands, Fundy, Gros Morne, Kluane, Auyuittuq.
+
+---
+
+## 4. Supported States & Provinces (50 US + DC + 13 Canadian)
+
+### US States & Codes (50 + DC)
+AL (Alabama), AK (Alaska), AZ (Arizona), AR (Arkansas), CA (California), CO (Colorado), CT (Connecticut), DE (Delaware), FL (Florida), GA (Georgia), HI (Hawaii), ID (Idaho), IL (Illinois), IN (Indiana), IA (Iowa), KS (Kansas), KY (Kentucky), LA (Louisiana), ME (Maine), MD (Maryland), MA (Massachusetts), MI (Michigan), MN (Minnesota), MS (Mississippi), MO (Missouri), MT (Montana), NE (Nebraska), NV (Nevada), NH (New Hampshire), NJ (New Jersey), NM (New Mexico), NY (New York), NC (North Carolina), ND (North Dakota), OH (Ohio), OK (Oklahoma), OR (Oregon), PA (Pennsylvania), RI (Rhode Island), SC (South Carolina), SD (South Dakota), TN (Tennessee), TX (Texas), UT (Utah), VT (Vermont), VA (Virginia), WA (Washington), WV (West Virginia), WI (Wisconsin), WY (Wyoming), DC (District of Columbia).
+
+### Canadian Provinces & Codes (13)
+AB (Alberta), BC (British Columbia), MB (Manitoba), NB (New Brunswick), NL (Newfoundland and Labrador), NS (Nova Scotia), NT (Northwest Territories), NU (Nunavut), ON (Ontario), PE (Prince Edward Island), QC (Quebec), SK (Saskatchewan), YT (Yukon).

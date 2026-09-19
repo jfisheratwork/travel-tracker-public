@@ -12,6 +12,7 @@ import { ToastContainerComponent } from './core/components/toast-container/toast
 import { LoadingSpinnerComponent } from './core/components/loading-spinner/loading-spinner.component';
 import { LocationDetailModal } from './components/location-detail-modal/location-detail-modal';
 import { WelcomeModalComponent } from './components/welcome-modal/welcome-modal.component';
+import { AiTripModalComponent } from './components/ai-trip-modal/ai-trip-modal.component';
 import { GlobalSearchComponent } from './components/global-search/global-search.component';
 import { MapMode } from './models/location.model';
 import {
@@ -38,6 +39,7 @@ import {
     LoadingSpinnerComponent,
     LocationDetailModal,
     WelcomeModalComponent,
+    AiTripModalComponent,
   ],
   templateUrl: './app.html',
   styleUrl: './app.css',
@@ -47,6 +49,7 @@ export class App implements OnInit {
   showWelcomeModal = false;
   showStatsModal = false;
   showHelpModal = false;
+  showAiTripModal = false;
   showThemeMenu = false;
   showDetailsDrawer = false;
   showProfileMenu = false;

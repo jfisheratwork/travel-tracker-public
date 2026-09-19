@@ -1,4 +1,6 @@
-<div class="bg-stone-50 border border-stone-200 p-4 rounded-xl shadow-xs">
+<div
+  class="bg-stone-50 border border-stone-200 p-3 sm:p-4 rounded-xl shadow-xs h-full flex flex-col min-h-0"
+>
   <!-- Header Bar -->
   <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
     <div class="flex items-center gap-2">
@@ -98,7 +100,7 @@
     </button>
   </div>
 
-  <div class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto pr-1">
+  <div class="flex flex-col gap-2 text-sm text-stone-500 flex-1 overflow-y-auto pr-1 min-h-0">
     <div
       *ngIf="visitedLocations.length === 0"
       class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400"

@@ -317,16 +317,14 @@
 
   <!-- Main Display Container: Stacked Map and Details Drawer -->
   <div class="flex flex-col gap-4">
-    <!-- Map Row: Map Widget + Right Action Column -->
+    <!-- Map Row: Map Widget + Right Action Column + Side Details Pane -->
     <div class="flex flex-col lg:flex-row gap-3 items-start w-full">
-      <!-- Map Area (Uses full vertical and horizontal screen real estate with thick rounded border) -->
+      <!-- Map Area (Occupies 56% when details pane is open, flex-1 full width when closed) -->
       <div
-        class="flex-1 w-full rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0"
-        [class.h-[calc(100vh-140px)]]="!showDetailsDrawer"
-        [class.sm:h-[calc(100vh-122px)]]="!showDetailsDrawer"
-        [class.min-h-[600px]]="!showDetailsDrawer"
-        [class.h-[50vh]]="showDetailsDrawer"
-        [class.min-h-[360px]]="showDetailsDrawer"
+        class="w-full rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0 h-[calc(100vh-140px)] sm:h-[calc(100vh-122px)] min-h-[600px]"
+        [class.flex-1]="!showDetailsDrawer"
+        [class.lg:w-[56%]]="showDetailsDrawer"
+        [class.lg:flex-none]="showDetailsDrawer"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
         style="border-width: 3.5px; border-style: solid"
@@ -334,9 +332,9 @@
         <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
       </div>
 
-      <!-- Right Column: Visited Header, Mode Tabs, Line, Edit Header, Add __, Show Details, Line -->
+      <!-- Right Action Column: Visited Header, Mode Tabs, Line, Edit Header, Add __, Show Details, Line -->
       <div
-        class="flex flex-col gap-2 flex-shrink-0 w-full lg:w-48 p-3 rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] transition-colors duration-200"
+        class="flex flex-col gap-2 flex-shrink-0 w-full lg:w-44 p-3 rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] transition-colors duration-200"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
       >
@@ -452,6 +450,19 @@
           </button>
         </ng-container>
 
+        <!-- "AI Trip Import" Button -->
+        <button
+          type="button"
+          (click)="showAiTripModal = true"
+          class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
+          [style.backgroundColor]="currentTheme.buttonBg"
+          [style.borderColor]="currentTheme.buttonBorder"
+          [style.color]="currentTheme.buttonText"
+          title="Import trip using AI prompt and structured text"
+        >
+          <span>🪄 AI Trip Import</span>
+        </button>
+
         <!-- "Show Details" Button -->
         <button
           type="button"
@@ -466,32 +477,64 @@
           [style.borderColor]="
             showDetailsDrawer ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
           "
-          title="Toggle Details Drawer"
+          title="Toggle Details Pane"
         >
-          <span>{{ showDetailsDrawer ? '▼ Hide Details' : '▲ Show Details' }}</span>
+          <span>{{ showDetailsDrawer ? '▶ Hide Details' : '◀ Show Details' }}</span>
         </button>
 
         <!-- Horizontal line separator -->
         <div class="w-full h-px my-0.5" [style.backgroundColor]="currentTheme.cardBorder"></div>
       </div>
-    </div>
 
-    <!-- Active Mode Content Drawer -->
-    <div
-      id="detailsDrawer"
-      *ngIf="showDetailsDrawer && (stateService.mapMode$ | async) as mode"
-      class="w-full flex-shrink-0 transition-all duration-300 animate-fadeIn mt-2"
-    >
+      <!-- Right Side Details Pane: Expands from right pushing map to 50-60% of viewport -->
       <div
-        *ngIf="mode === 'roads'"
-        class="rounded-xl shadow-lg overflow-hidden transition-colors duration-200"
+        id="detailsDrawer"
+        *ngIf="showDetailsDrawer && (stateService.mapMode$ | async) as mode"
+        class="flex-1 w-full lg:min-w-[360px] lg:max-w-[540px] h-[calc(100vh-140px)] sm:h-[calc(100vh-122px)] min-h-[600px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
-        style="border-width: 1px; border-style: solid"
       >
-        <app-route-builder></app-route-builder>
+        <!-- Pane Header -->
+        <div
+          class="px-4 py-2.5 border-b flex items-center justify-between flex-shrink-0 transition-colors duration-200"
+          [style.borderColor]="currentTheme.cardBorder"
+          [style.backgroundColor]="currentTheme.headerBg"
+          [style.color]="currentTheme.headerText"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider">
+              {{
+                mode === 'roads'
+                  ? '🚗 Road Trips'
+                  : mode === 'parks'
+                    ? '⛰️ Visited Parks'
+                    : '⭐ Visited Places'
+              }}
+            </span>
+          </div>
+          <button
+            type="button"
+            (click)="toggleDetailsDrawer()"
+            class="text-xs font-bold opacity-80 hover:opacity-100 transition px-2 py-0.5 rounded cursor-pointer flex items-center gap-1 hover:bg-black/10"
+            title="Close Details Pane"
+          >
+            <span>✕ Close</span>
+          </button>
+        </div>
+
+        <!-- Scrollable Content Container -->
+        <div class="flex-1 overflow-hidden p-3 flex flex-col min-h-0 bg-stone-50/50">
+          <div
+            *ngIf="mode === 'roads'"
+            class="h-full flex flex-col rounded-xl overflow-hidden bg-white border border-stone-200 shadow-xs"
+          >
+            <app-route-builder></app-route-builder>
+          </div>
+          <div *ngIf="mode === 'parks' || mode === 'states'" class="h-full flex flex-col">
+            <app-locations-tracker></app-locations-tracker>
+          </div>
+        </div>
       </div>
-      <app-locations-tracker *ngIf="mode === 'parks' || mode === 'states'"></app-locations-tracker>
     </div>
   </div>
 
@@ -541,6 +584,8 @@
   *ngIf="showSettingsModal"
   (close)="showSettingsModal = false"
 ></app-settings-modal>
+
+<app-ai-trip-modal *ngIf="showAiTripModal" (close)="showAiTripModal = false"></app-ai-trip-modal>
 
 <app-location-detail-modal
   *ngIf="stateService.editingLocation$ | async as editingLoc"
