@@ -1,252 +1,13 @@
-<div class="flex flex-col h-full relative" [style.backgroundColor]="currentTheme.cardBg">
-  <!-- Top Bar -->
-  <div
-    class="flex flex-wrap justify-between items-center gap-4 p-3.5 border-b z-[1000] relative transition-colors duration-200"
-    [style.backgroundColor]="currentTheme.toolbarBg"
-    [style.borderBottomColor]="currentTheme.cardBorder"
-  >
-    <!-- Left: Global Search -->
-    <div class="flex items-center min-w-[220px] max-w-xs flex-1">
-      <app-global-search class="w-full"></app-global-search>
-    </div>
-
-    <!-- Center: Primary Actions -->
-    <div class="flex items-center justify-center gap-2.5 flex-wrap">
-      <button
-        (click)="openParksModal()"
-        class="h-10 px-4 rounded-xl text-sm font-bold transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border"
-        [style.backgroundColor]="currentTheme.buttonBg"
-        [style.borderColor]="currentTheme.buttonBorder"
-        [style.color]="currentTheme.buttonText"
-      >
-        🌲 Add Parks
-      </button>
-      <button
-        (click)="openStatesModal()"
-        class="h-10 px-4 rounded-xl text-sm font-bold transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border"
-        [style.backgroundColor]="currentTheme.buttonBg"
-        [style.borderColor]="currentTheme.buttonBorder"
-        [style.color]="currentTheme.buttonText"
-      >
-        ⭐ Add States
-      </button>
-      <button
-        (click)="openRoads()"
-        class="h-10 px-4 rounded-xl text-sm font-bold transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border"
-        [style.backgroundColor]="currentTheme.buttonBg"
-        [style.borderColor]="currentTheme.buttonBorder"
-        [style.color]="currentTheme.buttonText"
-      >
-        🚗 Add Roads
-      </button>
-    </div>
-
-    <!-- Right: Utility Tools -->
-    <div class="flex items-center justify-end gap-2 flex-shrink-0">
-      <button
-        (click)="showStatsModal = true"
-        class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border"
-        [style.backgroundColor]="currentTheme.isDark ? '#1e1b4b' : '#eef2ff'"
-        [style.borderColor]="currentTheme.isDark ? '#4338ca' : '#c7d2fe'"
-        title="Show Statistics"
-        aria-label="Show Statistics"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <line x1="6" y1="20" x2="6" y2="14" stroke="#3b82f6" stroke-width="2.5"></line>
-          <line x1="12" y1="20" x2="12" y2="4" stroke="#8b5cf6" stroke-width="2.5"></line>
-          <line x1="18" y1="20" x2="18" y2="10" stroke="#ec4899" stroke-width="2.5"></line>
-        </svg>
-      </button>
-
-      <!-- Color Wheel Theme Selector Dropdown -->
-      <div class="relative" #themeMenuRef>
-        <button
-          (click)="toggleThemeMenu()"
-          class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border"
-          [style.backgroundColor]="currentTheme.isDark ? '#451a03' : '#fff7ed'"
-          [style.borderColor]="currentTheme.isDark ? '#9a3412' : '#fed7aa'"
-          [style.color]="currentTheme.isDark ? '#fdba74' : '#ea580c'"
-          [class.ring-2]="showThemeMenu"
-          [class.ring-amber-400]="showThemeMenu"
-          title="Color Theme"
-          aria-label="Select Color Theme"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="13.5" cy="6.5" r="1.3" fill="#ef4444" stroke="#ef4444"></circle>
-            <circle cx="17.5" cy="10.5" r="1.3" fill="#3b82f6" stroke="#3b82f6"></circle>
-            <circle cx="8.5" cy="7.5" r="1.3" fill="#10b981" stroke="#10b981"></circle>
-            <circle cx="6.5" cy="12.5" r="1.3" fill="#f59e0b" stroke="#f59e0b"></circle>
-            <path
-              d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
-            ></path>
-          </svg>
-        </button>
-
-        <!-- Dropdown Menu -->
-        <div
-          *ngIf="showThemeMenu"
-          class="absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-[1100] animate-fadeIn border"
-          [style.backgroundColor]="currentTheme.cardBg"
-          [style.borderColor]="currentTheme.cardBorder"
-        >
-          <div
-            class="px-3.5 py-2 border-b flex items-center justify-between"
-            [style.borderBottomColor]="currentTheme.cardBorder"
-          >
-            <span
-              class="text-xs font-bold uppercase tracking-wider"
-              [style.color]="currentTheme.subtextColor"
-              >Color Themes</span
-            >
-            <span class="text-[10px] font-medium" [style.color]="currentTheme.subtextColor"
-              >8 options</span
-            >
-          </div>
-
-          <div class="max-h-80 overflow-y-auto py-1">
-            <button
-              *ngFor="let t of availableThemes"
-              (click)="selectTheme(t.id)"
-              class="w-full px-3.5 py-2.5 flex items-center justify-between transition text-left group"
-              [style.backgroundColor]="
-                currentThemeId === t.id ? currentTheme.buttonBg : 'transparent'
-              "
-            >
-              <div class="flex items-center gap-3 min-w-0">
-                <!-- 3 Swatch Dots Preview -->
-                <div class="flex items-center -space-x-1.5 flex-shrink-0">
-                  <span
-                    class="w-4 h-4 rounded-full border border-white shadow-xs"
-                    [style.backgroundColor]="t.swatches[0]"
-                  ></span>
-                  <span
-                    class="w-4 h-4 rounded-full border border-white shadow-xs"
-                    [style.backgroundColor]="t.swatches[1]"
-                  ></span>
-                  <span
-                    class="w-4 h-4 rounded-full border border-white shadow-xs"
-                    [style.backgroundColor]="t.swatches[2]"
-                  ></span>
-                </div>
-                <div class="flex flex-col min-w-0">
-                  <span
-                    class="text-sm font-semibold truncate"
-                    [style.color]="
-                      currentThemeId === t.id ? currentTheme.buttonActiveBg : currentTheme.textColor
-                    "
-                    [style.fontFamily]="t.fontFamily"
-                  >
-                    {{ t.name }}
-                  </span>
-                  <span
-                    class="text-[10px] font-medium leading-none mt-0.5"
-                    [style.color]="currentTheme.subtextColor"
-                  >
-                    {{ t.fontName }}
-                  </span>
-                </div>
-              </div>
-
-              <!-- Checkmark when active -->
-              <svg
-                *ngIf="currentThemeId === t.id"
-                class="w-4 h-4 flex-shrink-0"
-                [style.color]="currentTheme.buttonActiveBg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2.5"
-              >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <button
-        (click)="openSettings()"
-        class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border group"
-        [style.backgroundColor]="currentTheme.isDark ? '#083344' : '#ecfeff'"
-        [style.borderColor]="currentTheme.isDark ? '#0e7490' : '#a5f3fc'"
-        [style.color]="currentTheme.isDark ? '#67e8f9' : '#0891b2'"
-        title="Settings"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5 transition-transform duration-300 group-hover:rotate-45"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      </button>
-      <button
-        (click)="showHelpModal = true"
-        class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border"
-        [style.backgroundColor]="currentTheme.isDark ? '#064e3b' : '#ecfdf5'"
-        [style.borderColor]="currentTheme.isDark ? '#047857' : '#a7f3d0'"
-        [style.color]="currentTheme.isDark ? '#6ee7b7' : '#059669'"
-        title="Help & Information"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"
-          />
-          <line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2" />
-        </svg>
-      </button>
-    </div>
-  </div>
-
-  <app-stats-modal *ngIf="showStatsModal" (close)="showStatsModal = false"></app-stats-modal>
+<div class="h-full w-full relative" [style.backgroundColor]="currentTheme.cardBg">
   <app-parks-states-modal
     *ngIf="showParksStatesModal"
     [mode]="parksStatesModalMode"
     (close)="showParksStatesModal = false"
   ></app-parks-states-modal>
-  <app-help-modal *ngIf="showHelpModal" (close)="showHelpModal = false"></app-help-modal>
 
   <!-- Map + Overlays (Stats Legend bottom-left, Visited Legend bottom-right) -->
-  <div class="flex-1 flex w-full relative min-h-0 overflow-hidden">
-    <div id="map" class="flex-1 h-full z-0"></div>
+  <div class="w-full h-full relative overflow-hidden">
+    <div id="map" class="w-full h-full z-0"></div>
 
     <!-- Bottom-Left Quick Stats Legend -->
     <div
@@ -333,90 +94,47 @@
 
       <div class="w-full h-px" [style.backgroundColor]="currentTheme.cardBorder"></div>
 
-      <!-- All -->
-      <div class="flex items-center gap-2 cursor-default" title="All Visited">
+      <!-- Everyone -->
+      <div class="flex items-center gap-2 cursor-default" title="Everyone has visited">
         <span
           class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
           [style.backgroundColor]="currentTheme.stateVisitedFill"
           [style.ringColor]="currentTheme.cardBorder"
         ></span>
-        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">All</span>
+        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Everyone</span>
       </div>
 
-      <!-- Some -->
-      <div class="flex items-center gap-2 cursor-default" title="Partially Visited">
+      <!-- Some of us -->
+      <div class="flex items-center gap-2 cursor-default" title="Some of us have visited">
         <span
           class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
           [style.backgroundColor]="currentTheme.statePartialFill"
           [style.ringColor]="currentTheme.cardBorder"
         ></span>
-        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Some</span>
+        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Some of us</span>
       </div>
 
-      <!-- None -->
-      <div class="flex items-center gap-2 cursor-default" title="Not Visited">
+      <!-- Not yet -->
+      <div class="flex items-center gap-2 cursor-default" title="Not yet visited">
         <span
           class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
           [style.backgroundColor]="currentTheme.stateUnvisitedFill"
           [style.ringColor]="currentTheme.cardBorder"
         ></span>
-        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">None</span>
+        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Not yet</span>
       </div>
-    </div>
-  </div>
 
-  <!-- Bottom Bar: Mirrored Mode Tabs (Routes, Parks, States) -->
-  <div
-    class="p-2.5 border-t z-[1000] relative flex justify-center transition-colors duration-200"
-    [style.backgroundColor]="currentTheme.toolbarBg"
-    [style.borderTopColor]="currentTheme.cardBorder"
-  >
-    <div class="flex gap-2 max-w-xl w-full">
-      <button
-        (click)="setMapMode('roads')"
-        [style.backgroundColor]="
-          mapMode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-        "
-        [style.color]="
-          mapMode === 'roads' ? currentTheme.buttonActiveText : currentTheme.buttonText
-        "
-        [style.borderColor]="
-          mapMode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
-        "
-        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border active:scale-95"
-      >
-        🚗 Routes
-      </button>
-      <button
-        (click)="setMapMode('parks')"
-        [style.backgroundColor]="
-          mapMode === 'parks' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-        "
-        [style.color]="
-          mapMode === 'parks' ? currentTheme.buttonActiveText : currentTheme.buttonText
-        "
-        [style.borderColor]="
-          mapMode === 'parks' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
-        "
-        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border active:scale-95"
-      >
-        🌲 Parks
-      </button>
-      <button
-        (click)="setMapMode('states')"
-        [style.backgroundColor]="
-          mapMode === 'states' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-        "
-        [style.color]="
-          mapMode === 'states' ? currentTheme.buttonActiveText : currentTheme.buttonText
-        "
-        [style.borderColor]="
-          mapMode === 'states' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
-        "
-        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border active:scale-95"
-      >
-        ⭐ States
-      </button>
+      <!-- Want to visit -->
+      <div class="flex items-center gap-2 cursor-default" title="Want to visit">
+        <span
+          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+          [style.backgroundColor]="wantToVisitColor"
+          [style.ringColor]="currentTheme.cardBorder"
+        ></span>
+        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor"
+          >Want to visit</span
+        >
+      </div>
     </div>
   </div>
 </div>

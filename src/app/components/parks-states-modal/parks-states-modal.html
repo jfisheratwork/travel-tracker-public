@@ -71,9 +71,9 @@
     <!-- Main Content (Table) -->
     <div class="overflow-y-auto flex-1 bg-white relative">
       <div *ngIf="!viewModel?.familyMembers?.length" class="text-center p-8 bg-white">
-        <p class="text-stone-500 mb-4">No family members added yet.</p>
+        <p class="text-stone-500 mb-4">No group members added yet.</p>
         <p class="text-sm text-stone-400">
-          Go to Settings > Family to add members before tracking visits.
+          Go to Settings > Our Group to add members before tracking visits.
         </p>
       </div>
 
@@ -108,7 +108,7 @@
               {{ m.name }}
               <span *ngIf="sortColumn === m.id" class="text-xs ml-1">↕</span>
             </th>
-            <th class="px-4 py-4 bg-stone-100 border-l border-stone-200 text-center">Family ↕</th>
+            <th class="px-4 py-4 bg-stone-100 border-l border-stone-200 text-center">Our Group ↕</th>
           </tr>
         </thead>
         <tbody>

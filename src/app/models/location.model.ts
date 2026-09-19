@@ -6,4 +6,8 @@ export interface LocationPoint {
   lng: number;
   visitedBy: string[];
   visited: boolean;
+  country?: string;
+  sub?: string;
 }
+
+export type MapMode = 'parks' | 'states' | 'roads';

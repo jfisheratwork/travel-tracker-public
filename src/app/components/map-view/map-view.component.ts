@@ -1,19 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  ElementRef,
-  Output,
-  EventEmitter,
-  HostListener,
-  ViewChild,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { GlobalSearchComponent } from '../global-search/global-search.component';
 import { StateService } from '../../services/state.service';
 // DOCS: https://rxjs.dev/api/index/class/Subject
-import { Subject, takeUntil, combineLatest } from 'rxjs';
+import { Subject, Observable, takeUntil, combineLatest } from 'rxjs';
 // DOCS: https://leafletjs.com/reference.html
 import * as L from 'leaflet';
 import { RouteObject } from '../../models/route.model';
@@ -28,14 +18,11 @@ import { API_ENDPOINTS } from '../../core/constants/api.constants';
 import { RoutingService } from '../../services/routing/routing.service';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { StatsModal } from '../stats-modal/stats-modal';
 import { ParksStatesModal } from '../parks-states-modal/parks-states-modal';
-import { HelpModalComponent } from '../help-modal/help-modal.component';
 import { LoggerService } from '../../core/services/logger.service';
 import {
   COLOR_THEMES,
   DEFAULT_THEME_ID,
-  AVAILABLE_THEMES_LIST,
   ColorThemeId,
   ColorThemeDefinition,
 } from '../../core/constants/theme.constants';
@@ -59,7 +46,7 @@ const NORTH_AMERICA_BOUNDS: L.LatLngBoundsLiteral = [
 @Component({
   selector: 'app-map-view',
   standalone: true,
-  imports: [CommonModule, GlobalSearchComponent, StatsModal, ParksStatesModal, HelpModalComponent],
+  imports: [CommonModule, ParksStatesModal],
   templateUrl: './map-view.component.html',
   styleUrls: ['./map-view.component.css'],
 })
@@ -69,13 +56,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private map!: L.Map;
   private baseTileLayer!: L.TileLayer;
   private destroy$ = new Subject<void>();
-  showStatsModal = false;
+  // DOCS: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver
+  private resizeObserver?: ResizeObserver;
   showParksStatesModal = false;
-  showHelpModal = false;
   parksStatesModalMode: 'parks' | 'states' = 'parks';
-  @ViewChild('themeMenuRef') themeMenuRef?: ElementRef;
-  showThemeMenu = false;
-  availableThemes = AVAILABLE_THEMES_LIST;
   currentThemeId: ColorThemeId = DEFAULT_THEME_ID;
   currentTheme: ColorThemeDefinition = COLOR_THEMES[DEFAULT_THEME_ID];
 
@@ -117,35 +101,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
     ).length;
   }
 
-  toggleThemeMenu(): void {
-    this.showThemeMenu = !this.showThemeMenu;
-  }
-
-  selectTheme(id: ColorThemeId): void {
-    this.stateService.setColorTheme(id);
-    this.showThemeMenu = false;
-  }
-
-  @HostListener('document:click', ['$event'])
-  onDocumentClick(event: MouseEvent): void {
-    if (this.showThemeMenu && this.themeMenuRef?.nativeElement) {
-      if (!this.themeMenuRef.nativeElement.contains(event.target as Node)) {
-        this.showThemeMenu = false;
-      }
-    }
-  }
-
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    if (this.showThemeMenu) {
-      this.showThemeMenu = false;
-    }
-  }
-
-  openSettings(): void {
-    this.settingsClick.emit();
-  }
-
   openParksModal(): void {
     this.stateService.setMapMode('parks');
     this.parksStatesModalMode = 'parks';
@@ -167,9 +122,21 @@ export class MapViewComponent implements OnInit, OnDestroy {
     }, 150);
   }
 
+  isDetailsDrawerOpen$: Observable<boolean>;
+  readonly wantToVisitColor = MAP_THEME.WANT_TO_VISIT_COLOR;
+
+  toggleDetailsDrawer(): void {
+    this.stateService.setDetailsDrawerOpen(!this.stateService.isDetailsDrawerOpen());
+  }
+
+  invalidateSize(): void {
+    if (this.map && typeof this.map.invalidateSize === 'function') {
+      this.map.invalidateSize();
+    }
+  }
+
   private currentLayerGroup!: L.LayerGroup;
   private stateGeoJsonLayer?: L.GeoJSON;
-  private currentPolyline: L.Polyline | null = null;
   private currentPolylines: L.Polyline[] = [];
   private allLocations: LocationPoint[] = [];
   private currentSearchTerm = '';
@@ -183,7 +150,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
     private routingService: RoutingService,
     private el: ElementRef,
     private logger: LoggerService,
-  ) {}
+  ) {
+    this.isDetailsDrawerOpen$ = this.stateService.detailsDrawerOpen$;
+  }
 
   ngOnInit() {
     this.initMap();
@@ -237,9 +206,20 @@ export class MapViewComponent implements OnInit, OnDestroy {
               })
               .filter(Boolean);
             const locationLogs = settings.locationVisits?.[originalId] || [];
+            const totalFamily = settings.familyMembers?.length || 0;
+            const isAllVisited =
+              totalFamily > 0
+                ? visitors.length === totalFamily
+                : visitDetails.length > 0 || locationLogs.length > 0;
+            const isPartiallyVisited =
+              totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
             return {
               ...p,
+              country: p.country || 'USA',
+              sub: p.sub || '',
               visited: visitDetails.length > 0 || locationLogs.length > 0,
+              isAllVisited,
+              isPartiallyVisited,
               visitedByMembers: visitors,
               visitLogs: locationLogs,
             };
@@ -260,9 +240,19 @@ export class MapViewComponent implements OnInit, OnDestroy {
               })
               .filter(Boolean);
             const locationLogs = settings.locationVisits?.[originalId] || [];
+            const totalFamily = settings.familyMembers?.length || 0;
+            const isAllVisited =
+              totalFamily > 0
+                ? visitors.length === totalFamily
+                : visitDetails.length > 0 || locationLogs.length > 0;
+            const isPartiallyVisited =
+              totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
             return {
               ...s,
+              country: s.country || (s.sub === 'Canada' ? 'Canada' : 'USA'),
               visited: visitDetails.length > 0 || locationLogs.length > 0,
+              isAllVisited,
+              isPartiallyVisited,
               visitedByMembers: visitors,
               visitLogs: locationLogs,
             };
@@ -328,6 +318,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
     this.currentLayerGroup = L.layerGroup().addTo(this.map);
 
+    if (typeof ResizeObserver !== 'undefined' && mapContainer) {
+      this.resizeObserver = new ResizeObserver(() => {
+        this.invalidateSize();
+      });
+      this.resizeObserver.observe(mapContainer);
+    }
+
     this.map.on('popupopen', (e: any) => {
       const editBtn = e.popup._contentNode?.querySelector('.edit-location-btn');
       if (editBtn) {
@@ -372,9 +369,32 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
       const isPark = m.id.includes('park');
       const markerTheme = isPark ? MAP_MARKER_THEME.PARK : MAP_MARKER_THEME.STATE;
-      const color = m.visited
-        ? this.currentTheme.markerVisitedColor
-        : this.currentTheme.markerUnvisitedColor;
+
+      let color: string;
+      let border: string;
+      let boxShadow: string;
+      let opacity: number;
+      let zIndexOffset: number;
+
+      if (m.isAllVisited || (m.visited && !m.isPartiallyVisited)) {
+        color = this.currentTheme.markerVisitedColor;
+        border = markerTheme.BORDER_ALL;
+        boxShadow = markerTheme.BOX_SHADOW_ALL;
+        opacity = 1;
+        zIndexOffset = 500;
+      } else if (m.isPartiallyVisited) {
+        color = this.currentTheme.markerPartialColor;
+        border = markerTheme.BORDER_SOME;
+        boxShadow = markerTheme.BOX_SHADOW_SOME;
+        opacity = 1;
+        zIndexOffset = 400;
+      } else {
+        color = this.currentTheme.markerUnvisitedColor;
+        border = markerTheme.BORDER_NONE;
+        boxShadow = markerTheme.BOX_SHADOW_NONE;
+        opacity = 0.72;
+        zIndexOffset = 0;
+      }
 
       let popupHtml = '';
       if (m.id.startsWith('hometown-')) {
@@ -407,7 +427,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
           .bindPopup(`<strong>${m.name} (${m.isLast ? 'Hometown' : 'Previous Hometown'})</strong>`)
           .addTo(this.currentLayerGroup);
       } else {
-        const iconHtml = `<div class="flex items-center justify-center transition-all duration-300" style="width:${markerTheme.DIAMETER}px; height:${markerTheme.DIAMETER}px; background-color:${color}; border-radius:50%; border: ${markerTheme.BORDER}; box-shadow: ${markerTheme.BOX_SHADOW}; font-size:${markerTheme.FONT_SIZE}; color: white; line-height: 1;">${markerTheme.ICON_CHAR}</div>`;
+        const iconChar = isPark
+          ? m.country === 'Canada'
+            ? (markerTheme as any).ICON_CHAR_CA || '🍁'
+            : (markerTheme as any).ICON_CHAR_US || '🌲'
+          : m.country === 'Canada' || m.sub === 'Canada'
+            ? (markerTheme as any).ICON_CHAR_CA || '🇨🇦'
+            : (markerTheme as any).ICON_CHAR_US || '🇺🇸';
+        const iconHtml = `<div class="flex items-center justify-center transition-all duration-300" style="width:${markerTheme.DIAMETER}px; height:${markerTheme.DIAMETER}px; background-color:${color}; border-radius:50%; border: ${border}; box-shadow: ${boxShadow}; opacity: ${opacity}; font-size:${markerTheme.FONT_SIZE}; color: white; line-height: 1;">${iconChar}</div>`;
         const icon = L.divIcon({
           html: iconHtml,
           className: 'bg-transparent border-none',
@@ -415,7 +442,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
           iconAnchor: [markerTheme.ANCHOR, markerTheme.ANCHOR],
           popupAnchor: [0, -markerTheme.ANCHOR],
         });
-        L.marker([m.lat, m.lng], { icon }).bindPopup(popupHtml).addTo(this.currentLayerGroup);
+        L.marker([m.lat, m.lng], { icon, zIndexOffset })
+          .bindPopup(popupHtml)
+          .addTo(this.currentLayerGroup);
       }
     });
   }
@@ -652,6 +681,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
     this.currentPolylines.forEach((p) => p.remove());
     this.currentPolylines = [];
 
+    if (this.mapMode !== 'roads') {
+      return;
+    }
+
     if (selectedRoute) {
       let coords =
         selectedRoute.coordinates && selectedRoute.coordinates.length > 0
@@ -765,6 +798,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
     if (this.stateGeoJsonLayer) {
       this.stateGeoJsonLayer.remove();
       this.stateGeoJsonLayer = undefined;
+    }
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
     }
     if (this.map) {
       this.map.remove();

@@ -16,7 +16,7 @@
           <h2 class="text-xl font-bold text-stone-800">Welcome to Traveled Roads Tracker</h2>
         </div>
         <p class="text-xs text-stone-500 mt-1">
-          Quick Setup — Personalize your family members, home city, and optional free map API keys
+          Quick Setup — Personalize your group members, home city, and optional free map API keys
           in one place.
         </p>
       </div>
@@ -32,10 +32,15 @@
     <!-- Body Scrollable Content -->
     <div class="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 space-y-5 sm:space-y-6">
       <!-- Purpose explanation from Help & Information -->
-      <div class="p-3.5 sm:p-4 bg-stone-50 border border-stone-200 rounded-xl text-stone-700 text-xs sm:text-sm leading-relaxed shadow-2xs">
+      <div
+        class="p-3.5 sm:p-4 bg-stone-50 border border-stone-200 rounded-xl text-stone-700 text-xs sm:text-sm leading-relaxed shadow-2xs"
+      >
         <p>
-          <strong class="text-stone-900 font-semibold">Traveled Roads Tracker</strong> helps you explore, log, and visualize visited
-          <strong class="text-stone-800">National Parks</strong>, <strong class="text-stone-800">States &amp; Provinces</strong>, and <strong class="text-stone-800">Road Trips</strong> across the United States and Canada
+          <strong class="text-stone-900 font-semibold">Traveled Roads Tracker</strong> helps you
+          explore, log, and visualize visited
+          <strong class="text-stone-800">National Parks</strong>,
+          <strong class="text-stone-800">States &amp; Provinces</strong>, and
+          <strong class="text-stone-800">Road Trips</strong> across the United States and Canada
           with interactive mapping, completion statistics, and trip memory logs.
         </p>
       </div>
@@ -49,7 +54,8 @@
           <div>
             <h3 class="text-sm font-bold text-emerald-950">Want to explore right away?</h3>
             <p class="text-xs text-emerald-800 mt-0.5 leading-relaxed">
-              Load sample road trips, family members, visited states, and national parks with one click.
+              Load sample road trips, group members, visited states, and national parks with one
+              click.
             </p>
           </div>
         </div>
@@ -70,15 +76,15 @@
         <hr class="flex-1 border-stone-200" />
       </div>
 
-      <!-- Section 1: Family Members -->
+      <!-- Section 1: Our Group -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
-            <span>👥 1. Family Members</span>
+          <label
+            class="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5"
+          >
+            <span>👥 1. Our Group</span>
           </label>
-          <span class="text-[11px] text-stone-400">
-            {{ familyMembers.length }} added
-          </span>
+          <span class="text-[11px] text-stone-400"> {{ familyMembers.length }} added </span>
         </div>
         <p class="text-xs text-stone-500">
           Enter who travels with you. Type names individually or paste comma-separated (e.g.
@@ -90,7 +96,7 @@
             type="text"
             [(ngModel)]="memberNameInput"
             (keydown.enter)="addFamilyMember()"
-            placeholder="Add a family member or comma-separated names..."
+            placeholder="Add a group member or comma-separated names..."
             class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs"
           />
           <button
@@ -123,7 +129,7 @@
             </button>
           </div>
           <div *ngIf="familyMembers.length === 0" class="text-xs text-stone-400 italic">
-            No family members added yet.
+            No group members added yet.
           </div>
         </div>
       </div>
@@ -132,7 +138,9 @@
 
       <!-- Section 2: Home City -->
       <div class="space-y-3">
-        <label class="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
+        <label
+          class="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5"
+        >
           <span>🏠 2. Home City / Starting Point</span>
         </label>
         <p class="text-xs text-stone-500">
@@ -147,7 +155,9 @@
           <div class="flex items-center gap-2 min-w-0 pr-2">
             <span class="text-lg">🏡</span>
             <div class="truncate">
-              <span class="text-xs font-bold text-emerald-900 block truncate">{{ homeCity.name }}</span>
+              <span class="text-xs font-bold text-emerald-900 block truncate">{{
+                homeCity.name
+              }}</span>
               <span class="text-[10px] text-emerald-700 font-mono">
                 {{ homeCity.lat.toFixed(4) }}, {{ homeCity.lng.toFixed(4) }}
               </span>
@@ -209,9 +219,13 @@
       <!-- Section 3: Free Map & Routing API Keys -->
       <div class="space-y-3">
         <div class="flex items-center justify-between">
-          <label class="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5">
+          <label
+            class="text-xs font-bold uppercase tracking-wider text-stone-700 flex items-center gap-1.5"
+          >
             <span>🔑 3. Free Map & Routing API Keys</span>
-            <span class="text-[10px] font-normal px-2 py-0.5 bg-stone-100 text-stone-500 rounded-full">
+            <span
+              class="text-[10px] font-normal px-2 py-0.5 bg-stone-100 text-stone-500 rounded-full"
+            >
               Optional
             </span>
           </label>
@@ -222,8 +236,9 @@
           <span class="text-base flex-shrink-0">✨</span>
           <div class="text-xs text-blue-900 leading-relaxed">
             <strong class="font-bold">Both keys have 100% free tiers for personal use.</strong>
-            They are stored securely in your browser's local storage and are never uploaded to any external server.
-            If left blank, free OpenStreetMap and OSRM fallbacks are used automatically.
+            They are stored securely in your browser's local storage and are never uploaded to any
+            external server. If left blank, free OpenStreetMap and OSRM fallbacks are used
+            automatically.
           </div>
         </div>
 
@@ -244,7 +259,8 @@
               </a>
             </div>
             <p class="text-[11px] text-stone-500">
-              Powers fast, accurate road trip calculation and turn-by-turn routing (100,000 free requests/mo).
+              Powers fast, accurate road trip calculation and turn-by-turn routing (100,000 free
+              requests/mo).
             </p>
             <input
               type="text"
