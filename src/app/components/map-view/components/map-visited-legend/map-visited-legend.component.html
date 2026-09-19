@@ -1,0 +1,55 @@
+<div
+  class="absolute right-3 bottom-3 z-[1000] backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3.5 flex flex-col gap-2 select-none no-print transition-colors duration-200"
+  [style.backgroundColor]="theme.cardBg"
+  [style.borderColor]="theme.cardBorder"
+  [style.color]="theme.textColor"
+>
+  <div
+    class="text-[10px] font-extrabold uppercase tracking-wider text-center"
+    [style.color]="theme.subtextColor"
+  >
+    VISITED
+  </div>
+
+  <div class="w-full h-px" [style.backgroundColor]="theme.cardBorder"></div>
+
+  <!-- Everyone -->
+  <div class="flex items-center gap-2 cursor-default" title="Everyone has visited">
+    <span
+      class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+      [style.backgroundColor]="theme.stateVisitedFill"
+      [style.ringColor]="theme.cardBorder"
+    ></span>
+    <span class="text-xs font-semibold" [style.color]="theme.textColor">Everyone</span>
+  </div>
+
+  <!-- Some of us -->
+  <div class="flex items-center gap-2 cursor-default" title="Some of us have visited">
+    <span
+      class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+      [style.backgroundColor]="theme.statePartialFill"
+      [style.ringColor]="theme.cardBorder"
+    ></span>
+    <span class="text-xs font-semibold" [style.color]="theme.textColor">Some of us</span>
+  </div>
+
+  <!-- Not yet -->
+  <div class="flex items-center gap-2 cursor-default" title="Not yet visited">
+    <span
+      class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+      [style.backgroundColor]="theme.stateUnvisitedFill"
+      [style.ringColor]="theme.cardBorder"
+    ></span>
+    <span class="text-xs font-semibold" [style.color]="theme.textColor">Not yet</span>
+  </div>
+
+  <!-- Want to visit -->
+  <div class="flex items-center gap-2 cursor-default" title="Want to visit">
+    <span
+      class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+      [style.backgroundColor]="wantToVisitColor"
+      [style.ringColor]="theme.cardBorder"
+    ></span>
+    <span class="text-xs font-semibold" [style.color]="theme.textColor">Want to visit</span>
+  </div>
+</div>

@@ -9,132 +9,17 @@
   <div class="w-full h-full relative overflow-hidden">
     <div id="map" class="w-full h-full z-0"></div>
 
-    <!-- Bottom-Left Quick Stats Legend -->
-    <div
-      class="absolute left-3 bottom-3 z-[1000] backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3 flex flex-col gap-1.5 select-none no-print min-w-[170px] transition-colors duration-200"
-      [style.backgroundColor]="currentTheme.cardBg"
-      [style.borderColor]="currentTheme.cardBorder"
-      [style.color]="currentTheme.textColor"
-    >
-      <div
-        class="text-[10px] font-extrabold uppercase tracking-wider text-center"
-        [style.color]="currentTheme.subtextColor"
-      >
-        STATISTICS
-      </div>
+    <app-map-stats-legend
+      [theme]="currentTheme"
+      [visitedUSStatesCount]="visitedUSStatesCount"
+      [visitedCAProvincesCount]="visitedCAProvincesCount"
+      [visitedUSParksCount]="visitedUSParksCount"
+      [visitedCAParksCount]="visitedCAParksCount"
+    ></app-map-stats-legend>
 
-      <div class="w-full h-px" [style.backgroundColor]="currentTheme.cardBorder"></div>
-
-      <!-- US States -->
-      <div class="flex items-center justify-between gap-3 text-xs">
-        <span
-          class="flex items-center gap-1.5 font-medium"
-          [style.color]="currentTheme.subtextColor"
-        >
-          <span>🇺🇸</span> US States
-        </span>
-        <span class="font-bold" [style.color]="currentTheme.textColor"
-          >{{ visitedUSStatesCount }} / {{ TOTAL_US_STATES }}</span
-        >
-      </div>
-
-      <!-- CA Provinces -->
-      <div class="flex items-center justify-between gap-3 text-xs">
-        <span
-          class="flex items-center gap-1.5 font-medium"
-          [style.color]="currentTheme.subtextColor"
-        >
-          <span>🇨🇦</span> CA Provinces
-        </span>
-        <span class="font-bold" [style.color]="currentTheme.textColor"
-          >{{ visitedCAProvincesCount }} / {{ TOTAL_CA_PROVINCES }}</span
-        >
-      </div>
-
-      <!-- US Parks -->
-      <div class="flex items-center justify-between gap-3 text-xs">
-        <span
-          class="flex items-center gap-1.5 font-medium"
-          [style.color]="currentTheme.subtextColor"
-        >
-          <span>🌲</span> US Parks
-        </span>
-        <span class="font-bold" [style.color]="currentTheme.textColor"
-          >{{ visitedUSParksCount }} / {{ TOTAL_US_PARKS }}</span
-        >
-      </div>
-
-      <!-- CA Parks -->
-      <div class="flex items-center justify-between gap-3 text-xs">
-        <span
-          class="flex items-center gap-1.5 font-medium"
-          [style.color]="currentTheme.subtextColor"
-        >
-          <span>🍁</span> CA Parks
-        </span>
-        <span class="font-bold" [style.color]="currentTheme.textColor"
-          >{{ visitedCAParksCount }} / {{ TOTAL_CA_PARKS }}</span
-        >
-      </div>
-    </div>
-
-    <!-- Bottom-Right Visited Legend -->
-    <div
-      class="absolute right-3 bottom-3 z-[1000] backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3.5 flex flex-col gap-2 select-none no-print transition-colors duration-200"
-      [style.backgroundColor]="currentTheme.cardBg"
-      [style.borderColor]="currentTheme.cardBorder"
-      [style.color]="currentTheme.textColor"
-    >
-      <div
-        class="text-[10px] font-extrabold uppercase tracking-wider text-center"
-        [style.color]="currentTheme.subtextColor"
-      >
-        VISITED
-      </div>
-
-      <div class="w-full h-px" [style.backgroundColor]="currentTheme.cardBorder"></div>
-
-      <!-- Everyone -->
-      <div class="flex items-center gap-2 cursor-default" title="Everyone has visited">
-        <span
-          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
-          [style.backgroundColor]="currentTheme.stateVisitedFill"
-          [style.ringColor]="currentTheme.cardBorder"
-        ></span>
-        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Everyone</span>
-      </div>
-
-      <!-- Some of us -->
-      <div class="flex items-center gap-2 cursor-default" title="Some of us have visited">
-        <span
-          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
-          [style.backgroundColor]="currentTheme.statePartialFill"
-          [style.ringColor]="currentTheme.cardBorder"
-        ></span>
-        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Some of us</span>
-      </div>
-
-      <!-- Not yet -->
-      <div class="flex items-center gap-2 cursor-default" title="Not yet visited">
-        <span
-          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
-          [style.backgroundColor]="currentTheme.stateUnvisitedFill"
-          [style.ringColor]="currentTheme.cardBorder"
-        ></span>
-        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Not yet</span>
-      </div>
-
-      <!-- Want to visit -->
-      <div class="flex items-center gap-2 cursor-default" title="Want to visit">
-        <span
-          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
-          [style.backgroundColor]="wantToVisitColor"
-          [style.ringColor]="currentTheme.cardBorder"
-        ></span>
-        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor"
-          >Want to visit</span
-        >
-      </div>
-    </div>
+    <app-map-visited-legend
+      [theme]="currentTheme"
+      [wantToVisitColor]="wantToVisitColor"
+    ></app-map-visited-legend>
   </div>
 </div>

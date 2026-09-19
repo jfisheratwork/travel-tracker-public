@@ -29,20 +29,30 @@ This document outlines the global rules for contributing to the Travel Tracker p
 - **System Files:** Do not touch system configuration files or user home directory files outside the repo.
 
 
-## 5. Agent Directives: LSP-First Engineering
+## 5. Agent Directives: Semantic Search, LSP & Refactoring
 
-### Navigation & Discovery
-- ALWAYS prioritize LSP operations (goToDefinition, findReferences, workspaceSymbol) for code discovery.
-- NEVER use grep, glob, or read_file for navigation tasks unless LSP tools explicitly fail.
-- When refactoring, perform a symbol search (LSP) to identify all call sites before attempting any file modifications.
+### Fast Navigation Playbook (Benchmarked Protocols)
+Follow this high-speed, token-efficient navigation sequence:
+1. **Locate Any Symbol**: Call `lsp_find_symbol(name: "...")`. Returns definition location, hover signature, and all references in <0.2s without grepping.
+2. **Inspect Unfamiliar Files**: Run `ast-grep outline --view expanded <path>`. Emits a 40-line structural digest with exact line numbers for every method and property (~95% token savings vs reading the full file).
+3. **Trace Impact**: Once exact coordinates are obtained from the outline, call `lsp_call_hierarchy` or `lsp_find_references`.
+   - *CRITICAL Decorator Trap Warning*: NEVER call `lsp_find_references` on decorator lines (e.g., `@Injectable`, `@Component`). This forces the language server to scan thousands of framework files in `node_modules` and causes multi-minute hangs. Always target the actual class/method identifier.
+4. **Inspect Dependencies**: Call `lsp_file_imports` to inspect imports without loading the file.
+5. **Instant Type Verification**: Call `lsp_diagnostics(file_path)` for 0.2s in-memory compilation checks before running `make lint`.
+
+### Refactoring Standards
+- When renaming or extracting functions, prefer AST/LSP refactoring operations (`rename_symbol`, `ast-grep --rewrite`) over blind find-and-replace to prevent collateral substitutions in comments, strings, or similarly named local variables.
+- Batch structural updates atomically:
+  1. Locate target AST nodes using pattern matches.
+  2. Perform replacement.
+  3. Run type-checker diagnostics (`lsp_diagnostics` and `make lint`) immediately after edits.
+- Never declare a refactor complete if compiler or diagnostic errors are introduced.
 
 ### Token Optimization
-- Do not read full file contents to "infer" dependencies. Use LSP to inspect call hierarchies.
+- Do not read full file contents to "infer" dependencies. Use LSP to inspect call hierarchies and file imports.
 - Perform refactors atomically: 1. Rename/Modify definition; 2. Update specific call sites identified by LSP; 3. Run type-check.
 - Avoid "mega-prompts" that ask for structural changes across 5+ files simultaneously. Break into modular sub-tasks.
 
-### Antigravity/Gemini Context
-- Leverage the IDE's internal symbol table. If you are unsure of a symbol's usage, call `workspaceSymbol` instead of scanning the file tree.
 
 ## 6. External Libraries
 When including external libraries (e.g., via CDN), agents MUST adhere to the following rules:
@@ -56,6 +66,7 @@ To optimize AI context window size and maintain high performance, agents MUST fo
 1. **Modular File Structure**: Prefer smaller, focused files over monolithic files. When adding significant new functionality, break it out into a new module or component file rather than appending thousands of lines to `index.html` or a single JavaScript file.
 2. **Targeted Test Execution**: Do NOT run the full test suite (especially headless browser tests or Puppeteer) after every minor tweak. Only run integration tests when a major logic feature is complete, at the very end of a workflow, or when explicitly requested by the user. Rely on manual verification or targeted unit tests for small changes.
 3. **Encourage Batched Requests**: If the user begins making many small, rapid-fire iterative requests (e.g., minor CSS tweaks one by one), the agent MUST politely encourage the user to batch their requests into a larger body of work. The agent should suggest creating or updating a formal `implementation_plan.md` or spec file so that multiple changes can be processed in a single, token-efficient pass.
+4. **Mandatory Architecture Reference**: Before designing new features, introducing state, or refactoring components, agents MUST consult [`architecture/README.md`](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/README.md) and the relevant domain document (e.g., `02-state-and-data-flow.md` for state changes, `03-map-and-gis-architecture.md` for mapping). Agents must never guess architectural boundaries or read monolithic files blindly.
 
 ---
 *These rules are to be followed by all contributors and AI assistants.*

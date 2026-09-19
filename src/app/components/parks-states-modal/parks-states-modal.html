@@ -9,7 +9,7 @@
     <!-- Header -->
     <div class="p-5 border-b border-stone-100 flex justify-between items-center flex-shrink-0">
       <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
-        {{ mode === 'parks' ? '⭐ Log National Parks Visits' : '⭐ Log States & Provinces Visits' }}
+        {{ mode === 'parks' ? '⛰️ Log National Parks Visits' : '⭐ Log States & Provinces Visits' }}
       </h2>
       <button
         (click)="cancel()"
@@ -108,7 +108,9 @@
               {{ m.name }}
               <span *ngIf="sortColumn === m.id" class="text-xs ml-1">↕</span>
             </th>
-            <th class="px-4 py-4 bg-stone-100 border-l border-stone-200 text-center">Our Group ↕</th>
+            <th class="px-4 py-4 bg-stone-100 border-l border-stone-200 text-center">
+              Our Group ↕
+            </th>
           </tr>
         </thead>
         <tbody>

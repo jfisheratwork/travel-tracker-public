@@ -9,6 +9,11 @@ This guide covers everything you need to know to build, test, and debug the appl
 Before doing anything, ensure you have the required prerequisites:
 - **Node.js**: The Javascript runtime. (Install via Homebrew: `brew install node`)
 - **Angular CLI**: The command-line interface for Angular. (Install globally: `npm install -g @angular/cli`)
+- **Language Servers & LSP Tooling (AI / MCP workflows)**:
+  Install the global TypeScript, Angular, and HTML language servers alongside the LSP MCP server:
+  ```bash
+  npm install -g typescript typescript-language-server @angular/language-server @angular/language-service vscode-langservers-extracted lsp-mcp-server
+  ```
 
 ### Initial Setup
 After cloning the repository, install the exact pinned versions of our dependencies:
@@ -122,6 +127,91 @@ public setSelectedRoute(route: RouteObject | null): void {
 ### Best Practices
 - **Use the `async` pipe**: Subscribe to Observables directly in your HTML templates using `| async`. This automatically handles subscribing and **unsubscribing** when the component is destroyed, preventing memory leaks.
 - **`firstValueFrom`**: If you just need a one-off result (like an HTTP API request), you can use `firstValueFrom(observable)` to convert the stream into a standard Promise for use with `async/await`.
+
+---
+
+## 5. Model Context Protocol (MCP) Setup
+
+To supercharge development, AI agents, and IDE assistants with deep semantic code discovery, browser testing, and automated refactoring, we use the Model Context Protocol (MCP).
+
+### MCP Server Stack
+- **`chrome-devtools-mcp`**: Enables automated browser inspection, console analysis, and interaction testing.
+- **`eslint`**: Direct integration with repository ESLint rules for automated lint checking and fixes.
+- **`sequential-thinking`**: Structured problem decomposition and multi-step reasoning for agents.
+- **`github-mcp-server`**: Facilitates reading PRs, issues, commits, and reviews.
+- **`lsp-bridge`**: Fast bridge to language server protocols for definition lookup, references, and hover types.
+- **`ast-grep`**: Structural pattern searching and code rewriting across TypeScript and HTML.
+- **`angular-language-server`** (`ngserver`): Official Angular template language server for template diagnostics and typechecking.
+- **`html-language-server`**: Language support for HTML templates.
+
+### MCP Configuration
+Add the following configuration to your MCP client (for VS Code, this can be placed in `.vscode/mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "chrome-devtools-mcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    },
+    "eslint": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@eslint/mcp@latest"
+      ]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ]
+    },
+    "github-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "YOUR_ROTATED_GITHUB_PAT"
+      }
+    },
+    "lsp-bridge": {
+      "command": "lsp-mcp-server",
+      "env": {
+        "LSP_LOG_LEVEL": "info"
+      }
+    },
+    "ast-grep": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notprolands/ast-grep-mcp"
+      ]
+    },
+    "angular-language-server": {
+      "command": "ngserver",
+      "args": [
+        "--stdio"
+      ]
+    },
+    "html-language-server": {
+      "command": "vscode-html-language-server",
+      "args": [
+        "--stdio"
+      ]
+    }
+  }
+}
+```
+
+> [!WARNING]
+> **Security Reminder:** Never commit real secrets or tokens (e.g. `GITHUB_PERSONAL_ACCESS_TOKEN`) into version control. Ensure local secret tokens remain in uncommitted configuration or your local environment.
 
 ---
 

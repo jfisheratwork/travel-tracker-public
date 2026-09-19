@@ -1,0 +1,55 @@
+<div
+  class="absolute left-3 bottom-3 z-[1000] backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3 flex flex-col gap-1.5 select-none no-print min-w-[170px] transition-colors duration-200"
+  [style.backgroundColor]="theme.cardBg"
+  [style.borderColor]="theme.cardBorder"
+  [style.color]="theme.textColor"
+>
+  <div
+    class="text-[10px] font-extrabold uppercase tracking-wider text-center"
+    [style.color]="theme.subtextColor"
+  >
+    STATISTICS
+  </div>
+
+  <div class="w-full h-px" [style.backgroundColor]="theme.cardBorder"></div>
+
+  <!-- US States -->
+  <div class="flex items-center justify-between gap-3 text-xs">
+    <span class="flex items-center gap-1.5 font-medium" [style.color]="theme.subtextColor">
+      <span>🇺🇸</span> US States
+    </span>
+    <span class="font-bold" [style.color]="theme.textColor">
+      {{ visitedUSStatesCount }} / {{ TOTAL_US_STATES }}
+    </span>
+  </div>
+
+  <!-- CA Provinces -->
+  <div class="flex items-center justify-between gap-3 text-xs">
+    <span class="flex items-center gap-1.5 font-medium" [style.color]="theme.subtextColor">
+      <span>🇨🇦</span> CA Provinces
+    </span>
+    <span class="font-bold" [style.color]="theme.textColor">
+      {{ visitedCAProvincesCount }} / {{ TOTAL_CA_PROVINCES }}
+    </span>
+  </div>
+
+  <!-- US Parks -->
+  <div class="flex items-center justify-between gap-3 text-xs">
+    <span class="flex items-center gap-1.5 font-medium" [style.color]="theme.subtextColor">
+      <span>⛰️</span> US Parks
+    </span>
+    <span class="font-bold" [style.color]="theme.textColor">
+      {{ visitedUSParksCount }} / {{ TOTAL_US_PARKS }}
+    </span>
+  </div>
+
+  <!-- CA Parks -->
+  <div class="flex items-center justify-between gap-3 text-xs">
+    <span class="flex items-center gap-1.5 font-medium" [style.color]="theme.subtextColor">
+      <span>🏔️</span> CA Parks
+    </span>
+    <span class="font-bold" [style.color]="theme.textColor">
+      {{ visitedCAParksCount }} / {{ TOTAL_CA_PARKS }}
+    </span>
+  </div>
+</div>

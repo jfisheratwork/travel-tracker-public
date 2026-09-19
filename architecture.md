@@ -1,112 +1,40 @@
-# Application Architecture
+# Traveled Roads Tracker Architecture Portal
 
-The Family Travel Tracker is a client-side static web application that enables families to track national parks, states, and road trips. It executes entirely in the user's browser (serverless static hosting) and persists preferences and trip coordinates locally.
+The Traveled Roads Tracker application has evolved from a legacy static script into a modern, reactive **Angular 21 Standalone Application** backed by **Leaflet GIS mapping**, **RxJS reactive state streams**, and **browser-local schema persistence**.
+
+> [!IMPORTANT]
+> The full architectural specification and deep documentation tree is maintained inside the **[`architecture/`](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/README.md)** directory. Developers and AI agents must reference these guides before starting new features or refactors.
 
 ---
 
-## 1. Component Architecture
+## Architectural Document Directory
 
-Following the modularization refactor, the application logic is divided into five logical layers loaded sequentially in `docs/index.html`. This ensures a clear separation of concerns:
+| Document | Topic | Description |
+| :--- | :--- | :--- |
+| **[architecture/README.md](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/README.md)** | **Master Index & System Diagram** | High-level topology diagram, module relationships, and quick reference guide. |
+| **[01. System Overview](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/01-system-overview.md)** | **Core Framework & Directory Layout** | Angular 21, Vite builder, standalone components, and bootstrap lifecycle. |
+| **[02. State & Data Flow](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/02-state-and-data-flow.md)** | **Reactive State & Persistence** | `StateService` observables, `LocalStorageService` schemas, and migration rules. |
+| **[03. Map & GIS Architecture](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/03-map-and-gis-architecture.md)** | **Leaflet Engine & Decoupled Services** | `MapViewComponent` orchestrator, `MapShadingService`, `MapMarkerService`, `MapRouteService`, and pure GIS math utilities. |
+| **[04. Component Catalog](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/04-component-catalog.md)** | **UI Views & Modal Dialogs** | Contracts and inputs/outputs for `RouteBuilderComponent`, `LocationsTrackerComponent`, and all modals. |
+| **[05. External APIs & Network](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/05-external-apis-and-network.md)** | **Network Interceptor & Endpoints** | Tile servers (CARTO/OSM), Nominatim geocoding, OSRM/Mapbox routing, and timeout/retry handling. |
+| **[06. Testing & Quality Assurance](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/06-testing-and-quality.md)** | **Vitest, Linting & Build Standards** | Unit testing with mocked Leaflet, Playwright e2e specs, and Makefile commands. |
+| **[07. AI Agent Playbook](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/07-ai-agent-playbook.md)** | **Fast Navigation & LSP Protocol** | Benchmarked protocols for `lsp_find_symbol` (0.1s), `ast-grep outline` (0.05s, 95% token savings), and decorator trap warnings. |
+
+---
+
+## High-Level Architecture Diagram
 
 ```mermaid
 graph TD
-    HTML["docs/index.html<br>(Tailwind CSS Layout)"]
-    CSS["docs/css/style.css<br>(Custom Animations & Print Styles)"]
-    Const["docs/js/data_constants.js<br>(Static Parks & States List)"]
-    Helpers["docs/js/helpers.js<br>(Formatting, Escaping, Sorting, Migrations)"]
-    State["docs/js/state.js<br>(Global variables, LocalStorage Sync)"]
-    Map["docs/js/map.js<br>(Leaflet Initialization, Marker/Polyline Plotting)"]
-    UI["docs/js/ui.js<br>(Modals Toggles, Table Drawings, Stats Grid)"]
-    App["docs/js/app.js<br>(Search events, Routing engines, Backup Imports)"]
+    UI["Presentation Layer (Angular 21 Standalone Components)"]
+    Services["Domain Services (StateService, LocationDataService)"]
+    MapLayer["GIS & Map Layer (MapShadingService, MapMarkerService, MapRouteService)"]
+    Storage["Browser LocalStorage (Schema Migrations)"]
+    Network["Network Interceptor (OSRM, Mapbox, Nominatim, CARTO)"]
 
-    HTML --> CSS
-    HTML --> Const
-    HTML --> Helpers
-    HTML --> State
-    HTML --> Map
-    HTML --> UI
-    HTML --> App
-    
-    State -->|Calls| Helpers
-    Map -->|Reads State & Calls| Helpers
-    UI -->|Reads/Writes State & Calls| Helpers
-    App -->|Orchestrates| State
-    App -->|Orchestrates| Map
-    App -->|Orchestrates| UI
+    UI --> Services
+    UI --> MapLayer
+    Services --> Storage
+    Services --> Network
+    MapLayer --> Network
 ```
-
-### Module Descriptions
-*   **[docs/js/helpers.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/helpers.js)**: Holds pure mathematical and formatting functions (e.g. converting geodetic coordinates to distances/times, HTML-escaping to prevent XSS, grouping trip dates, and JSON schema version migration).
-*   **[docs/js/state.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/state.js)**: Manages reactive application state. Loads settings and visit records from `localStorage` on startup, invokes migrations, and writes back state changes via the `save()` helper.
-*   **[docs/js/map.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/map.js)**: Orchestrates the Leaflet map layer, custom icon layouts (visited vs unvisited visual states), custom popup HTML, and coordinate plotting.
-*   **[docs/js/ui.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/ui.js)**: Controls interactive DOM rendering (modals, settings checklists, member filter selectors, table sorts, and stats grids).
-*   **[docs/js/app.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/app.js)**: Serves as the central controller. Glues input event listeners, processes OSRM/Mapbox REST requests, geocodes input queries using Nominatim, and manages spreadsheet exports/backup JSON restorations.
-
----
-
-## 2. Core Workflows
-
-### A. Initialization & Data Migration
-When the application starts, it retrieves `localStorage` schemas and normalizes old formats to ensure continuous backward compatibility:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant Browser as Client Browser
-    participant HTML as index.html
-    participant State as state.js
-    participant Helpers as helpers.js
-    participant UI as ui.js
-
-    Browser->>HTML: Load Application Page
-    HTML->>State: Evaluate Script
-    State->>Browser: Read 'np_travel_tracker_v3' & 'np_travel_settings'
-    State->>Helpers: Call migrateData(settings, visitData)
-    Note over Helpers: Normalizes legacy single hometowns to array<br/>Injects empty list for new family routing attributes
-    Helpers-->>State: Return Clean Settings & Visit Objects
-    State->>Browser: Write back migrated state to localStorage
-    HTML->>UI: Trigger switchTab('parks') on window.onload
-    UI->>Browser: Draw park tracking lists & compute stats
-```
-
-### B. Routing & Point Simplification
-The application fetches road-following coordinate geometries from CDNs and simplifies them locally using the Douglas-Peucker algorithm to save storage bandwidth:
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant UI as ui.js
-    participant App as app.js
-    participant Nominatim as OS Nominatim API
-    participant Routing as OSRM / Mapbox CDN
-    participant Storage as LocalStorage
-
-    UI->>App: User triggers requestRoute() (Start -> End)
-    App->>Nominatim: Fetch coordinates for Start and End queries
-    Nominatim-->>App: Return Lat/Lng coordinates
-    App->>Routing: Fetch driving route polyline
-    Routing-->>App: Return full GPS coordinate array, distance, and duration
-    Note over App: Apply Douglas-Peucker point simplification<br/>based on tolerance settings (e.g. 0.001)
-    App->>Storage: Append simplified road trip record to settings.savedRoutes
-    App->>UI: Trigger renderSavedRoutes() and updateMapMarkers()
-```
-
----
-
-## 3. Testing Architecture
-
-Since the code is modularized to run natively in static web CDNs via shared global window variables, unit tests in Node.js are emulated using Node's `global` namespace.
-
-*   **Test File**: [tests/app.test.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/tests/app.test.js)
-*   **Emulation Hook**:
-    Inside [docs/js/app.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/app.js), Node.js environment detection loads all dependency files (`state.js`, `helpers.js`, `map.js`, `ui.js`) using `require` and mixes their exports into the Node `global` object.
-    ```javascript
-    if (typeof module !== 'undefined' && module.exports) {
-        const state = require('./state.js');
-        const helpers = require('./helpers.js');
-        const map = require('./map.js');
-        const ui = require('./ui.js');
-        Object.assign(global, state, helpers, map, ui);
-    }
-    ```
-    This mimics the browser's global scope environment, letting developers write fast local unit tests using the native `node:test` runner.
