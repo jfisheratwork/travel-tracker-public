@@ -109,11 +109,10 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
   - Verified full interaction, modal launching, and drawer toggling via Chrome DevTools MCP.
   - All 19 unit tests passing and 0 lint warnings.
 - Relocated map key & positioned mode tabs exclusively at bottom:
-  - Moved the key / legend to the right edge of the map container with vertical text styling, indicator dots, and subtle backdrop blur.
-  - Formatted "KEY" as horizontal text, and formatted visited status text ("All Visited", "Partially Visited", "Not Visited") with upright letters reading downwards (`[writing-mode:vertical-rl] [text-orientation:upright]`).
+  - Transformed the map key into a horizontal-text floating card on the right map margin titled `VISITED` with line-aligned indicators: `All` (green dot), `Some` (amber dot), and `None` (stone dot).
   - Positioned the mode selector tabs (`🚗 Routes`, `🌲 Parks`, `⭐ States`) exclusively at the bottom bar of the map card, eliminating redundant top tabs for a cleaner, decluttered layout.
   - Expanded the `Family Tracker` title border box to fill the entire container width (`w-full`), harmonizing with the map container dimensions.
-  - Added italicized serif attribution text ("made for fun by Jake Fisher") to the left of the GitHub repository link in the footer.
+  - Added italicized serif attribution text ("Made for fun by Jake Fisher") with capitalized "Made" to the left of the GitHub repository link in the footer.
   - Verified visual rendering and tab switching via Chrome DevTools MCP.
 
 ### Tasks Not Done
@@ -150,6 +149,9 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "make that border box will the whole width"
 - "The text should read down with each letter under the next. Only test that should be on the horizontal is the `key`"
 - "Add \"made for fun by Jake Fisher\" somewhere just to the left of the github link make it slightly different visually maybe italics or different font"
+- "Hmm I don't like that vertical text for key. Lets try the word 'key' becomes 'visited' with the indicators being 'all', 'some', 'none' the text can all be horizontal line aligned and the legend will just be a bit wider is all"
+- "`made for fun by Jake Fisher` capitalize the word 'made'"
+
 
 
 
