@@ -8,53 +8,72 @@
     [style.borderColor]="currentTheme.headerBorder"
     style="border-width: 2px; border-style: solid"
   >
-    <!-- Left spacer balancing the profile widget on desktop to keep title centered -->
-    <div class="w-10 sm:w-36 hidden sm:block"></div>
+    <!-- Left spacer balancing the right controls on desktop to keep title centered -->
+    <div class="w-12 sm:w-52 hidden sm:block"></div>
 
     <!-- Centered Title -->
     <h1
       class="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight m-0 text-center flex-1 transition-colors duration-200"
       [style.color]="currentTheme.headerText"
     >
-      Family Tracker
+      Traveled Roads Tracker
     </h1>
 
-    <!-- Right Profile Widget & Dropdown -->
-    <div class="relative sm:w-36 flex justify-end" #profileMenuRef>
+    <!-- Right Controls: Setup Wizard & Profile Widget -->
+    <div class="flex items-center gap-2 sm:gap-2.5 sm:w-52 justify-end">
+      <!-- Setup Wizard Button (Prominent in title bar to left of profile) -->
       <button
-        (click)="toggleProfileMenu()"
-        class="flex items-center gap-2 py-1 px-2 sm:px-2.5 rounded-full transition-all active:scale-95 border"
+        type="button"
+        (click)="showWelcomeModal = true"
+        class="flex items-center gap-1.5 py-1 px-2.5 sm:px-3 rounded-full text-xs font-semibold transition-all active:scale-95 border cursor-pointer"
         [style.borderColor]="currentTheme.headerBorder"
+        [style.color]="currentTheme.headerText"
         [style.backgroundColor]="
           currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)'
         "
-        title="User Profile"
-        aria-label="User Profile Menu"
+        title="Quick Setup Wizard"
+        aria-label="Quick Setup Wizard"
       >
-        <div
-          class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-xs"
-          [style.backgroundColor]="currentTheme.accent"
-        >
-          TU
-        </div>
-        <span
-          class="text-xs font-semibold hidden md:inline-block"
-          [style.color]="currentTheme.headerText"
-        >
-          Test User
-        </span>
-        <svg
-          class="w-3.5 h-3.5 transition-transform"
-          [class.rotate-180]="showProfileMenu"
-          [style.color]="currentTheme.headerText"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <span>✨</span>
+        <span class="hidden md:inline">Setup Wizard</span>
       </button>
+
+      <!-- Profile Widget & Dropdown -->
+      <div class="relative" #profileMenuRef>
+        <button
+          (click)="toggleProfileMenu()"
+          class="flex items-center gap-2 py-1 px-2 sm:px-2.5 rounded-full transition-all active:scale-95 border cursor-pointer"
+          [style.borderColor]="currentTheme.headerBorder"
+          [style.backgroundColor]="
+            currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)'
+          "
+          title="User Profile"
+          aria-label="User Profile Menu"
+        >
+          <div
+            class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-xs"
+            [style.backgroundColor]="currentTheme.accent"
+          >
+            TU
+          </div>
+          <span
+            class="text-xs font-semibold hidden md:inline-block"
+            [style.color]="currentTheme.headerText"
+          >
+            Test User
+          </span>
+          <svg
+            class="w-3.5 h-3.5 transition-transform"
+            [class.rotate-180]="showProfileMenu"
+            [style.color]="currentTheme.headerText"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
 
       <!-- Profile Dropdown Menu -->
       <div
@@ -92,6 +111,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 
   <!-- Main Display Container: Stacked Map and Details Drawer -->
@@ -152,7 +172,7 @@
   >
     <div class="flex items-center gap-2">
       <span class="font-semibold" [style.color]="currentTheme.isDark ? '#f1f5f9' : '#44403c'"
-        >Family Tracker</span
+        >Traveled Roads Tracker</span
       >
       <span>&bull;</span>
       <span>Explore National Parks, States &amp; Road Trips</span>
