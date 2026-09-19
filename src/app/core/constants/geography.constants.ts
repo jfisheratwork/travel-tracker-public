@@ -820,3 +820,11 @@ export const STATES: GeoLocation[] = [
     lng: -135.0568,
   },
 ];
+
+export const TOTAL_US_PARKS = 63;
+export const TOTAL_CA_PARKS = 22;
+export const TOTAL_PARKS = 85;
+
+export const TOTAL_US_STATES = 50;
+export const TOTAL_CA_PROVINCES = 13;
+export const TOTAL_STATES = 63;

@@ -39,6 +39,15 @@ import {
   ColorThemeId,
   ColorThemeDefinition,
 } from '../../core/constants/theme.constants';
+import {
+  STATES,
+  NATIONAL_PARKS,
+  TOTAL_US_STATES,
+  TOTAL_CA_PROVINCES,
+  TOTAL_US_PARKS,
+  TOTAL_CA_PARKS,
+} from '../../core/constants/geography.constants';
+import { AppSettings } from '../../models/settings.model';
 
 const METERS_PER_MILE = 1609.34;
 const ROADS_HOMETOWN_RADIUS_MILES = 300;
@@ -69,6 +78,44 @@ export class MapViewComponent implements OnInit, OnDestroy {
   availableThemes = AVAILABLE_THEMES_LIST;
   currentThemeId: ColorThemeId = DEFAULT_THEME_ID;
   currentTheme: ColorThemeDefinition = COLOR_THEMES[DEFAULT_THEME_ID];
+
+  currentSettings: AppSettings | null = null;
+  readonly TOTAL_US_STATES = TOTAL_US_STATES;
+  readonly TOTAL_CA_PROVINCES = TOTAL_CA_PROVINCES;
+  readonly TOTAL_US_PARKS = TOTAL_US_PARKS;
+  readonly TOTAL_CA_PARKS = TOTAL_CA_PARKS;
+
+  get visitedUSStatesCount(): number {
+    if (!this.currentSettings?.visitedStates) return 0;
+    const usIds = STATES.filter((s) => s.sub !== 'Canada').map((s) => s.id);
+    return Object.entries(this.currentSettings.visitedStates).filter(
+      ([id, visits]) => usIds.includes(id) && visits && visits.length > 0,
+    ).length;
+  }
+
+  get visitedCAProvincesCount(): number {
+    if (!this.currentSettings?.visitedStates) return 0;
+    const caIds = STATES.filter((s) => s.sub === 'Canada').map((s) => s.id);
+    return Object.entries(this.currentSettings.visitedStates).filter(
+      ([id, visits]) => caIds.includes(id) && visits && visits.length > 0,
+    ).length;
+  }
+
+  get visitedUSParksCount(): number {
+    if (!this.currentSettings?.visitedParks) return 0;
+    const usIds = NATIONAL_PARKS.filter((p) => p.country !== 'Canada').map((p) => p.id);
+    return Object.entries(this.currentSettings.visitedParks).filter(
+      ([id, visits]) => usIds.includes(id) && visits && visits.length > 0,
+    ).length;
+  }
+
+  get visitedCAParksCount(): number {
+    if (!this.currentSettings?.visitedParks) return 0;
+    const caIds = NATIONAL_PARKS.filter((p) => p.country === 'Canada').map((p) => p.id);
+    return Object.entries(this.currentSettings.visitedParks).filter(
+      ([id, visits]) => caIds.includes(id) && visits && visits.length > 0,
+    ).length;
+  }
 
   toggleThemeMenu(): void {
     this.showThemeMenu = !this.showThemeMenu;
@@ -153,6 +200,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     ])
       .pipe(takeUntil(this.destroy$))
       .subscribe(([settings, searchTerm, mapMode, selectedRoute, parks, states, statesGeoJson]) => {
+        this.currentSettings = settings;
         this.currentSearchTerm = searchTerm.toLowerCase();
         this.mapMode = mapMode;
         this.familyMembers = settings.familyMembers;

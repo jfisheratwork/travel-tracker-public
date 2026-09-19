@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MapViewComponent } from './components/map-view/map-view.component';
 import { LocalStorageService } from './services/local-storage.service';
@@ -34,7 +34,29 @@ import {
 export class App implements OnInit {
   showSettingsModal = false;
   showDetailsDrawer = false;
+  showProfileMenu = false;
+  @ViewChild('profileMenuRef') profileMenuRef?: ElementRef;
   currentTheme: ColorThemeDefinition = COLOR_THEMES[DEFAULT_THEME_ID];
+
+  toggleProfileMenu(): void {
+    this.showProfileMenu = !this.showProfileMenu;
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    if (this.showProfileMenu && this.profileMenuRef?.nativeElement) {
+      if (!this.profileMenuRef.nativeElement.contains(event.target as Node)) {
+        this.showProfileMenu = false;
+      }
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.showProfileMenu) {
+      this.showProfileMenu = false;
+    }
+  }
 
   // We inject LocalStorageService here to ensure it's instantiated immediately
   // upon application startup. This guarantees the initial state load.

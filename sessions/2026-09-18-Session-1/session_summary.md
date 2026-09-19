@@ -155,6 +155,15 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
   - Executed `make test` (23/23 tests passing) and `make lint` (0 errors, 0 warnings).
   - Conducted live Chrome DevTools MCP testing verifying instant theme switching and responsive dark/light styling.
 
+- Repositioned the `VISITED` status legend to the bottom-right corner (`bottom-3 right-3`) of the map overlay.
+- Added a floating `STATISTICS` quick-stats card in the bottom-left corner (`bottom-3 left-3`) of the map overlay displaying live counts for US States (45/50), Canadian Provinces (8/13), US Parks (31/63), and Canadian Parks (10/22).
+- Added a placeholder "Test User" profile pill and avatar ("TU") in the top-right of the header banner with an "In progress" popover and outside-click/escape listeners.
+- Styled the map container with a thick, smooth rounded border (`border-[3.5px] rounded-2xl md:rounded-3xl shadow-xl`) adapting dynamically to the active color theme.
+- Converted the `Show Statistics` button in the top toolbar to a compact icon button with a Lucide-style bar chart SVG, harmonizing the 4 top utility actions (Stats, Theme, Settings, Help).
+- Exported total geography constants (`TOTAL_US_STATES`, `TOTAL_CA_PROVINCES`, `TOTAL_US_PARKS`, `TOTAL_CA_PARKS`) in `src/app/core/constants/geography.constants.ts`.
+- Verified test suite and lint checks: 9/9 suites passing, 23/23 tests passing, 0 ESLint warnings.
+- Verified visual rendering and interactions via Chrome DevTools MCP across light, Dutch orange, and default Dunes themes.
+
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
 - Optional Douglas-Peucker route point simplification slider in RouteBuilder.
@@ -201,6 +210,8 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "State and tree icons make the size half way between their two current respective sizes"
 - "For the mockups a blend of the first and the 3rd with 4 new mockups. I would like mayb e alittle more light forest green and lake michigan blue in that first mockup. For the second I am a horrible sucker for dutch orange. Honestly what we really should do is create a small color wheel icon next to settings gear that lets people select different schemes from the a drop down"
 - "Implement the color wheel picker with the default scheme being 3: dunes and deep lake. This picker is only for color schemes. You generated some GREAT ideas for other UI changes let me think on those and get back to you that might be our next change after the picker. For the picker add the 3 new schemes you gave me, the first 3 you created, plus the original."
+- "Ideas From \"1. Lake Michigan Blue & Light Forest Mist\"\n- move the legend to the bottom right\n- add a new legend bottom left that shows the basic stats: us states visited, canadan province vistied, us parks visited, canda parks visited\n- Add place holder top right for a Profile and logged in person for now the person can \"Test User\" and the dorp down can just say in progess\n\nIdeas From \"3. Dunes & Deep Lake (Lake Michigan Blue, Terracotta & Sandstone)\"\n- I like that title border the best for now its just gonna have site name and the dummy profile picture/profile\n- I really like the rounded thick border on the map\n\nIdeas from \"4. Alpine Forest & Dutch Orange Accent\"\n- Just an icon for stats is a better approach"
+
 
 
 
