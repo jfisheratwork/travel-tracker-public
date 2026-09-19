@@ -21,12 +21,12 @@
 
     <!-- 
       LIBRARY: Tailwind CSS
-      Version: 3.4.19
+      Version: 3.4.17
       Summary: A utility-first CSS framework for rapidly building custom user interfaces.
       Home: https://tailwindcss.com/
-      Release Notes: https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.19
+      Release Notes: https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.17
     -->
-    <script src="https://cdn.tailwindcss.com/3.4.19"></script>
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 
     <!-- 
       LIBRARY: SheetJS (xlsx)
@@ -153,14 +153,24 @@
         <div class="flex flex-wrap items-center gap-3 mb-6 border-b border-stone-200 pb-6 no-print">
             <div class="relative flex-1 min-w-[200px] max-w-md">
                 <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                    </svg>
                 </span>
-                <input type="text" id="global-search-input" placeholder="Search by name or member..." oninput="handleSearch(this.value)"
+                <input type="text" id="global-search-input" placeholder="Search by name or member..."
+                    oninput="handleSearch(this.value)"
                     class="w-full pl-10 pr-20 py-2.5 rounded-xl border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm font-medium">
                 <span class="absolute inset-y-0 right-0 flex items-center gap-1.5 pr-3">
                     <span id="search-result-count" class="text-[11px] font-semibold text-stone-400 hidden"></span>
-                    <button id="search-clear-btn" onclick="clearSearch()" class="hidden text-stone-300 hover:text-stone-600 transition" title="Clear search">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    <button id="search-clear-btn" onclick="clearSearch()"
+                        class="hidden text-stone-300 hover:text-stone-600 transition" title="Clear search">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
                     </button>
                 </span>
             </div>
@@ -177,14 +187,18 @@
         <!-- Main Display Container -->
         <div id="world-map-container">
             <div class="bg-white p-4 rounded-xl shadow-lg border border-stone-200">
-                <div class="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-stone-100 pb-4 no-print">
+                <div
+                    class="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-stone-100 pb-4 no-print">
                     <div class="flex gap-2" id="map-mode-buttons">
                         <button onclick="switchTab('parks')" id="btn-map-parks"
-                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">National Parks</button>
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">National
+                            Parks</button>
                         <button onclick="switchTab('states')" id="btn-map-states"
-                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">States & Provinces</button>
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">States
+                            & Provinces</button>
                         <button onclick="switchTab('roads')" id="btn-map-roads"
-                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">Road Trips</button>
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">Road
+                            Trips</button>
                     </div>
                     <button id="toggle-stats-btn" onclick="toggleStatsWidget()"
                         class="px-4 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center gap-1.5 shadow-sm">
@@ -205,17 +219,21 @@
                             <div id="regional-stats"
                                 class="hidden space-y-3 bg-white p-4 rounded-xl shadow-sm border border-stone-200">
                                 <div id="us-stat-container" class="space-y-1">
-                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span
-                                            id="us-stat-label">US States</span><span id="us-stat-count">0/50</span></div>
-                                    <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
+                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500">
+                                        <span id="us-stat-label">US States</span><span id="us-stat-count">0/50</span>
+                                    </div>
+                                    <div
+                                        class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
                                         <div id="us-stat-bar" class="bg-blue-600 h-full transition-all duration-500"
                                             style="width: 0%"></div>
                                     </div>
                                 </div>
                                 <div id="ca-stat-container" class="space-y-1">
-                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500"><span
-                                            id="ca-stat-label">CA Provinces</span><span id="ca-stat-count">0/13</span></div>
-                                    <div class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
+                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500">
+                                        <span id="ca-stat-label">CA Provinces</span><span id="ca-stat-count">0/13</span>
+                                    </div>
+                                    <div
+                                        class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
                                         <div id="ca-stat-bar" class="bg-red-600 h-full transition-all duration-500"
                                             style="width: 0%"></div>
                                     </div>
@@ -223,14 +241,17 @@
                             </div>
                             <div id="remaining-box"
                                 class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
-                                <span id="remaining-label" class="block text-sm text-stone-500 uppercase tracking-wide">Remaining</span>
+                                <span id="remaining-label"
+                                    class="block text-sm text-stone-500 uppercase tracking-wide">Remaining</span>
                                 <span id="total-remaining" class="text-3xl font-bold text-stone-400">--</span>
                             </div>
                         </div>
-                        <div class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col justify-between">
+                        <div
+                            class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col justify-between">
                             <div class="mb-4">
                                 <div class="flex justify-between items-end mb-1">
-                                    <span class="text-sm font-bold text-stone-700 uppercase tracking-wide">Detailed Progress</span>
+                                    <span class="text-sm font-bold text-stone-700 uppercase tracking-wide">Detailed
+                                        Progress</span>
                                     <span id="group-percent" class="text-xs text-stone-500 font-medium">0%</span>
                                 </div>
                                 <div class="w-full bg-stone-200 rounded-full h-4 overflow-hidden shadow-inner">
@@ -238,92 +259,116 @@
                                         style="width: 0%"></div>
                                 </div>
                             </div>
-                            <div id="family-progress-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4"></div>
+                            <div id="family-progress-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div id="world-map"></div>
                 <div id="map-legend" class="mt-4 flex gap-6 justify-center text-sm">
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span> All Visited</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span> Partially Visited</div>
-                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-stone-400"></span> Not Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span> All
+                        Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        Partially Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-stone-400"></span> Not
+                        Visited</div>
                 </div>
 
                 <!-- Visited Parks List (shown when Parks tab active) -->
                 <div id="parks-visited-ui" class="hidden mt-4 bg-stone-50 border border-stone-200 p-4 rounded-xl">
                     <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">Visited Parks</h3>
-                    <div id="visited-parks-list" class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
-                        <div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No parks visited yet. Use "Add Parks" to log visits.</div>
+                    <div id="visited-parks-list"
+                        class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
+                        <div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No parks
+                            visited yet. Use "Add Parks" to log visits.</div>
                     </div>
                 </div>
 
                 <!-- Visited States List (shown when States tab active) -->
                 <div id="states-visited-ui" class="hidden mt-4 bg-stone-50 border border-stone-200 p-4 rounded-xl">
-                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">Visited States & Provinces</h3>
-                    <div id="visited-states-list" class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
-                        <div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No states visited yet. Use "Add States" to log visits.</div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">Visited States &
+                        Provinces</h3>
+                    <div id="visited-states-list"
+                        class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
+                        <div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No
+                            states visited yet. Use "Add States" to log visits.</div>
                     </div>
                 </div>
 
                 <!-- Route Builder UI -->
                 <div id="route-builder-ui" class="hidden mt-4 bg-stone-50 border border-stone-200 p-4 rounded-xl">
-                    <h3 id="route-builder-title" class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">Add New Road Trip</h3>
+                    <h3 id="route-builder-title" class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">
+                        Add New Road Trip</h3>
                     <div class="flex flex-col gap-2">
                         <div class="flex gap-2">
-                            <input type="text" id="route-start" placeholder="Start (e.g. Seattle, WA)" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
-                            <input type="text" id="route-end" placeholder="Destination (e.g. Portland, OR)" class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
+                            <input type="text" id="route-start" placeholder="Start (e.g. Seattle, WA)"
+                                class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
+                            <input type="text" id="route-end" placeholder="Destination (e.g. Portland, OR)"
+                                class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
                         </div>
-                        
+
                         <!-- Dynamic intermediate stops -->
                         <div id="route-stops-container" class="flex flex-col gap-2"></div>
-                        
+
                         <div class="flex justify-between items-center mt-1">
-                            <button onclick="addStopInput()" class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1">
+                            <button onclick="addStopInput()"
+                                class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1">
                                 ➕ Add Stop
                             </button>
-                            <button onclick="requestRoute()" class="bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition shadow">Route</button>
+                            <button onclick="requestRoute()"
+                                class="bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition shadow">Route</button>
                         </div>
                         <div class="mt-2 pt-2 border-t border-stone-200/60">
                             <label class="flex items-center gap-2 cursor-pointer text-xs text-stone-600">
-                                <input type="checkbox" id="route-store-full-coords" class="w-4 h-4 rounded accent-green-700">
+                                <input type="checkbox" id="route-store-full-coords"
+                                    class="w-4 h-4 rounded accent-green-700">
                                 <span>Store detailed path coordinates locally (faster subsequent loads)</span>
                             </label>
-                            <p class="text-[10px] text-stone-400 mt-0.5 ml-6">⚠️ Storing full coordinates consumes significant local storage. Not recommended for long or multiple routes.</p>
+                            <p class="text-[10px] text-stone-400 mt-0.5 ml-6">⚠️ Storing full coordinates consumes
+                                significant local storage. Not recommended for long or multiple routes.</p>
                         </div>
                     </div>
-                    
+
                     <div id="route-status" class="text-xs text-stone-500 mt-2 font-medium empty:hidden"></div>
 
                     <!-- Alternative Routes Selector -->
                     <div id="alt-routes-selector" class="hidden mt-4 border-t border-stone-200 pt-3">
-                        <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Select Preferred Route Option</h4>
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Select Preferred
+                            Route Option</h4>
                         <div id="alt-routes-list" class="flex flex-col gap-2"></div>
                         <div class="flex gap-2 mt-3 justify-end">
-                            <button onclick="cancelAltRouteSelection()" class="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-855 font-semibold transition">Cancel</button>
-                            <button onclick="saveSelectedRoute()" class="px-4 py-1.5 text-xs bg-green-700 text-white font-bold rounded-lg hover:bg-green-800 transition">Save Selected Route</button>
+                            <button onclick="cancelAltRouteSelection()"
+                                class="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-855 font-semibold transition">Cancel</button>
+                            <button onclick="saveSelectedRoute()"
+                                class="px-4 py-1.5 text-xs bg-green-700 text-white font-bold rounded-lg hover:bg-green-800 transition">Save
+                                Selected Route</button>
                         </div>
                     </div>
-                    
+
                     <div class="flex justify-between items-center border-t border-stone-200 pt-4 mt-4 mb-3">
                         <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400">Saved Trips</h3>
-                        <button id="btn-load-all-routes" onclick="loadAllRoutes()" class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1">
+                        <button id="btn-load-all-routes" onclick="loadAllRoutes()"
+                            class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1">
                             🚗 Load All Routes on Map
                         </button>
                     </div>
 
                     <!-- Progress Bar Container -->
-                    <div id="routes-loading-progress-container" class="hidden mb-3 p-3 bg-white border border-stone-200 rounded-lg">
+                    <div id="routes-loading-progress-container"
+                        class="hidden mb-3 p-3 bg-white border border-stone-200 rounded-lg">
                         <div class="flex justify-between text-xs font-semibold text-stone-600 mb-1">
                             <span id="routes-loading-status">Loading routes...</span>
                             <span id="routes-loading-percent">0%</span>
                         </div>
                         <div class="w-full bg-stone-100 rounded-full h-2 overflow-hidden border border-stone-200">
-                            <div id="routes-loading-progress-bar" class="bg-green-600 h-full transition-all duration-300" style="width: 0%"></div>
+                            <div id="routes-loading-progress-bar"
+                                class="bg-green-600 h-full transition-all duration-300" style="width: 0%"></div>
                         </div>
                     </div>
 
-                    <div id="saved-routes-list" class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
+                    <div id="saved-routes-list"
+                        class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
                         <!-- Saved routes render here -->
                     </div>
                 </div>
@@ -354,7 +399,8 @@
                 </button>
             </div>
             <!-- Search & Filters -->
-            <div class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
+            <div
+                class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
                 <div class="relative flex-1 min-w-[200px]">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -363,7 +409,8 @@
                             <path d="m21 21-4.3-4.3" />
                         </svg>
                     </span>
-                    <input type="text" id="parks-search-input" placeholder="Search parks..." oninput="handleParksSearch(this.value)"
+                    <input type="text" id="parks-search-input" placeholder="Search parks..."
+                        oninput="handleParksSearch(this.value)"
                         class="w-full pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm">
                 </div>
                 <div class="flex gap-2">
@@ -415,7 +462,8 @@
                 </button>
             </div>
             <!-- Search & Filters -->
-            <div class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
+            <div
+                class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
                 <div class="relative flex-1 min-w-[200px]">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -424,7 +472,8 @@
                             <path d="m21 21-4.3-4.3" />
                         </svg>
                     </span>
-                    <input type="text" id="states-search-input" placeholder="Search states & provinces..." oninput="handleStatesSearch(this.value)"
+                    <input type="text" id="states-search-input" placeholder="Search states & provinces..."
+                        oninput="handleStatesSearch(this.value)"
                         class="w-full pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm">
                 </div>
                 <div class="flex gap-2">
@@ -460,7 +509,6 @@
 
     <!-- Edit Metadata Modal -->
     <div id="edit-modal"
-
         class="fixed inset-0 z-[2100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
         <div
             class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 transform">
@@ -512,18 +560,22 @@
     <!-- Route Edit Choice Modal -->
     <div id="route-edit-choice-modal"
         class="fixed inset-0 z-[2050] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print transition-all duration-200">
-        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center animate-in fade-in zoom-in duration-200">
+        <div
+            class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center animate-in fade-in zoom-in duration-200">
             <h3 class="text-lg font-bold text-stone-800 mb-2">Edit Road Trip</h3>
             <p class="text-xs text-stone-500 mb-6">Choose how you want to modify this road trip.</p>
             <div class="flex flex-col gap-3">
-                <button onclick="handleEditChoice('data')" class="w-full py-3 bg-white border border-stone-250 hover:border-green-600 rounded-xl text-sm font-semibold text-stone-700 hover:text-green-700 transition flex items-center justify-center gap-2 shadow-sm">
+                <button onclick="handleEditChoice('data')"
+                    class="w-full py-3 bg-white border border-stone-250 hover:border-green-600 rounded-xl text-sm font-semibold text-stone-700 hover:text-green-700 transition flex items-center justify-center gap-2 shadow-sm">
                     📝 Edit Trip Data (Name, Dates, Notes)
                 </button>
-                <button onclick="handleEditChoice('route')" class="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+                <button onclick="handleEditChoice('route')"
+                    class="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm">
                     🚗 Edit Trip Route (Stops, Alt Options)
                 </button>
             </div>
-            <button onclick="toggleRouteEditChoiceModal(false)" class="mt-4 text-xs font-semibold text-stone-400 hover:text-stone-600 transition">
+            <button onclick="toggleRouteEditChoiceModal(false)"
+                class="mt-4 text-xs font-semibold text-stone-400 hover:text-stone-600 transition">
                 Close
             </button>
         </div>
@@ -539,8 +591,8 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
                         class="text-green-700">
-                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-                        <circle cx="12" cy="10" r="3"/>
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                        <circle cx="12" cy="10" r="3" />
                     </svg>
                     Edit Road Trip
                 </h2>
@@ -553,7 +605,8 @@
             </div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1">
                 <!-- Route Details Info (Read-only) -->
-                <div class="bg-stone-50 p-3 rounded-xl border border-stone-200/60 grid grid-cols-2 gap-2 text-xs text-stone-500">
+                <div
+                    class="bg-stone-50 p-3 rounded-xl border border-stone-200/60 grid grid-cols-2 gap-2 text-xs text-stone-500">
                     <div>
                         <span class="block font-bold text-stone-400 uppercase tracking-wider mb-0.5">Distance</span>
                         <span id="route-edit-distance" class="text-stone-700 font-semibold text-sm">--</span>
@@ -565,26 +618,30 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Route Name</label>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Route
+                        Name</label>
                     <input type="text" id="route-edit-name"
                         class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Start Date</label>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Start
+                            Date</label>
                         <input type="date" id="route-edit-start-date"
                             class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
                     </div>
                     <div>
-                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">End Date <span class="text-stone-400 font-normal">(Opt)</span></label>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">End Date
+                            <span class="text-stone-400 font-normal">(Opt)</span></label>
                         <input type="date" id="route-edit-end-date"
                             class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Trip Status</label>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Trip
+                        Status</label>
                     <select id="route-edit-status"
                         class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-green-600">
                         <option value="completed">Completed</option>
@@ -594,16 +651,21 @@
 
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
-                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider">Who Participated?</label>
-                        <button type="button" onclick="selectAllRouteMembers()" class="text-xs font-bold text-green-700 hover:text-green-900 transition bg-transparent border-none p-0 cursor-pointer">Select All</button>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider">Who
+                            Participated?</label>
+                        <button type="button" onclick="selectAllRouteMembers()"
+                            class="text-xs font-bold text-green-700 hover:text-green-900 transition bg-transparent border-none p-0 cursor-pointer">Select
+                            All</button>
                     </div>
-                    <div id="route-edit-members" class="grid grid-cols-2 gap-2 max-h-[120px] overflow-y-auto p-2 border border-stone-200 rounded-lg bg-stone-50/50">
+                    <div id="route-edit-members"
+                        class="grid grid-cols-2 gap-2 max-h-[120px] overflow-y-auto p-2 border border-stone-200 rounded-lg bg-stone-50/50">
                         <!-- Checkboxes dynamically generated by JS -->
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Description / Log</label>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Description /
+                        Log</label>
                     <textarea id="route-edit-description" rows="3" maxlength="300"
                         class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 resize-none"
                         oninput="document.getElementById('route-char-count').innerText = this.value.length"></textarea>
@@ -611,15 +673,22 @@
                 </div>
             </div>
             <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-between items-center flex-shrink-0">
-                <button onclick="deleteRouteFromEditModal()" class="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                <button onclick="deleteRouteFromEditModal()"
+                    class="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
                     Delete Route
                 </button>
                 <div class="flex gap-2">
                     <button onclick="toggleRouteEditModal(false)"
                         class="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-200 transition">Cancel</button>
                     <button onclick="saveRouteEditDetails()"
-                        class="px-6 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-800 transition shadow-sm">Save Changes</button>
+                        class="px-6 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-800 transition shadow-sm">Save
+                        Changes</button>
                 </div>
             </div>
         </div>
@@ -712,27 +781,37 @@
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-semibold text-stone-800 mb-1">Routing Engine</label>
-                            <select id="setting-routing-engine" onchange="updateSetting('routingEngine', this.value); toggleMapboxSettings();" class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white">
+                            <select id="setting-routing-engine"
+                                onchange="updateSetting('routingEngine', this.value); toggleMapboxSettings();"
+                                class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white">
                                 <option value="osrm">OSRM Public (Free, Throttled)</option>
                                 <option value="mapbox">Mapbox API (Requires Key)</option>
                             </select>
                         </div>
                         <div id="mapbox-settings-container" class="hidden">
                             <label class="block text-sm font-semibold text-stone-800 mb-1">Mapbox API Key</label>
-                            <input type="text" id="setting-mapbox-key" placeholder="pk.ey..." onchange="updateSetting('mapboxKey', this.value)" class="w-full border border-stone-200 rounded-lg p-2 text-sm">
+                            <input type="text" id="setting-mapbox-key" placeholder="pk.ey..."
+                                onchange="updateSetting('mapboxKey', this.value)"
+                                class="w-full border border-stone-200 rounded-lg p-2 text-sm">
                             <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
-                                To use Mapbox routing, sign up for a free account at <a href="https://www.mapbox.com/" target="_blank" class="text-blue-600 underline hover:text-blue-800">mapbox.com</a>. Once signed in, go to your account dashboard, copy your **Default public token** (starts with 'pk.'), and paste it above. The free plan includes up to **100,000 free driving direction requests per month**, which easily covers typical routing needs.
+                                To use Mapbox routing, sign up for a free account at <a href="https://www.mapbox.com/"
+                                    target="_blank" class="text-blue-600 underline hover:text-blue-800">mapbox.com</a>.
+                                Once signed in, go to your account dashboard, copy your **Default public token** (starts
+                                with 'pk.'), and paste it above. The free plan includes up to **100,000 free driving
+                                direction requests per month**, which easily covers typical routing needs.
                             </p>
                         </div>
                         <div>
                             <label class="block text-sm font-semibold text-stone-800 mb-1">Point Reduction Level</label>
-                            <select id="setting-route-reduction" onchange="updateSetting('routeReduction', this.value);" class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white">
+                            <select id="setting-route-reduction" onchange="updateSetting('routeReduction', this.value);"
+                                class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white">
                                 <option value="0">None (Exact Path)</option>
                                 <option value="0.001">Low (Minimal simplification)</option>
                                 <option value="0.01">Medium (Good balance)</option>
                                 <option value="0.05">High (Straighten curves)</option>
                             </select>
-                            <p class="text-xs text-stone-500 mt-1">Higher reduction drastically lowers storage usage but smooths out tight curves.</p>
+                            <p class="text-xs text-stone-500 mt-1">Higher reduction drastically lowers storage usage but
+                                smooths out tight curves.</p>
                         </div>
                     </div>
                 </div>
