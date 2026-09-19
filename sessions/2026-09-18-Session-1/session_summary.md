@@ -210,11 +210,16 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "State and tree icons make the size half way between their two current respective sizes"
 - "For the mockups a blend of the first and the 3rd with 4 new mockups. I would like mayb e alittle more light forest green and lake michigan blue in that first mockup. For the second I am a horrible sucker for dutch orange. Honestly what we really should do is create a small color wheel icon next to settings gear that lets people select different schemes from the a drop down"
 - "Implement the color wheel picker with the default scheme being 3: dunes and deep lake. This picker is only for color schemes. You generated some GREAT ideas for other UI changes let me think on those and get back to you that might be our next change after the picker. For the picker add the 3 new schemes you gave me, the first 3 you created, plus the original."
-- "Ideas From \"1. Lake Michigan Blue & Light Forest Mist\"\n- move the legend to the bottom right\n- add a new legend bottom left that shows the basic stats: us states visited, canadan province vistied, us parks visited, canda parks visited\n- Add place holder top right for a Profile and logged in person for now the person can \"Test User\" and the dorp down can just say in progess\n\nIdeas From \"3. Dunes & Deep Lake (Lake Michigan Blue, Terracotta & Sandstone)\"\n- I like that title border the best for now its just gonna have site name and the dummy profile picture/profile\n- I really like the rounded thick border on the map\n\nIdeas from \"4. Alpine Forest & Dutch Orange Accent\"\n- Just an icon for stats is a better approach"
-
-
-
-
-
-
-
+- "Ideas From \"1. Lake Michigan Blue & Light Forest Mist\"\n- move the legend to the bottom right\n- add a new legend bottom left that shows the basic stats: us states visited, canadan province vistied, us parks visited, canda parks visited\n- Add place holder top right for a Profile and logged in person for now the person can \"Test User\" and the dorp down can just say in progess\n\nIdeas From \"3. Dunes & Deep Lake (Lake Michigan Blue, Terracotta & Sandstone)\"\n- I like that title border the best for now its just gonna have site name and the dummy profile picture/profile\n- I really like the rounded thick border on the map\n\n- "Ideas From \"4. Alpine Forest & Dutch Orange Accent\"\n- Just an icon for stats is a better approach"
+- "When we did the color wheel mockups we missed the change in color of states, change in button background colors, ... I wouldn;t mind some subtle font shifts between these styles"
+- "these need some color to them"
+- "I think the parks view still needs to show the basic state/provine outlines"
+- "balance out the placement here it doesn't feel quite right"
+- "Can those state star icons be about 50% smaller"
+- "State and tree icons make the size half way between their two current respective sizes"
+- "For the mockups a blend of the first and the 3rd with 4 new mockups. I would like mayb e alittle more light forest green and lake michigan blue in that first mockup. For the second I am a horrible sucker for dutch orange. Honestly what we really should do is create a small color wheel icon next to settings gear that lets people select different schemes from the a drop down"
+- "Implement the color wheel picker with the default scheme being 3: dunes and deep lake. This picker is only for color schemes. You generated some GREAT ideas for other UI changes let me think on those and get back to you that might be our next change after the picker. For the picker add the 3 new schemes you gave me, the first 3 you created, plus the original."
+- "Ideas From \"1. Lake Michigan Blue & Light Forest Mist\"\n- move the legend to the bottom right\n- add a new legend bottom left that shows the basic stats: us states visited, canadan province vistied, us parks visited, canda parks visited\n- Add place holder top right for a Profile and logged in person for now the person can \"Test User\" and the dorp down can just say in progess\n\nIdeas From \"3. Dunes & Deep Lake (Lake Michigan Blue, Terracotta & Sandstone)\"\n- I like that title border the best for now its just gonna have site name and the dummy profile picture/profile\n- I really like the rounded thick border on the map\n\n- "Ideas From \"4. Alpine Forest & Dutch Orange Accent\"\n- Just an icon for stats is a better approach"
+- "When we did the color wheel mockups we missed the change in color of states, change in button background colors, ... I wouldn;t mind some subtle font shifts between these styles"
+- "these need some color to them"
+- "I think the parks view still needs to show the basic state/provine outlines"

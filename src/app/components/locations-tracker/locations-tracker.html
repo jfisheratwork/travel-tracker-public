@@ -58,9 +58,7 @@
             class="text-green-600 font-bold text-xs"
             >✓ All</span
           >
-          <span
-            *ngIf="item.members.length < totalFamilyMembersCount"
-            class="text-stone-400 text-xs"
+          <span *ngIf="item.members.length < totalFamilyMembersCount" class="text-stone-400 text-xs"
             >{{ item.members.length }}/{{ totalFamilyMembersCount }}</span
           >
         </div>
@@ -113,4 +111,3 @@
   [mode]="mode"
   (close)="showModal = false"
 ></app-parks-states-modal>
-

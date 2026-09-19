@@ -184,11 +184,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.initMap();
 
-    this.stateService.colorTheme$.pipe(takeUntil(this.destroy$)).subscribe((themeId) => {
-      this.currentThemeId = themeId;
-      this.currentTheme = COLOR_THEMES[themeId] || COLOR_THEMES[DEFAULT_THEME_ID];
-    });
-
     combineLatest([
       this.stateService.settings$,
       this.stateService.searchTerm$,
@@ -197,100 +192,109 @@ export class MapViewComponent implements OnInit, OnDestroy {
       this.locationDataService.parks$,
       this.locationDataService.states$,
       this.locationDataService.statesGeoJson$,
+      this.stateService.colorTheme$,
     ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(([settings, searchTerm, mapMode, selectedRoute, parks, states, statesGeoJson]) => {
-        this.currentSettings = settings;
-        this.currentSearchTerm = searchTerm.toLowerCase();
-        this.mapMode = mapMode;
-        this.familyMembers = settings.familyMembers;
+      .subscribe(
+        ([settings, searchTerm, mapMode, selectedRoute, parks, states, statesGeoJson, themeId]) => {
+          this.currentThemeId = themeId;
+          this.currentTheme = COLOR_THEMES[themeId] || COLOR_THEMES[DEFAULT_THEME_ID];
+          this.currentSettings = settings;
+          this.currentSearchTerm = searchTerm.toLowerCase();
+          this.mapMode = mapMode;
+          this.familyMembers = settings.familyMembers;
 
-        const hometowns: LocationPoint[] = settings.hometowns.map(
-          (h, idx) =>
-            ({
-              id: `hometown-${h.id}`,
-              name: h.name,
-              lat: h.lat,
-              lng: h.lng,
-              region: '',
-              visited: true,
-              visitedBy: [],
-              isLast: idx === settings.hometowns.length - 1,
-            }) as any,
-        );
-
-        const mergedParks = parks.map((p) => {
-          const originalId = p.id.replace('park-', '');
-          const visitDetails = settings.visitedParks?.[originalId] || [];
-          const visitors = visitDetails
-            .map((v) => {
-              const mem = settings.familyMembers.find((m) => m.id === v.memberId);
-              if (!mem) return null;
-              return {
-                ...mem,
-                date: v.firstVisitedDate || v.dateVisited,
-                notes: v.notes,
-              };
-            })
-            .filter(Boolean);
-          const locationLogs = settings.locationVisits?.[originalId] || [];
-          return {
-            ...p,
-            visited: visitDetails.length > 0 || locationLogs.length > 0,
-            visitedByMembers: visitors,
-            visitLogs: locationLogs,
-          };
-        });
-
-        const mergedStates = states.map((s) => {
-          const originalId = s.id.replace('state-', '');
-          const visitDetails = settings.visitedStates?.[originalId] || [];
-          const visitors = visitDetails
-            .map((v) => {
-              const mem = settings.familyMembers.find((m) => m.id === v.memberId);
-              if (!mem) return null;
-              return {
-                ...mem,
-                date: v.firstVisitedDate || v.dateVisited,
-                notes: v.notes,
-              };
-            })
-            .filter(Boolean);
-          const locationLogs = settings.locationVisits?.[originalId] || [];
-          return {
-            ...s,
-            visited: visitDetails.length > 0 || locationLogs.length > 0,
-            visitedByMembers: visitors,
-            visitLogs: locationLogs,
-          };
-        });
-
-        this.allLocations = [...mergedParks, ...mergedStates, ...hometowns];
-
-        this.filterMarkers(this.currentSearchTerm);
-        this.renderStateShading(settings, statesGeoJson);
-
-        const hasHometown = settings.hometowns && settings.hometowns.length > 0;
-
-        if (this.map) {
-          setTimeout(() => {
-            if (!this.map || typeof this.map.invalidateSize !== 'function') return;
-            this.map.invalidateSize();
-            this.applyModeZoom(settings, selectedRoute);
-          }, 100);
-        }
-
-        const effectiveCartoKey = settings.cartoKey || environment.cartoKey;
-        if (this.baseTileLayer && effectiveCartoKey && effectiveCartoKey !== 'YOUR_CARTO_API_KEY') {
-          this.baseTileLayer.setUrl(
-            `${API_ENDPOINTS.CARTO_TILE_LAYER}?api_key=${effectiveCartoKey}`,
+          const hometowns: LocationPoint[] = settings.hometowns.map(
+            (h, idx) =>
+              ({
+                id: `hometown-${h.id}`,
+                name: h.name,
+                lat: h.lat,
+                lng: h.lng,
+                region: '',
+                visited: true,
+                visitedBy: [],
+                isLast: idx === settings.hometowns.length - 1,
+              }) as any,
           );
-        } else if (this.baseTileLayer) {
-          this.baseTileLayer.setUrl(API_ENDPOINTS.OSM_TILE_LAYER);
-        }
 
-        this.renderRoutes(settings.savedRoutes, selectedRoute, hasHometown);
-      });
+          const mergedParks = parks.map((p) => {
+            const originalId = p.id.replace('park-', '');
+            const visitDetails = settings.visitedParks?.[originalId] || [];
+            const visitors = visitDetails
+              .map((v) => {
+                const mem = settings.familyMembers.find((m) => m.id === v.memberId);
+                if (!mem) return null;
+                return {
+                  ...mem,
+                  date: v.firstVisitedDate || v.dateVisited,
+                  notes: v.notes,
+                };
+              })
+              .filter(Boolean);
+            const locationLogs = settings.locationVisits?.[originalId] || [];
+            return {
+              ...p,
+              visited: visitDetails.length > 0 || locationLogs.length > 0,
+              visitedByMembers: visitors,
+              visitLogs: locationLogs,
+            };
+          });
+
+          const mergedStates = states.map((s) => {
+            const originalId = s.id.replace('state-', '');
+            const visitDetails = settings.visitedStates?.[originalId] || [];
+            const visitors = visitDetails
+              .map((v) => {
+                const mem = settings.familyMembers.find((m) => m.id === v.memberId);
+                if (!mem) return null;
+                return {
+                  ...mem,
+                  date: v.firstVisitedDate || v.dateVisited,
+                  notes: v.notes,
+                };
+              })
+              .filter(Boolean);
+            const locationLogs = settings.locationVisits?.[originalId] || [];
+            return {
+              ...s,
+              visited: visitDetails.length > 0 || locationLogs.length > 0,
+              visitedByMembers: visitors,
+              visitLogs: locationLogs,
+            };
+          });
+
+          this.allLocations = [...mergedParks, ...mergedStates, ...hometowns];
+
+          this.filterMarkers(this.currentSearchTerm);
+          this.renderStateShading(settings, statesGeoJson);
+
+          const hasHometown = settings.hometowns && settings.hometowns.length > 0;
+
+          if (this.map) {
+            setTimeout(() => {
+              if (!this.map || typeof this.map.invalidateSize !== 'function') return;
+              this.map.invalidateSize();
+              this.applyModeZoom(settings, selectedRoute);
+            }, 100);
+          }
+
+          const effectiveCartoKey = settings.cartoKey || environment.cartoKey;
+          if (
+            this.baseTileLayer &&
+            effectiveCartoKey &&
+            effectiveCartoKey !== 'YOUR_CARTO_API_KEY'
+          ) {
+            this.baseTileLayer.setUrl(
+              `${API_ENDPOINTS.CARTO_TILE_LAYER}?api_key=${effectiveCartoKey}`,
+            );
+          } else if (this.baseTileLayer) {
+            this.baseTileLayer.setUrl(API_ENDPOINTS.OSM_TILE_LAYER);
+          }
+
+          this.renderRoutes(settings.savedRoutes, selectedRoute, hasHometown);
+        },
+      );
   }
 
   private initMap() {
@@ -364,7 +368,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
       const isPark = m.id.includes('park');
       const markerTheme = isPark ? MAP_MARKER_THEME.PARK : MAP_MARKER_THEME.STATE;
-      const color = m.visited ? '#22c55e' : '#94a3b8'; // Green if visited, slate if unvisited
+      const color = m.visited
+        ? this.currentTheme.markerVisitedColor
+        : this.currentTheme.markerUnvisitedColor;
 
       let popupHtml = '';
       if (m.id.startsWith('hometown-')) {
@@ -479,14 +485,32 @@ export class MapViewComponent implements OnInit, OnDestroy {
       this.stateGeoJsonLayer = undefined;
     }
 
-    if (this.mapMode !== 'states' || !statesGeoJson) {
+    if ((this.mapMode !== 'states' && this.mapMode !== 'parks') || !statesGeoJson) {
       return;
     }
 
+    const isParksMode = this.mapMode === 'parks';
     const totalFamily = settings.familyMembers?.length || 0;
 
     const getFeatureStyle = (feature: any): L.PathOptions => {
-      if (!feature) return STATE_SHADING_THEME.UNVISITED;
+      if (isParksMode) {
+        return {
+          fillColor: 'transparent',
+          fillOpacity: 0,
+          color: this.currentTheme.stateUnvisitedStroke,
+          weight: 1.2,
+          opacity: 0.65,
+          interactive: false,
+        };
+      }
+      if (!feature) {
+        return {
+          fillColor: this.currentTheme.stateUnvisitedFill,
+          fillOpacity: 0.1,
+          color: this.currentTheme.stateUnvisitedStroke,
+          weight: 0.75,
+        };
+      }
       const stateId = feature.id as string;
       const visitDetails = settings.visitedStates?.[stateId] || [];
       const locationLogs = settings.locationVisits?.[stateId] || [];
@@ -505,22 +529,46 @@ export class MapViewComponent implements OnInit, OnDestroy {
       const matchesSearch = !this.currentSearchTerm || stateName.includes(this.currentSearchTerm);
 
       if (!matchesSearch) {
-        return { ...STATE_SHADING_THEME.DIMMED };
+        return {
+          fillColor: this.currentTheme.stateUnvisitedFill,
+          fillOpacity: 0.03,
+          color: this.currentTheme.stateUnvisitedStroke,
+          weight: 0.5,
+        };
       }
       if (isAllVisited) {
-        return { ...STATE_SHADING_THEME.ALL_VISITED };
+        return {
+          fillColor: this.currentTheme.stateVisitedFill,
+          fillOpacity: 0.45,
+          color: this.currentTheme.stateVisitedStroke,
+          weight: 1.5,
+        };
       }
       if (isPartiallyVisited) {
-        return { ...STATE_SHADING_THEME.PARTIALLY_VISITED };
+        return {
+          fillColor: this.currentTheme.statePartialFill,
+          fillOpacity: 0.4,
+          color: this.currentTheme.statePartialStroke,
+          weight: 1.5,
+        };
       }
-      return { ...STATE_SHADING_THEME.UNVISITED };
+      return {
+        fillColor: this.currentTheme.stateUnvisitedFill,
+        fillOpacity: 0.1,
+        color: this.currentTheme.stateUnvisitedStroke,
+        weight: 0.75,
+      };
     };
 
     // DOCS: https://leafletjs.com/reference.html#geojson
     this.stateGeoJsonLayer = L.geoJSON(statesGeoJson, {
       pane: STATE_SHADING_THEME.PANE_NAME,
+      interactive: !isParksMode,
       style: (feature) => getFeatureStyle(feature),
       onEachFeature: (feature, featureLayer) => {
+        if (isParksMode) {
+          return;
+        }
         const stateId = feature.id as string;
         const stateName = feature.properties?.name || feature.id;
         const visitDetails = settings.visitedStates?.[stateId] || [];

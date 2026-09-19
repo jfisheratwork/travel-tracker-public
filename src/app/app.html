@@ -1,10 +1,12 @@
-<div class="w-full max-w-[96vw] 2xl:max-w-[1700px] mx-auto px-2 py-3 sm:px-4 md:py-4 relative flex flex-col min-h-screen">
+<div
+  class="w-full max-w-[96vw] 2xl:max-w-[1700px] mx-auto px-2 py-3 sm:px-4 md:py-4 relative flex flex-col min-h-screen"
+>
   <!-- Page Title (Bordered title bar with centered title and profile placeholder on right) -->
   <div
     class="w-full flex items-center justify-between py-2 sm:py-2.5 px-4 sm:px-6 rounded-2xl shadow-sm mb-3 transition-colors duration-200"
     [style.backgroundColor]="currentTheme.headerBg"
     [style.borderColor]="currentTheme.headerBorder"
-    style="border-width: 2px; border-style: solid;"
+    style="border-width: 2px; border-style: solid"
   >
     <!-- Left spacer balancing the profile widget on desktop to keep title centered -->
     <div class="w-10 sm:w-36 hidden sm:block"></div>
@@ -23,7 +25,9 @@
         (click)="toggleProfileMenu()"
         class="flex items-center gap-2 py-1 px-2 sm:px-2.5 rounded-full transition-all active:scale-95 border"
         [style.borderColor]="currentTheme.headerBorder"
-        [style.backgroundColor]="currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)'"
+        [style.backgroundColor]="
+          currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)'
+        "
         title="User Profile"
         aria-label="User Profile Menu"
       >
@@ -86,7 +90,7 @@
       class="w-full h-[75vh] min-h-[550px] xl:h-[78vh] rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-colors duration-200"
       [style.backgroundColor]="currentTheme.cardBg"
       [style.borderColor]="currentTheme.cardBorder"
-      style="border-width: 3.5px; border-style: solid;"
+      style="border-width: 3.5px; border-style: solid"
     >
       <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
     </div>
@@ -96,14 +100,16 @@
       <button
         (click)="showDetailsDrawer = !showDetailsDrawer"
         class="flex items-center gap-2 px-6 py-2 rounded-full font-bold text-sm shadow-sm hover:opacity-90 transition-all active:scale-95"
-        [style.backgroundColor]="currentTheme.cardBg"
-        [style.borderColor]="currentTheme.cardBorder"
-        [style.color]="currentTheme.isDark ? '#f8fafc' : '#44403c'"
-        style="border-width: 1px; border-style: solid;"
+        [style.backgroundColor]="currentTheme.buttonBg"
+        [style.borderColor]="currentTheme.buttonBorder"
+        [style.color]="currentTheme.buttonText"
+        style="border-width: 1.5px; border-style: solid"
       >
         <span>{{ showDetailsDrawer ? '▲ Hide Details' : '▼ Show Details' }}</span>
         <span class="text-xs opacity-60 font-normal">
-          ({{ mode === 'roads' ? 'Road Trips' : (mode === 'parks' ? 'Visited Parks' : 'Visited States') }})
+          ({{
+            mode === 'roads' ? 'Road Trips' : mode === 'parks' ? 'Visited Parks' : 'Visited States'
+          }})
         </span>
       </button>
     </div>
@@ -118,7 +124,7 @@
         class="rounded-xl shadow-lg overflow-hidden transition-colors duration-200"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
-        style="border-width: 1px; border-style: solid;"
+        style="border-width: 1px; border-style: solid"
       >
         <app-route-builder></app-route-builder>
       </div>
@@ -131,10 +137,12 @@
     class="mt-auto pt-8 pb-4 text-xs flex flex-col sm:flex-row items-center justify-between gap-2 px-2 transition-colors duration-200"
     [style.borderTopColor]="currentTheme.cardBorder"
     [style.color]="currentTheme.isDark ? '#94a3b8' : '#78716c'"
-    style="border-top-width: 1px; border-top-style: solid;"
+    style="border-top-width: 1px; border-top-style: solid"
   >
     <div class="flex items-center gap-2">
-      <span class="font-semibold" [style.color]="currentTheme.isDark ? '#f1f5f9' : '#44403c'">Family Tracker</span>
+      <span class="font-semibold" [style.color]="currentTheme.isDark ? '#f1f5f9' : '#44403c'"
+        >Family Tracker</span
+      >
       <span>&bull;</span>
       <span>Explore National Parks, States &amp; Road Trips</span>
     </div>

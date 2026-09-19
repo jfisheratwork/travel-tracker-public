@@ -70,6 +70,8 @@ export class App implements OnInit {
       this.currentTheme = COLOR_THEMES[themeId] || COLOR_THEMES[DEFAULT_THEME_ID];
       if (typeof document !== 'undefined' && document.body) {
         document.body.style.backgroundColor = this.currentTheme.canvasBg;
+        document.body.style.fontFamily = this.currentTheme.fontFamily;
+        document.documentElement.style.setProperty('--app-font', this.currentTheme.fontFamily);
         if (this.currentTheme.isDark) {
           document.body.classList.add('dark');
         } else {

@@ -89,7 +89,9 @@
 
               <!-- Date Picker Right Next to Checkbox (Only Shown When Visited) -->
               <div *ngIf="isVisited(member.id)" class="flex items-center gap-1.5">
-                <span class="text-[11px] font-semibold text-stone-400 hidden sm:inline">First:</span>
+                <span class="text-[11px] font-semibold text-stone-400 hidden sm:inline"
+                  >First:</span
+                >
                 <input
                   type="date"
                   [(ngModel)]="editingVisits[member.id].firstVisitedDate"

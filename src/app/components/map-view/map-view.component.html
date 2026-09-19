@@ -2,7 +2,7 @@
   <!-- Top Bar -->
   <div
     class="flex flex-wrap justify-between items-center gap-4 p-3.5 border-b z-[1000] relative transition-colors duration-200"
-    [style.backgroundColor]="currentTheme.cardBg"
+    [style.backgroundColor]="currentTheme.toolbarBg"
     [style.borderBottomColor]="currentTheme.cardBorder"
   >
     <!-- Left: Global Search -->
@@ -14,19 +14,28 @@
     <div class="flex items-center justify-center gap-2.5 flex-wrap">
       <button
         (click)="openParksModal()"
-        class="h-10 px-4 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm font-bold hover:bg-green-100 transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95"
+        class="h-10 px-4 rounded-xl text-sm font-bold transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border"
+        [style.backgroundColor]="currentTheme.buttonBg"
+        [style.borderColor]="currentTheme.buttonBorder"
+        [style.color]="currentTheme.buttonText"
       >
         🌲 Add Parks
       </button>
       <button
         (click)="openStatesModal()"
-        class="h-10 px-4 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-sm font-bold hover:bg-blue-100 transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95"
+        class="h-10 px-4 rounded-xl text-sm font-bold transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border"
+        [style.backgroundColor]="currentTheme.buttonBg"
+        [style.borderColor]="currentTheme.buttonBorder"
+        [style.color]="currentTheme.buttonText"
       >
         ⭐ Add States
       </button>
       <button
         (click)="openRoads()"
-        class="h-10 px-4 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl text-sm font-bold hover:bg-amber-100 transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95"
+        class="h-10 px-4 rounded-xl text-sm font-bold transition flex items-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border"
+        [style.backgroundColor]="currentTheme.buttonBg"
+        [style.borderColor]="currentTheme.buttonBorder"
+        [style.color]="currentTheme.buttonText"
       >
         🚗 Add Roads
       </button>
@@ -36,23 +45,23 @@
     <div class="flex items-center justify-end gap-2 flex-shrink-0">
       <button
         (click)="showStatsModal = true"
-        class="h-10 w-10 border border-stone-200 hover:bg-stone-50 rounded-xl text-stone-600 transition flex items-center justify-center shadow-xs active:scale-95"
+        class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border"
+        [style.backgroundColor]="currentTheme.isDark ? '#1e1b4b' : '#eef2ff'"
+        [style.borderColor]="currentTheme.isDark ? '#4338ca' : '#c7d2fe'"
         title="Show Statistics"
         aria-label="Show Statistics"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="w-5 h-5 text-stone-600"
+          class="w-5 h-5"
           fill="none"
           viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
           stroke-linecap="round"
           stroke-linejoin="round"
         >
-          <line x1="18" y1="20" x2="18" y2="10"></line>
-          <line x1="12" y1="20" x2="12" y2="4"></line>
-          <line x1="6" y1="20" x2="6" y2="14"></line>
+          <line x1="6" y1="20" x2="6" y2="14" stroke="#3b82f6" stroke-width="2.5"></line>
+          <line x1="12" y1="20" x2="12" y2="4" stroke="#8b5cf6" stroke-width="2.5"></line>
+          <line x1="18" y1="20" x2="18" y2="10" stroke="#ec4899" stroke-width="2.5"></line>
         </svg>
       </button>
 
@@ -60,15 +69,18 @@
       <div class="relative" #themeMenuRef>
         <button
           (click)="toggleThemeMenu()"
-          class="h-10 w-10 border border-stone-200 hover:bg-stone-50 rounded-xl text-stone-600 transition flex items-center justify-center shadow-xs active:scale-95"
+          class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border"
+          [style.backgroundColor]="currentTheme.isDark ? '#451a03' : '#fff7ed'"
+          [style.borderColor]="currentTheme.isDark ? '#9a3412' : '#fed7aa'"
+          [style.color]="currentTheme.isDark ? '#fdba74' : '#ea580c'"
           [class.ring-2]="showThemeMenu"
-          [class.ring-stone-400]="showThemeMenu"
+          [class.ring-amber-400]="showThemeMenu"
           title="Color Theme"
           aria-label="Select Color Theme"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5 text-stone-600"
+            class="w-5 h-5"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -76,53 +88,91 @@
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle>
-            <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle>
-            <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle>
-            <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle>
-            <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+            <circle cx="13.5" cy="6.5" r="1.3" fill="#ef4444" stroke="#ef4444"></circle>
+            <circle cx="17.5" cy="10.5" r="1.3" fill="#3b82f6" stroke="#3b82f6"></circle>
+            <circle cx="8.5" cy="7.5" r="1.3" fill="#10b981" stroke="#10b981"></circle>
+            <circle cx="6.5" cy="12.5" r="1.3" fill="#f59e0b" stroke="#f59e0b"></circle>
+            <path
+              d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
+            ></path>
           </svg>
         </button>
 
         <!-- Dropdown Menu -->
         <div
           *ngIf="showThemeMenu"
-          class="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-stone-200 py-2 z-[1100] animate-fadeIn"
+          class="absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-[1100] animate-fadeIn border"
+          [style.backgroundColor]="currentTheme.cardBg"
+          [style.borderColor]="currentTheme.cardBorder"
         >
-          <div class="px-3.5 py-2 border-b border-stone-100 flex items-center justify-between">
-            <span class="text-xs font-bold uppercase tracking-wider text-stone-500">Color Themes</span>
-            <span class="text-[10px] text-stone-400 font-medium">8 options</span>
+          <div
+            class="px-3.5 py-2 border-b flex items-center justify-between"
+            [style.borderBottomColor]="currentTheme.cardBorder"
+          >
+            <span
+              class="text-xs font-bold uppercase tracking-wider"
+              [style.color]="currentTheme.subtextColor"
+              >Color Themes</span
+            >
+            <span class="text-[10px] font-medium" [style.color]="currentTheme.subtextColor"
+              >8 options</span
+            >
           </div>
 
           <div class="max-h-80 overflow-y-auto py-1">
             <button
               *ngFor="let t of availableThemes"
               (click)="selectTheme(t.id)"
-              class="w-full px-3.5 py-2.5 flex items-center justify-between hover:bg-stone-50 transition text-left group"
-              [class.bg-stone-50]="currentThemeId === t.id"
+              class="w-full px-3.5 py-2.5 flex items-center justify-between transition text-left group"
+              [style.backgroundColor]="
+                currentThemeId === t.id ? currentTheme.buttonBg : 'transparent'
+              "
             >
               <div class="flex items-center gap-3 min-w-0">
                 <!-- 3 Swatch Dots Preview -->
                 <div class="flex items-center -space-x-1.5 flex-shrink-0">
-                  <span class="w-4 h-4 rounded-full border border-white shadow-xs" [style.backgroundColor]="t.swatches[0]"></span>
-                  <span class="w-4 h-4 rounded-full border border-white shadow-xs" [style.backgroundColor]="t.swatches[1]"></span>
-                  <span class="w-4 h-4 rounded-full border border-white shadow-xs" [style.backgroundColor]="t.swatches[2]"></span>
+                  <span
+                    class="w-4 h-4 rounded-full border border-white shadow-xs"
+                    [style.backgroundColor]="t.swatches[0]"
+                  ></span>
+                  <span
+                    class="w-4 h-4 rounded-full border border-white shadow-xs"
+                    [style.backgroundColor]="t.swatches[1]"
+                  ></span>
+                  <span
+                    class="w-4 h-4 rounded-full border border-white shadow-xs"
+                    [style.backgroundColor]="t.swatches[2]"
+                  ></span>
                 </div>
                 <div class="flex flex-col min-w-0">
                   <span
-                    class="text-sm font-semibold text-stone-800 truncate group-hover:text-stone-900"
-                    [class.text-green-700]="currentThemeId === t.id"
+                    class="text-sm font-semibold truncate"
+                    [style.color]="
+                      currentThemeId === t.id ? currentTheme.buttonActiveBg : currentTheme.textColor
+                    "
+                    [style.fontFamily]="t.fontFamily"
                   >
                     {{ t.name }}
                   </span>
-                  <span *ngIf="t.id === 'dunes-deep-lake'" class="text-[10px] text-amber-600 font-bold leading-none mt-0.5">
-                    Default
+                  <span
+                    class="text-[10px] font-medium leading-none mt-0.5"
+                    [style.color]="currentTheme.subtextColor"
+                  >
+                    {{ t.fontName }}
                   </span>
                 </div>
               </div>
 
               <!-- Checkmark when active -->
-              <svg *ngIf="currentThemeId === t.id" class="w-4 h-4 text-green-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <svg
+                *ngIf="currentThemeId === t.id"
+                class="w-4 h-4 flex-shrink-0"
+                [style.color]="currentTheme.buttonActiveBg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
                 <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </button>
@@ -132,22 +182,54 @@
 
       <button
         (click)="openSettings()"
-        class="h-10 w-10 border border-stone-200 hover:bg-stone-50 rounded-xl text-stone-600 transition flex items-center justify-center shadow-xs active:scale-95"
+        class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border group"
+        [style.backgroundColor]="currentTheme.isDark ? '#083344' : '#ecfeff'"
+        [style.borderColor]="currentTheme.isDark ? '#0e7490' : '#a5f3fc'"
+        [style.color]="currentTheme.isDark ? '#67e8f9' : '#0891b2'"
         title="Settings"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-5 h-5 transition-transform duration-300 group-hover:rotate-45"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+          />
         </svg>
       </button>
       <button
         (click)="showHelpModal = true"
-        class="h-10 w-10 border border-stone-200 hover:bg-stone-50 rounded-xl text-stone-600 transition flex items-center justify-center shadow-xs active:scale-95"
+        class="h-10 w-10 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border"
+        [style.backgroundColor]="currentTheme.isDark ? '#064e3b' : '#ecfdf5'"
+        [style.borderColor]="currentTheme.isDark ? '#047857' : '#a7f3d0'"
+        [style.color]="currentTheme.isDark ? '#6ee7b7' : '#059669'"
         title="Help & Information"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-stone-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="w-5 h-5"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          stroke-width="2"
+        >
           <circle cx="12" cy="12" r="10" />
-          <path stroke-linecap="round" stroke-linejoin="round" d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"
+          />
           <line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2" />
         </svg>
       </button>
@@ -168,111 +250,170 @@
 
     <!-- Bottom-Left Quick Stats Legend -->
     <div
-      class="absolute left-3 bottom-3 z-[1000] bg-white/95 backdrop-blur-xs border border-stone-200 rounded-2xl shadow-md py-2.5 px-3 flex flex-col gap-1.5 text-stone-700 select-none no-print min-w-[170px]"
+      class="absolute left-3 bottom-3 z-[1000] backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3 flex flex-col gap-1.5 select-none no-print min-w-[170px] transition-colors duration-200"
+      [style.backgroundColor]="currentTheme.cardBg"
+      [style.borderColor]="currentTheme.cardBorder"
+      [style.color]="currentTheme.textColor"
     >
       <div
-        class="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider text-center"
+        class="text-[10px] font-extrabold uppercase tracking-wider text-center"
+        [style.color]="currentTheme.subtextColor"
       >
         STATISTICS
       </div>
 
-      <div class="w-full h-px bg-stone-200"></div>
+      <div class="w-full h-px" [style.backgroundColor]="currentTheme.cardBorder"></div>
 
       <!-- US States -->
       <div class="flex items-center justify-between gap-3 text-xs">
-        <span class="flex items-center gap-1.5 text-stone-600 font-medium">
+        <span
+          class="flex items-center gap-1.5 font-medium"
+          [style.color]="currentTheme.subtextColor"
+        >
           <span>🇺🇸</span> US States
         </span>
-        <span class="font-bold text-stone-800">{{ visitedUSStatesCount }} / {{ TOTAL_US_STATES }}</span>
+        <span class="font-bold" [style.color]="currentTheme.textColor"
+          >{{ visitedUSStatesCount }} / {{ TOTAL_US_STATES }}</span
+        >
       </div>
 
       <!-- CA Provinces -->
       <div class="flex items-center justify-between gap-3 text-xs">
-        <span class="flex items-center gap-1.5 text-stone-600 font-medium">
+        <span
+          class="flex items-center gap-1.5 font-medium"
+          [style.color]="currentTheme.subtextColor"
+        >
           <span>🇨🇦</span> CA Provinces
         </span>
-        <span class="font-bold text-stone-800">{{ visitedCAProvincesCount }} / {{ TOTAL_CA_PROVINCES }}</span>
+        <span class="font-bold" [style.color]="currentTheme.textColor"
+          >{{ visitedCAProvincesCount }} / {{ TOTAL_CA_PROVINCES }}</span
+        >
       </div>
 
       <!-- US Parks -->
       <div class="flex items-center justify-between gap-3 text-xs">
-        <span class="flex items-center gap-1.5 text-stone-600 font-medium">
+        <span
+          class="flex items-center gap-1.5 font-medium"
+          [style.color]="currentTheme.subtextColor"
+        >
           <span>🌲</span> US Parks
         </span>
-        <span class="font-bold text-stone-800">{{ visitedUSParksCount }} / {{ TOTAL_US_PARKS }}</span>
+        <span class="font-bold" [style.color]="currentTheme.textColor"
+          >{{ visitedUSParksCount }} / {{ TOTAL_US_PARKS }}</span
+        >
       </div>
 
       <!-- CA Parks -->
       <div class="flex items-center justify-between gap-3 text-xs">
-        <span class="flex items-center gap-1.5 text-stone-600 font-medium">
+        <span
+          class="flex items-center gap-1.5 font-medium"
+          [style.color]="currentTheme.subtextColor"
+        >
           <span>🍁</span> CA Parks
         </span>
-        <span class="font-bold text-stone-800">{{ visitedCAParksCount }} / {{ TOTAL_CA_PARKS }}</span>
+        <span class="font-bold" [style.color]="currentTheme.textColor"
+          >{{ visitedCAParksCount }} / {{ TOTAL_CA_PARKS }}</span
+        >
       </div>
     </div>
 
     <!-- Bottom-Right Visited Legend -->
     <div
-      class="absolute right-3 bottom-3 z-[1000] bg-white/95 backdrop-blur-xs border border-stone-200 rounded-2xl shadow-md py-2.5 px-3.5 flex flex-col gap-2 text-stone-700 select-none no-print"
+      class="absolute right-3 bottom-3 z-[1000] backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3.5 flex flex-col gap-2 select-none no-print transition-colors duration-200"
+      [style.backgroundColor]="currentTheme.cardBg"
+      [style.borderColor]="currentTheme.cardBorder"
+      [style.color]="currentTheme.textColor"
     >
       <div
-        class="text-[10px] font-extrabold text-stone-400 uppercase tracking-wider text-center"
+        class="text-[10px] font-extrabold uppercase tracking-wider text-center"
+        [style.color]="currentTheme.subtextColor"
       >
         VISITED
       </div>
 
-      <div class="w-full h-px bg-stone-200"></div>
+      <div class="w-full h-px" [style.backgroundColor]="currentTheme.cardBorder"></div>
 
       <!-- All -->
       <div class="flex items-center gap-2 cursor-default" title="All Visited">
-        <span class="w-2.5 h-2.5 rounded-full bg-green-600 ring-2 ring-green-100 shadow-xs"></span>
-        <span class="text-xs font-semibold text-stone-700">All</span>
+        <span
+          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+          [style.backgroundColor]="currentTheme.stateVisitedFill"
+          [style.ringColor]="currentTheme.cardBorder"
+        ></span>
+        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">All</span>
       </div>
 
       <!-- Some -->
       <div class="flex items-center gap-2 cursor-default" title="Partially Visited">
-        <span class="w-2.5 h-2.5 rounded-full bg-amber-500 ring-2 ring-amber-100 shadow-xs"></span>
-        <span class="text-xs font-semibold text-stone-700">Some</span>
+        <span
+          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+          [style.backgroundColor]="currentTheme.statePartialFill"
+          [style.ringColor]="currentTheme.cardBorder"
+        ></span>
+        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">Some</span>
       </div>
 
       <!-- None -->
       <div class="flex items-center gap-2 cursor-default" title="Not Visited">
-        <span class="w-2.5 h-2.5 rounded-full bg-stone-400 ring-2 ring-stone-100 shadow-xs"></span>
-        <span class="text-xs font-semibold text-stone-700">None</span>
+        <span
+          class="w-2.5 h-2.5 rounded-full ring-2 shadow-xs"
+          [style.backgroundColor]="currentTheme.stateUnvisitedFill"
+          [style.ringColor]="currentTheme.cardBorder"
+        ></span>
+        <span class="text-xs font-semibold" [style.color]="currentTheme.textColor">None</span>
       </div>
     </div>
   </div>
 
   <!-- Bottom Bar: Mirrored Mode Tabs (Routes, Parks, States) -->
-  <div class="p-2.5 border-t border-stone-100 bg-white z-[1000] relative flex justify-center">
+  <div
+    class="p-2.5 border-t z-[1000] relative flex justify-center transition-colors duration-200"
+    [style.backgroundColor]="currentTheme.toolbarBg"
+    [style.borderTopColor]="currentTheme.cardBorder"
+  >
     <div class="flex gap-2 max-w-xl w-full">
       <button
         (click)="setMapMode('roads')"
-        [class.bg-blue-600]="mapMode === 'roads'"
-        [class.text-white]="mapMode === 'roads'"
-        [class.bg-stone-50]="mapMode !== 'roads'"
-        [class.text-stone-600]="mapMode !== 'roads'"
-        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border border-stone-200 hover:border-stone-300 active:scale-95"
+        [style.backgroundColor]="
+          mapMode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
+        "
+        [style.color]="
+          mapMode === 'roads' ? currentTheme.buttonActiveText : currentTheme.buttonText
+        "
+        [style.borderColor]="
+          mapMode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
+        "
+        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border active:scale-95"
       >
         🚗 Routes
       </button>
       <button
         (click)="setMapMode('parks')"
-        [class.bg-green-700]="mapMode === 'parks'"
-        [class.text-white]="mapMode === 'parks'"
-        [class.bg-stone-50]="mapMode !== 'parks'"
-        [class.text-stone-600]="mapMode !== 'parks'"
-        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border border-stone-200 hover:border-stone-300 active:scale-95"
+        [style.backgroundColor]="
+          mapMode === 'parks' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
+        "
+        [style.color]="
+          mapMode === 'parks' ? currentTheme.buttonActiveText : currentTheme.buttonText
+        "
+        [style.borderColor]="
+          mapMode === 'parks' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
+        "
+        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border active:scale-95"
       >
         🌲 Parks
       </button>
       <button
         (click)="setMapMode('states')"
-        [class.bg-indigo-600]="mapMode === 'states'"
-        [class.text-white]="mapMode === 'states'"
-        [class.bg-stone-50]="mapMode !== 'states'"
-        [class.text-stone-600]="mapMode !== 'states'"
-        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border border-stone-200 hover:border-stone-300 active:scale-95"
+        [style.backgroundColor]="
+          mapMode === 'states' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
+        "
+        [style.color]="
+          mapMode === 'states' ? currentTheme.buttonActiveText : currentTheme.buttonText
+        "
+        [style.borderColor]="
+          mapMode === 'states' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
+        "
+        class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border active:scale-95"
       >
         ⭐ States
       </button>
