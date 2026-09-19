@@ -17,12 +17,20 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { StatsModal } from '../stats-modal/stats-modal';
 import { ParksStatesModal } from '../parks-states-modal/parks-states-modal';
+import { HelpModalComponent } from '../help-modal/help-modal.component';
 import { LoggerService } from '../../core/services/logger.service';
+
+const METERS_PER_MILE = 1609.34;
+const ROADS_HOMETOWN_RADIUS_MILES = 300;
+const NORTH_AMERICA_BOUNDS: L.LatLngBoundsLiteral = [
+  [22.0, -132.0],
+  [60.0, -55.0],
+];
 
 @Component({
   selector: 'app-map-view',
   standalone: true,
-  imports: [CommonModule, GlobalSearchComponent, StatsModal, ParksStatesModal],
+  imports: [CommonModule, GlobalSearchComponent, StatsModal, ParksStatesModal, HelpModalComponent],
   templateUrl: './map-view.component.html',
   styleUrls: ['./map-view.component.css'],
 })
@@ -34,6 +42,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   showStatsModal = false;
   showParksStatesModal = false;
+  showHelpModal = false;
   parksStatesModalMode: 'parks' | 'states' = 'parks';
 
   openSettings(): void {
@@ -158,28 +167,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
         this.filterMarkers(this.currentSearchTerm);
         this.renderStateShading(settings, statesGeoJson);
 
+        const hasHometown = settings.hometowns && settings.hometowns.length > 0;
+
         if (this.map) {
           setTimeout(() => {
             if (!this.map || typeof this.map.invalidateSize !== 'function') return;
             this.map.invalidateSize();
-            const activeHometown =
-              settings.hometowns.length > 0
-                ? settings.hometowns[settings.hometowns.length - 1]
-                : undefined;
-
-            const METERS_PER_MILE = 1609.34;
-            const DEFAULT_HOMETOWN_RADIUS_MILES = 200;
-            const hometownRadiusMeters = DEFAULT_HOMETOWN_RADIUS_MILES * METERS_PER_MILE;
-
-            const showingRoads =
-              this.mapMode === 'roads' &&
-              (selectedRoute || (settings.savedRoutes && settings.savedRoutes.length > 0));
-            if (activeHometown && !showingRoads) {
-              const bounds = L.latLng(activeHometown.lat, activeHometown.lng).toBounds(
-                hometownRadiusMeters,
-              );
-              this.map.fitBounds(bounds);
-            }
+            this.applyModeZoom(settings, selectedRoute);
           }, 100);
         }
 
@@ -192,7 +186,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
           this.baseTileLayer.setUrl(API_ENDPOINTS.OSM_TILE_LAYER);
         }
 
-        this.renderRoutes(settings.savedRoutes, selectedRoute);
+        this.renderRoutes(settings.savedRoutes, selectedRoute, hasHometown);
       });
   }
 
@@ -468,7 +462,37 @@ export class MapViewComponent implements OnInit, OnDestroy {
     }).addTo(this.map);
   }
 
-  private async renderRoutes(savedRoutes: RouteObject[] = [], selectedRoute: RouteObject | null) {
+  private applyModeZoom(
+    settings: import('../../models/settings.model').AppSettings,
+    selectedRoute?: RouteObject | null,
+  ): void {
+    if (!this.map || typeof this.map.fitBounds !== 'function') return;
+
+    if (this.mapMode === 'parks' || this.mapMode === 'states') {
+      this.map.fitBounds(NORTH_AMERICA_BOUNDS, { padding: [20, 20] });
+    } else if (this.mapMode === 'roads') {
+      if (selectedRoute) {
+        return;
+      }
+      const currentHome =
+        settings.hometowns.find((h) => !h.endDate) ||
+        (settings.hometowns.length > 0
+          ? settings.hometowns[settings.hometowns.length - 1]
+          : undefined);
+
+      if (currentHome) {
+        const hometownRadiusMeters = ROADS_HOMETOWN_RADIUS_MILES * METERS_PER_MILE;
+        const bounds = L.latLng(currentHome.lat, currentHome.lng).toBounds(hometownRadiusMeters);
+        this.map.fitBounds(bounds);
+      }
+    }
+  }
+
+  private async renderRoutes(
+    savedRoutes: RouteObject[] = [],
+    selectedRoute: RouteObject | null,
+    hasHometown: boolean = false,
+  ) {
     this.currentPolylines.forEach((p) => p.remove());
     this.currentPolylines = [];
 
@@ -555,7 +579,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
         }
       }
 
-      if (allBounds.length > 0) {
+      if (allBounds.length > 0 && !hasHometown) {
         let groupBounds = allBounds[0];
         for (let i = 1; i < allBounds.length; i++) {
           groupBounds = groupBounds.extend(allBounds[i]);

@@ -115,6 +115,17 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
   - Added italicized serif attribution text ("Made for fun by Jake Fisher") with capitalized "Made" to the left of the GitHub repository link in the footer.
   - Verified visual rendering and tab switching via Chrome DevTools MCP.
 
+- Added Help Modal (`HelpModalComponent`) with intro boilerplate, suggestions & GitHub issues link, and open-source software/mapping library attributions.
+- Added `?` button next to settings gear in `MapViewComponent` to open the Help Modal.
+- Enlarged Settings Modal significantly (`max-w-3xl lg:max-w-4xl`, `min-h-[550px]`, `max-h-[88vh]`), fitting all 5 navigation tabs and maximizing viewable area.
+- Implemented mode-specific Leaflet map zoom:
+  - National Parks and States/Provinces views automatically zoom to fit the full North America bounding box (`[[22.0, -132.0], [60.0, -55.0]]`).
+  - Roads / Routes view automatically zooms to the user's active/current hometown with a 300-mile radius (`METERS_PER_MILE = 1609.34`, `ROADS_HOMETOWN_RADIUS_MILES = 300`).
+- Updated sample data preset (`family1.json` and `family.json`) across `public/examples/`, `docs/examples/`, and `docs/newsite/examples/` with the new user-provided dataset, anonymizing family member names to `Bob`, `Brittany`, `Ben`, `Becca`, and `Brian`.
+- Added unit test suite for `HelpModalComponent` (4 tests).
+- Executed and verified all 9 unit test suites (23/23 tests passing) and `make lint` (0 errors, 0 warnings).
+- Conducted live browser verification via Chrome DevTools MCP.
+
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
 - Optional Douglas-Peucker route point simplification slider in RouteBuilder.
@@ -151,6 +162,10 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "Add \"made for fun by Jake Fisher\" somewhere just to the left of the github link make it slightly different visually maybe italics or different font"
 - "Hmm I don't like that vertical text for key. Lets try the word 'key' becomes 'visited' with the indicators being 'all', 'some', 'none' the text can all be horizontal line aligned and the legend will just be a bit wider is all"
 - "`made for fun by Jake Fisher` capitalize the word 'made'"
+- "Next to our settings gear ad a '?' help modal. Initally that help model will include a small bolioer plate intro that I will add later, a H3 header under that that says something like if you have suggested add an issue with a link to github issues page, under that a H3 header with attributions, attribute all open source I am using one bullet for each that includes software and map programs etc"
+- "For the State and Park views zoom the north america map, For the Roads zoom the user specified current home with around a 300 mile radius"
+- "settigns model is way too small use alot more of the availble window space"
+- "This will be the new example file replace family.json with this one. Change the names to Bob, Britnany, Ben, Becca, Brian to do a very surface level anonymous of my kids and family names"
 
 
 

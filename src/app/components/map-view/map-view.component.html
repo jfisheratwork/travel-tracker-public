@@ -38,6 +38,13 @@
       >
         ⚙️
       </button>
+      <button
+        (click)="showHelpModal = true"
+        class="px-3 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center justify-center shadow-sm active:scale-95"
+        title="Help & Information"
+      >
+        ❓
+      </button>
     </div>
   </div>
 
@@ -47,6 +54,7 @@
     [mode]="parksStatesModalMode"
     (close)="showParksStatesModal = false"
   ></app-parks-states-modal>
+  <app-help-modal *ngIf="showHelpModal" (close)="showHelpModal = false"></app-help-modal>
 
   <!-- Map + Right-side Vertical Key -->
   <div class="flex-1 flex w-full relative min-h-0 overflow-hidden">
