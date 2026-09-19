@@ -8,40 +8,6 @@
     </div>
   </div>
 
-  <!-- Mode Selector Tabs (Above Map) -->
-  <div *ngIf="stateService.mapMode$ | async as mode" class="flex gap-2 max-w-xl mx-auto w-full mb-3">
-    <button
-      (click)="stateService.setMapMode('roads')"
-      [class.bg-blue-600]="mode === 'roads'"
-      [class.text-white]="mode === 'roads'"
-      [class.bg-white]="mode !== 'roads'"
-      [class.text-stone-600]="mode !== 'roads'"
-      class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border border-stone-200 hover:border-stone-300"
-    >
-      🚗 Routes
-    </button>
-    <button
-      (click)="stateService.setMapMode('parks')"
-      [class.bg-green-700]="mode === 'parks'"
-      [class.text-white]="mode === 'parks'"
-      [class.bg-white]="mode !== 'parks'"
-      [class.text-stone-600]="mode !== 'parks'"
-      class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border border-stone-200 hover:border-stone-300"
-    >
-      🌲 Parks
-    </button>
-    <button
-      (click)="stateService.setMapMode('states')"
-      [class.bg-indigo-600]="mode === 'states'"
-      [class.text-white]="mode === 'states'"
-      [class.bg-white]="mode !== 'states'"
-      [class.text-stone-600]="mode !== 'states'"
-      class="flex-1 py-2 px-4 rounded-xl text-sm font-bold shadow-xs transition border border-stone-200 hover:border-stone-300"
-    >
-      ⭐ States
-    </button>
-  </div>
-
   <!-- Main Display Container: Stacked Map and Details Drawer -->
   <div class="flex flex-col gap-4">
     <!-- Map Area (Uses full vertical and horizontal screen real estate) -->
