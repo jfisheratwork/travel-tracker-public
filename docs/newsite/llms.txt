@@ -1,0 +1,35 @@
+# Traveled Roads Tracker
+
+> Traveled Roads Tracker is a client-side Angular web application for tracking family road trips, visited US and Canadian National Parks, and visited US States and Canadian Provinces.
+
+## AI Trip Import & Trip Delta Schema
+
+Traveled Roads Tracker supports natural language trip logging. When a user describes their travel experience, an AI can parse the locations, dates, notes, and family members, and produce a structured JSON object according to the **Trip Delta schema**.
+
+### The Trip Delta Format
+
+```json
+{
+  "type": "trip_delta",
+  "version": 1,
+  "trip": {
+    "name": "Trip Title (e.g. Yellowstone & Grand Tetons Road Trip)",
+    "date": "YYYY-MM-DD",
+    "members": ["all"],
+    "parks": ["Yellowstone", "Grand Teton"],
+    "states": ["Montana", "Wyoming", "Idaho"],
+    "notes": "Route notes or highlights"
+  }
+}
+```
+
+### Schema Rules & Specifications
+- **`parks`**: Array of canonical US and Canadian National Park names (e.g., "Yellowstone", "Grand Teton", "Banff", "Acadia", "Zion", "Glacier"). Do not include prefixes/suffixes like "National Park and Preserve".
+- **`states`**: Array of US States or Canadian Provinces visited, including arrival/departure transit states. Accepts full names (e.g. "Montana", "Wyoming", "British Columbia") or standard 2-letter postal codes (e.g. "MT", "WY", "BC").
+- **`members`**: Array of group member first names, or `["all"]` if the entire group attended.
+- **`date`**: ISO date `YYYY-MM-DD`. If only year is given, use `YYYY-06-01`. If only month/year is given, use `YYYY-MM-01`.
+- **`notes`**: Brief 1-2 sentence description of the trip.
+
+## Links & Documentation
+- [Architecture Documentation](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/README.md)
+- [State Management & Data Flow](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/02-state-and-data-flow.md)
