@@ -14,4 +14,4 @@ if [ "$GITHUB_ACTIONS" != "true" ] && [ "$CI" != "true" ]; then
   fi
 fi
 
-npm test -- --watch=false
+HOME=$(pwd)/scratch NG_CLI_ANALYTICS=false npm test -- --watch=false

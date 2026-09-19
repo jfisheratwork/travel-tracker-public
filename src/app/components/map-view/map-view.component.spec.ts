@@ -12,6 +12,8 @@ vi.mock('leaflet', () => {
     setView: vi.fn().mockReturnThis(),
     remove: vi.fn(),
     on: vi.fn(),
+    createPane: vi.fn().mockReturnValue({ style: {} }),
+    getPane: vi.fn().mockReturnValue({ style: {} }),
   };
   return {
     Icon: {
@@ -51,6 +53,10 @@ vi.mock('leaflet', () => {
       getBounds: vi.fn().mockReturnValue({ isValid: vi.fn().mockReturnValue(true) }),
       remove: vi.fn(),
     }),
+    geoJSON: vi.fn().mockReturnValue({
+      addTo: vi.fn().mockReturnThis(),
+      remove: vi.fn(),
+    }),
     FeatureGroup: vi.fn().mockReturnValue({
       getBounds: vi.fn().mockReturnValue({ isValid: vi.fn().mockReturnValue(true) }),
     }),
@@ -60,7 +66,6 @@ vi.mock('leaflet', () => {
 describe('MapViewComponent', () => {
   let component: MapViewComponent;
   let fixture: ComponentFixture<MapViewComponent>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let stateServiceMock: any;
   let searchTerm$: BehaviorSubject<string>;
   let selectedRoute$: BehaviorSubject<any>;
@@ -84,6 +89,7 @@ describe('MapViewComponent', () => {
     const locationDataServiceMock = {
       parks$: new BehaviorSubject([]),
       states$: new BehaviorSubject([]),
+      statesGeoJson$: new BehaviorSubject(null),
     };
 
     await TestBed.configureTestingModule({

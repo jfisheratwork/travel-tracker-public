@@ -4,7 +4,6 @@ import { RouteBuilderComponent } from './route-builder';
 import { RoutingService } from '../../services/routing/routing.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { StateService } from '../../services/state.service';
-import { of, throwError } from 'rxjs';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 

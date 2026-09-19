@@ -8,7 +8,7 @@ import { Subject, takeUntil, combineLatest } from 'rxjs';
 // DOCS: https://leafletjs.com/reference.html
 import * as L from 'leaflet';
 import { RouteObject } from '../../models/route.model';
-import { MAP_THEME } from '../../core/constants/map.constants';
+import { MAP_THEME, STATE_SHADING_THEME } from '../../core/constants/map.constants';
 import { LocationDataService } from '../../services/location-data.service';
 import { LocationPoint } from '../../models/location.model';
 import { API_ENDPOINTS } from '../../core/constants/api.constants';
@@ -52,6 +52,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   }
 
   private currentLayerGroup!: L.LayerGroup;
+  private stateGeoJsonLayer?: L.GeoJSON;
   private currentPolyline: L.Polyline | null = null;
   private currentPolylines: L.Polyline[] = [];
   private allLocations: LocationPoint[] = [];
@@ -78,9 +79,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
       this.stateService.selectedRoute$,
       this.locationDataService.parks$,
       this.locationDataService.states$,
+      this.locationDataService.statesGeoJson$,
     ])
       .pipe(takeUntil(this.destroy$))
-      .subscribe(([settings, searchTerm, mapMode, selectedRoute, parks, states]) => {
+      .subscribe(([settings, searchTerm, mapMode, selectedRoute, parks, states, statesGeoJson]) => {
         this.currentSearchTerm = searchTerm.toLowerCase();
         this.mapMode = mapMode;
         this.familyMembers = settings.familyMembers;
@@ -148,6 +150,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
         this.allLocations = [...mergedParks, ...mergedStates, ...hometowns];
 
         this.filterMarkers(this.currentSearchTerm);
+        this.renderStateShading(settings, statesGeoJson);
 
         if (this.map) {
           setTimeout(() => {
@@ -191,6 +194,15 @@ export class MapViewComponent implements OnInit, OnDestroy {
     L.Icon.Default.imagePath = 'leaflet/';
     const mapContainer = this.el.nativeElement.querySelector('#map');
     this.map = L.map(mapContainer).setView([39.8283, -98.5795], 4);
+
+    // DOCS: https://leafletjs.com/reference.html#map-createpane
+    if (!this.map.getPane(STATE_SHADING_THEME.PANE_NAME)) {
+      this.map.createPane(STATE_SHADING_THEME.PANE_NAME);
+      const pane = this.map.getPane(STATE_SHADING_THEME.PANE_NAME);
+      if (pane) {
+        pane.style.zIndex = STATE_SHADING_THEME.PANE_Z_INDEX;
+      }
+    }
 
     const cartoKey = environment.cartoKey;
     const tileUrl =
@@ -256,60 +268,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
       if (m.id.startsWith('hometown-')) {
         popupHtml = `<strong>${m.name} (${m.isLast ? 'Hometown' : 'Previous Hometown'})</strong>`;
       } else {
-        const subLabel = isPark ? 'National Park' : 'State / Province';
-        const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(m.name).replace(/%20/g, '_')}`;
         const originalId = m.id.replace('park-', '').replace('state-', '');
-
-        const allMembers = this.familyMembers;
-        const membersHtml = allMembers
-          .map((member: any) => {
-            const hasVisited = m.visitedByMembers?.some((v: any) => v.id === member.id);
-            let visitText = 'No';
-
-            if (hasVisited) {
-              const visitObj = m.visitedByMembers.find((v: any) => v.id === member.id);
-              visitText = visitObj?.date ? `Yes (${visitObj.date})` : 'Yes';
-            }
-
-            return `
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="color:#57534e;">${member.name}</span>
-              <span style="color:${hasVisited ? '#16a34a' : '#d6d3d1'}; font-weight:${hasVisited ? 'bold' : 'normal'}; font-size:12px;">${visitText}</span>
-            </div>
-            `;
-          })
-          .join('');
-
-        const visitLogsBadge =
-          m.visitLogs && m.visitLogs.length > 0
-            ? `<div style="font-size: 11px; color: #2563eb; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 6px; padding: 3px 6px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
-                 <span>📅</span>
-                 <strong>${m.visitLogs.length} trip visit${m.visitLogs.length > 1 ? 's' : ''} logged</strong>
-               </div>`
-            : '';
-
-        popupHtml = `
-            <div style="font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; min-width: 240px; padding: 4px;">
-                <strong style="font-size: 14px; display: block; color: #292524;">${m.name}</strong>
-                <span style="font-size: 12px; color: #78716c; display: block; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; margin-bottom: 4px;">${subLabel}</span>
-                
-                ${visitLogsBadge}
-
-                <div style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; margin-bottom: 8px;">
-                    ${membersHtml}
-                </div>
-
-                <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #f5f5f4; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-                    <a href="${wikiUrl}" target="_blank" style="font-size: 12px; color: #3b82f6; text-decoration: none; display: flex; align-items: center; gap: 4px;">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
-                        Wikipedia
-                    </a>
-                    <button class="edit-location-btn" data-id="${originalId}" data-mode="${isPark ? 'parks' : 'states'}" style="font-size: 11px; color: #15803d; font-weight: bold; background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
-                        ✏️ Details
-                    </button>
-                </div>
-            </div>
-        `;
+        popupHtml = this.buildLocationPopupHtml({
+          name: m.name,
+          isPark,
+          originalId,
+          visitedByMembers: m.visitedByMembers,
+          visitLogs: m.visitLogs,
+        });
       }
 
       if (m.id.startsWith('hometown-')) {
@@ -340,6 +306,162 @@ export class MapViewComponent implements OnInit, OnDestroy {
     });
   }
 
+  private buildLocationPopupHtml(params: {
+    name: string;
+    isPark: boolean;
+    originalId: string;
+    visitedByMembers?: any[];
+    visitLogs?: any[];
+  }): string {
+    const subLabel = params.isPark ? 'National Park' : 'State / Province';
+    const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(params.name).replace(/%20/g, '_')}`;
+
+    const membersHtml = this.familyMembers
+      .map((member: any) => {
+        const hasVisited = params.visitedByMembers?.some((v: any) => v.id === member.id);
+        let visitText = 'No';
+
+        if (hasVisited) {
+          const visitObj = params.visitedByMembers?.find((v: any) => v.id === member.id);
+          visitText = visitObj?.date ? `Yes (${visitObj.date})` : 'Yes';
+        }
+
+        return `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="color:#57534e;">${member.name}</span>
+          <span style="color:${hasVisited ? '#16a34a' : '#d6d3d1'}; font-weight:${hasVisited ? 'bold' : 'normal'}; font-size:12px;">${visitText}</span>
+        </div>
+        `;
+      })
+      .join('');
+
+    const visitLogsBadge =
+      params.visitLogs && params.visitLogs.length > 0
+        ? `<div style="font-size: 11px; color: #2563eb; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 6px; padding: 3px 6px; margin-bottom: 8px; display: flex; align-items: center; gap: 4px;">
+             <span>📅</span>
+             <strong>${params.visitLogs.length} trip visit${params.visitLogs.length > 1 ? 's' : ''} logged</strong>
+           </div>`
+        : '';
+
+    return `
+        <div style="font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; min-width: 240px; padding: 4px;">
+            <strong style="font-size: 14px; display: block; color: #292524;">${params.name}</strong>
+            <span style="font-size: 12px; color: #78716c; display: block; border-bottom: 1px solid #e7e5e4; padding-bottom: 4px; margin-bottom: 4px;">${subLabel}</span>
+            
+            ${visitLogsBadge}
+
+            <div style="display: flex; flex-direction: column; gap: 2px; font-size: 12px; margin-bottom: 8px;">
+                ${membersHtml}
+            </div>
+
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #f5f5f4; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <a href="${wikiUrl}" target="_blank" style="font-size: 12px; color: #3b82f6; text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" x2="12" y1="16" y2="12"></line><line x1="12" x2="12.01" y1="8" y2="8"></line></svg>
+                    Wikipedia
+                </a>
+                <button class="edit-location-btn" data-id="${params.originalId}" data-mode="${params.isPark ? 'parks' : 'states'}" style="font-size: 11px; color: #15803d; font-weight: bold; background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 3px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+                    ✏️ Details
+                </button>
+            </div>
+        </div>
+    `;
+  }
+
+  private renderStateShading(settings: any, statesGeoJson: any) {
+    if (!this.map) return;
+
+    if (this.stateGeoJsonLayer) {
+      this.stateGeoJsonLayer.remove();
+      this.stateGeoJsonLayer = undefined;
+    }
+
+    if (this.mapMode !== 'states' || !statesGeoJson) {
+      return;
+    }
+
+    const totalFamily = settings.familyMembers?.length || 0;
+
+    const getFeatureStyle = (feature: any): L.PathOptions => {
+      if (!feature) return STATE_SHADING_THEME.UNVISITED;
+      const stateId = feature.id as string;
+      const visitDetails = settings.visitedStates?.[stateId] || [];
+      const locationLogs = settings.locationVisits?.[stateId] || [];
+      const visitors = visitDetails
+        .map((v: any) => settings.familyMembers?.find((m: any) => m.id === v.memberId))
+        .filter(Boolean);
+
+      const isAllVisited =
+        totalFamily > 0
+          ? visitors.length === totalFamily
+          : visitDetails.length > 0 || locationLogs.length > 0;
+      const isPartiallyVisited =
+        totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
+
+      const stateName = (feature.properties?.name || feature.id || '').toLowerCase();
+      const matchesSearch = !this.currentSearchTerm || stateName.includes(this.currentSearchTerm);
+
+      if (!matchesSearch) {
+        return { ...STATE_SHADING_THEME.DIMMED };
+      }
+      if (isAllVisited) {
+        return { ...STATE_SHADING_THEME.ALL_VISITED };
+      }
+      if (isPartiallyVisited) {
+        return { ...STATE_SHADING_THEME.PARTIALLY_VISITED };
+      }
+      return { ...STATE_SHADING_THEME.UNVISITED };
+    };
+
+    // DOCS: https://leafletjs.com/reference.html#geojson
+    this.stateGeoJsonLayer = L.geoJSON(statesGeoJson, {
+      pane: STATE_SHADING_THEME.PANE_NAME,
+      style: (feature) => getFeatureStyle(feature),
+      onEachFeature: (feature, featureLayer) => {
+        const stateId = feature.id as string;
+        const stateName = feature.properties?.name || feature.id;
+        const visitDetails = settings.visitedStates?.[stateId] || [];
+        const locationLogs = settings.locationVisits?.[stateId] || [];
+        const visitors = visitDetails
+          .map((v: any) => {
+            const mem = settings.familyMembers?.find((m: any) => m.id === v.memberId);
+            if (!mem) return null;
+            return {
+              ...mem,
+              date: v.firstVisitedDate || v.dateVisited,
+              notes: v.notes,
+            };
+          })
+          .filter(Boolean);
+
+        const popupHtml = this.buildLocationPopupHtml({
+          name: stateName,
+          isPark: false,
+          originalId: stateId,
+          visitedByMembers: visitors,
+          visitLogs: locationLogs,
+        });
+
+        featureLayer.bindPopup(popupHtml);
+
+        featureLayer.on({
+          mouseover: (e: any) => {
+            const currentStyle = getFeatureStyle(feature);
+            e.target.setStyle({
+              weight: STATE_SHADING_THEME.HOVER.weight,
+              fillOpacity: Math.min(
+                (currentStyle.fillOpacity ?? 0) + STATE_SHADING_THEME.HOVER.fillOpacityBoost,
+                STATE_SHADING_THEME.HOVER.maxOpacity,
+              ),
+            });
+          },
+          mouseout: (e: any) => {
+            e.target.setStyle(getFeatureStyle(feature));
+          },
+        });
+      },
+    }).addTo(this.map);
+  }
+
   private async renderRoutes(savedRoutes: RouteObject[] = [], selectedRoute: RouteObject | null) {
     this.currentPolylines.forEach((p) => p.remove());
     this.currentPolylines = [];
@@ -362,68 +484,78 @@ export class MapViewComponent implements OnInit, OnDestroy {
             this.routeCoordinatesCache[selectedRoute.timestamp] = coords;
           }
         } catch (e) {
-          this.logger.error('Failed to fetch route for selected route', e);
+          this.logger.error('Failed to calculate route for rendering', e);
         }
       }
 
       if (coords && coords.length > 0) {
-        // Render only the selected route
         const polyline = L.polyline(coords, {
           color: MAP_THEME.ROUTE_POLYLINE_COLOR,
           weight: MAP_THEME.ROUTE_POLYLINE_WEIGHT,
           opacity: MAP_THEME.ROUTE_POLYLINE_OPACITY,
         }).addTo(this.map);
-        polyline.bindTooltip(selectedRoute.name, { sticky: true });
+
+        if (selectedRoute.name) {
+          polyline.bindTooltip(selectedRoute.name, { sticky: true });
+        }
+
         this.currentPolylines.push(polyline);
         const bounds = polyline.getBounds();
         if (bounds.isValid()) {
           this.map.fitBounds(bounds, { padding: [50, 50] });
         }
       }
-    } else if (this.mapMode === 'roads' && savedRoutes && savedRoutes.length > 0) {
-      // Render all routes if mode is roads
-      await Promise.all(
-        savedRoutes.map(async (route) => {
-          let coords =
-            route.coordinates && route.coordinates.length > 0
-              ? route.coordinates
-              : route.route && route.route.length > 0
-                ? route.route
-                : this.routeCoordinatesCache[route.timestamp];
+    } else if (savedRoutes && savedRoutes.length > 0) {
+      const allBounds: L.LatLngBounds[] = [];
 
-          if (!coords && route.waypoints && route.waypoints.length > 0) {
-            try {
-              const options = await firstValueFrom(
-                this.routingService.getRoutes(route.engine, route.waypoints),
-              );
-              if (options && options.length > 0) {
-                coords = options[0].route;
-                this.routeCoordinatesCache[route.timestamp] = coords;
-              }
-            } catch (e) {
-              this.logger.error('Failed to fetch route for ' + route.name, e);
+      for (const route of savedRoutes) {
+        let coords =
+          route.coordinates && route.coordinates.length > 0
+            ? route.coordinates
+            : route.route && route.route.length > 0
+              ? route.route
+              : this.routeCoordinatesCache[route.timestamp];
+
+        if (!coords && route.waypoints && route.waypoints.length > 0) {
+          try {
+            const options = await firstValueFrom(
+              this.routingService.getRoutes(route.engine, route.waypoints),
+            );
+            if (options && options.length > 0) {
+              coords = options[0].route;
+              this.routeCoordinatesCache[route.timestamp] = coords;
             }
+          } catch (e) {
+            this.logger.error(`Failed to calculate route ${route.name}`, e);
           }
+        }
 
-          if (coords && coords.length > 0) {
-            const isPlanned = route.status === 'planned';
-            const polyline = L.polyline(coords, {
-              color: isPlanned ? '#3b82f6' : '#22c55e', // blue for planned, green for completed
-              weight: 4,
-              opacity: 0.9,
-            }).addTo(this.map);
+        if (coords && coords.length > 0) {
+          const polyline = L.polyline(coords, {
+            color: MAP_THEME.ROUTE_POLYLINE_COLOR,
+            weight: MAP_THEME.ROUTE_POLYLINE_WEIGHT,
+            opacity: MAP_THEME.ROUTE_POLYLINE_OPACITY,
+          }).addTo(this.map);
+
+          if (route.name) {
             polyline.bindTooltip(route.name, { sticky: true });
-            this.currentPolylines.push(polyline);
           }
-        }),
-      );
 
-      // Fit bounds to all routes
-      if (this.currentPolylines.length > 0) {
-        const group = new L.FeatureGroup(this.currentPolylines);
-        const bounds = group.getBounds();
-        if (bounds.isValid()) {
-          this.map.fitBounds(bounds, { padding: [50, 50] });
+          this.currentPolylines.push(polyline);
+          const b = polyline.getBounds();
+          if (b.isValid()) {
+            allBounds.push(b);
+          }
+        }
+      }
+
+      if (allBounds.length > 0) {
+        let groupBounds = allBounds[0];
+        for (let i = 1; i < allBounds.length; i++) {
+          groupBounds = groupBounds.extend(allBounds[i]);
+        }
+        if (groupBounds.isValid()) {
+          this.map.fitBounds(groupBounds, { padding: [50, 50] });
         }
       }
     }
@@ -444,6 +576,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
+    if (this.stateGeoJsonLayer) {
+      this.stateGeoJsonLayer.remove();
+      this.stateGeoJsonLayer = undefined;
+    }
     if (this.map) {
       this.map.remove();
     }

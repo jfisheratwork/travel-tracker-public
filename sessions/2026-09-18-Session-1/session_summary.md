@@ -86,7 +86,19 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
   - Verified modifying a route ("Spokane to Glacier Park (Edited)") and saving updates localStorage and the list view instantly.
   - Verified creating a new trip via "+ Plan Trip" with OSRM calculation ("Spokane" to "Missoula, MT") and saving it dynamically.
   - Verified deleting the newly created test trip removes it from the list and the map.
-  - Verified zero console errors on reload.
+  - Implemented **State and Province Boundary Shading** on Leaflet Map:
+  - Bundled standard WGS84 GeoJSON for all 50 US States, DC, Puerto Rico, and 13 Canadian Provinces/Territories into `public/assets/data/us_ca_states.geojson` (405 KB).
+  - Integrated `statesGeoJson$` observable into `LocationDataService` with proper HTTP error handling and retry mechanisms.
+  - Rendered state polygons dynamically in a dedicated Leaflet pane (`stateShadingPane`, `zIndex: 350`) positioned below markers (zIndex 600) and above base tiles (zIndex 200).
+  - Applied color status shading based on family visit completion:
+    - **All Visited**: Emerald Green (`#22c55e`, fillOpacity: 0.35, stroke: `#16a34a`).
+    - **Partially Visited**: Amber Gold (`#f59e0b`, fillOpacity: 0.30, stroke: `#d97706`).
+    - **Not Visited**: Subtle Stone border (`#cbd5e1`, fillOpacity: 0.05).
+  - Connected hover highlights and click interaction on polygons opening state popups with direct "✏️ Details" modal access.
+  - Linked real-time search filtering: dimming non-matching state polygons (`fillOpacity: 0.02`) while keeping matches bright.
+  - Maintained complete view cleanliness: state polygons automatically activate in States mode and clear in Parks and Roads modes.
+  - Ran comprehensive Chrome DevTools MCP verification: confirmed 65 paths loaded, correct colors, polygon clicks opening Arizona details, clean switching to Parks (0 paths) and back, and search dimming.
+  - Ran `make test` (19/19 tests passing) and `make lint` (0 errors, 0 warnings).
 
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
@@ -113,4 +125,7 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "Maybe a bug use chromedev tools to investigate. When I click show all routes nothing shows"
 - "Edit on clock routes also not working"
 - "I think routes NEED a full TEST via chrome dev tools END TO END"
+- "commit and push it all"
+- "what about the shading on states visited did that get lost in the shuffle?"
+- "yes"
 

@@ -7,6 +7,7 @@ import { GeocodingService } from '../../services/routing/geocoding.service';
 import { RoutingService, RouteOption } from '../../services/routing/routing.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { RouteObject, Waypoint } from '../../models/route.model';
+import { FamilyMember } from '../../models/settings.model';
 import { firstValueFrom } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
 
@@ -42,7 +43,7 @@ export class RouteBuilderComponent implements OnInit {
   endQuery = '';
   stopsQueries: string[] = [];
 
-  familyMembers: any[] = [];
+  familyMembers: FamilyMember[] = [];
   selectedMembers: string[] = [];
   participantSearchQuery = '';
 
@@ -198,7 +199,7 @@ export class RouteBuilderComponent implements OnInit {
     moveItemInArray(this.stopsQueries, event.previousIndex, event.currentIndex);
   }
 
-  trackByIndex(index: number, obj: any): any {
+  trackByIndex(index: number): number {
     return index;
   }
 
@@ -242,9 +243,9 @@ export class RouteBuilderComponent implements OnInit {
 
       // Preview the first route on the map
       this.previewSelectedOption();
-    } catch (err: any) {
+    } catch (err: unknown) {
       this.logger.error('Error in calculateRoute:', err);
-      this.errorMessage = err.message || 'Failed to calculate route.';
+      this.errorMessage = err instanceof Error ? err.message : 'Failed to calculate route.';
     } finally {
       this.isCalculating = false;
     }

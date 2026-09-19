@@ -1,7 +1,7 @@
-import { HttpInterceptorFn, HttpErrorResponse, HttpEvent } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { timeout, retry, catchError, finalize } from 'rxjs/operators';
-import { throwError, timer, Observable } from 'rxjs';
+import { throwError, timer } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { LoggerService } from '../services/logger.service';
 import { ToastService } from '../services/toast.service';
@@ -36,20 +36,21 @@ export const networkInterceptor: HttpInterceptorFn = (req, next) => {
         return timer(1000 * retryCount);
       },
     }),
-    catchError((error: any) => {
+    catchError((error: unknown) => {
       logger.error('Network request failed permanently after retries.', error);
 
       let type = AppErrorType.UNKNOWN;
+      const err = error as { name?: string; status?: number };
 
-      if (error && error.name === 'TimeoutError') {
+      if (err && err.name === 'TimeoutError') {
         type = AppErrorType.NETWORK_TIMEOUT;
-      } else if (error && (error.status === 400 || error.status === 422)) {
+      } else if (err && (err.status === 400 || err.status === 422)) {
         type = AppErrorType.VALIDATION_ERROR;
-      } else if (error && (error.status === 401 || error.status === 403)) {
+      } else if (err && (err.status === 401 || err.status === 403)) {
         type = AppErrorType.UNAUTHORIZED;
-      } else if (error && error.status === 404) {
+      } else if (err && err.status === 404) {
         type = AppErrorType.NOT_FOUND;
-      } else if (error && error.status >= 500) {
+      } else if (err && err.status !== undefined && err.status >= 500) {
         type = AppErrorType.SERVER_ERROR;
       }
 
@@ -62,5 +63,5 @@ export const networkInterceptor: HttpInterceptorFn = (req, next) => {
     finalize(() => {
       stateService.setLoading(false);
     }),
-  ) as any;
+  );
 };

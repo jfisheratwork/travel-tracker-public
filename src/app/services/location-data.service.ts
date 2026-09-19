@@ -1,6 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject } from 'rxjs';
+// DOCS: https://rxjs.dev/api/index/class/BehaviorSubject
+// DOCS: https://rxjs.dev/api/index/function/of
+import { BehaviorSubject, of } from 'rxjs';
+// DOCS: https://rxjs.dev/api/operators/catchError
 import { catchError } from 'rxjs/operators';
 import { LocationPoint } from '../models/location.model';
 import { LoggerService } from '../core/services/logger.service';
@@ -18,6 +21,9 @@ export class LocationDataService {
 
   private statesSubject = new BehaviorSubject<LocationPoint[]>([]);
   public readonly states$ = this.statesSubject.asObservable();
+
+  private statesGeoJsonSubject = new BehaviorSubject<GeoJSON.FeatureCollection | null>(null);
+  public readonly statesGeoJson$ = this.statesGeoJsonSubject.asObservable();
 
   constructor() {
     this.loadData();
@@ -47,5 +53,19 @@ export class LocationDataService {
         visitedBy: [],
       })),
     );
+
+    this.http
+      .get<GeoJSON.FeatureCollection>('assets/data/us_ca_states.geojson')
+      .pipe(
+        catchError((err) => {
+          this.logger.error('Failed to load states GeoJSON data', err);
+          return of(null);
+        }),
+      )
+      .subscribe((geoJson) => {
+        if (geoJson) {
+          this.statesGeoJsonSubject.next(geoJson);
+        }
+      });
   }
 }
