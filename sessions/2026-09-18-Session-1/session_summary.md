@@ -128,6 +128,13 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - Pushed all commits to `origin/main` on GitHub (commit `ec03ec7`).
 - Generated 3 distinct UI color scheme mockups adding background color across the page canvas, header banner, toolbar, and controls: National Park & Evergreen, Midnight Slate & Blue Glow, and American Southwest & Sandstone.
 
+- Balanced top toolbar placement: Organized controls into 3 balanced flex zones (Left: search input, Center: Add Parks, Add States, Add Roads action buttons, Right: Statistics, Settings, Help utilities) with uniform 40px (`h-10`) heights, matching `rounded-xl` radii, and clean Lucide-style vector SVG icons for Settings and Help.
+- Refined state and national park map marker icon sizes to the midpoint between their initial respective sizes:
+  - Extracted marker parameters into `MAP_MARKER_THEME` in `src/app/core/constants/map.constants.ts` (Rule 1 compliance).
+  - Configured 18px diameter for both State star markers and National Park tree markers (halfway between 24px and 12px).
+  - Scaled tree glyph font size to 12px and state star glyph font size to 10.5px with 1.5px white borders and 9px center anchors.
+- Verified test suite and lint checks: 9/9 suites passing, 23/23 tests passing, 0 ESLint warnings.
+
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
 - Optional Douglas-Peucker route point simplification slider in RouteBuilder.
@@ -169,6 +176,9 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "settigns model is way too small use alot more of the availble window space"
 - "This will be the new example file replace family.json with this one. Change the names to Bob, Britnany, Ben, Becca, Brian to do a very surface level anonymous of my kids and family names"
 - "COMMIT AND PUSH IT ALL\n\nMock up a couple minor color scheme changes paricualrly focused on adding more background color in places. 3 mockup to give me ideas"
+- "balance out the placement here it doesn't feel quite right"
+- "Can those state star icons be about 50% smaller"
+- "State and tree icons make the size half way between their two current respective sizes"
 
 
 

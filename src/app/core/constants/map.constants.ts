@@ -38,3 +38,33 @@ export const STATE_SHADING_THEME = {
     maxOpacity: 0.6,
   },
 };
+
+export const MAP_MARKER_THEME = {
+  PARK: {
+    DIAMETER: 18,
+    ANCHOR: 9,
+    FONT_SIZE: '12px',
+    BORDER: '1.5px solid white',
+    BOX_SHADOW: '0 1.5px 3px rgba(0,0,0,0.28)',
+    ICON_CHAR: '🌲',
+  },
+  STATE: {
+    DIAMETER: 18,
+    ANCHOR: 9,
+    FONT_SIZE: '10.5px',
+    BORDER: '1.5px solid white',
+    BOX_SHADOW: '0 1.5px 3px rgba(0,0,0,0.28)',
+    ICON_CHAR: '★',
+  },
+  HOMETOWN: {
+    DIAMETER: 32,
+    ANCHOR: 16,
+    POPUP_OFFSET_Y: -20,
+    FONT_SIZE: '18px',
+    BORDER: '2px solid white',
+    BOX_SHADOW: '0 2px 4px rgba(0,0,0,0.3)',
+    ICON_CHAR: '🏠',
+    ACTIVE_COLOR: '#3b82f6',
+    PREVIOUS_COLOR: '#9ca3af',
+  },
+};

@@ -8,7 +8,11 @@ import { Subject, takeUntil, combineLatest } from 'rxjs';
 // DOCS: https://leafletjs.com/reference.html
 import * as L from 'leaflet';
 import { RouteObject } from '../../models/route.model';
-import { MAP_THEME, STATE_SHADING_THEME } from '../../core/constants/map.constants';
+import {
+  MAP_THEME,
+  STATE_SHADING_THEME,
+  MAP_MARKER_THEME,
+} from '../../core/constants/map.constants';
 import { LocationDataService } from '../../services/location-data.service';
 import { LocationPoint } from '../../models/location.model';
 import { API_ENDPOINTS } from '../../core/constants/api.constants';
@@ -260,8 +264,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
       if (m.lat === 0 && m.lng === 0) return; // Skip if no coordinates
 
       const isPark = m.id.includes('park');
-      const iconChar = isPark ? '🌲' : '★';
-      const iconSize = isPark ? '16px' : '14px';
+      const markerTheme = isPark ? MAP_MARKER_THEME.PARK : MAP_MARKER_THEME.STATE;
       const color = m.visited ? '#22c55e' : '#94a3b8'; // Green if visited, slate if unvisited
 
       let popupHtml = '';
@@ -279,27 +282,29 @@ export class MapViewComponent implements OnInit, OnDestroy {
       }
 
       if (m.id.startsWith('hometown-')) {
-        const htColor = m.isLast ? '#3b82f6' : '#9ca3af';
-        const iconHtml = `<div class="flex items-center justify-center transition-all duration-300" style="width:32px; height:32px; background-color:${htColor}; border-radius:50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size:18px;">🏠</div>`;
+        const htColor = m.isLast
+          ? MAP_MARKER_THEME.HOMETOWN.ACTIVE_COLOR
+          : MAP_MARKER_THEME.HOMETOWN.PREVIOUS_COLOR;
+        const iconHtml = `<div class="flex items-center justify-center transition-all duration-300" style="width:${MAP_MARKER_THEME.HOMETOWN.DIAMETER}px; height:${MAP_MARKER_THEME.HOMETOWN.DIAMETER}px; background-color:${htColor}; border-radius:50%; border: ${MAP_MARKER_THEME.HOMETOWN.BORDER}; box-shadow: ${MAP_MARKER_THEME.HOMETOWN.BOX_SHADOW}; font-size:${MAP_MARKER_THEME.HOMETOWN.FONT_SIZE};">${MAP_MARKER_THEME.HOMETOWN.ICON_CHAR}</div>`;
         const icon = L.divIcon({
           html: iconHtml,
           className: 'bg-transparent border-none',
-          iconSize: [32, 32],
-          iconAnchor: [16, 16],
-          popupAnchor: [0, -20],
+          iconSize: [MAP_MARKER_THEME.HOMETOWN.DIAMETER, MAP_MARKER_THEME.HOMETOWN.DIAMETER],
+          iconAnchor: [MAP_MARKER_THEME.HOMETOWN.ANCHOR, MAP_MARKER_THEME.HOMETOWN.ANCHOR],
+          popupAnchor: [0, MAP_MARKER_THEME.HOMETOWN.POPUP_OFFSET_Y],
         });
 
         L.marker([m.lat, m.lng], { icon, zIndexOffset: m.isLast ? 1000 : 800 })
           .bindPopup(`<strong>${m.name} (${m.isLast ? 'Hometown' : 'Previous Hometown'})</strong>`)
           .addTo(this.currentLayerGroup);
       } else {
-        const iconHtml = `<div class="flex items-center justify-center transition-all duration-300" style="width:24px; height:24px; background-color:${color}; border-radius:50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); font-size:${iconSize}; color: white; line-height: 1;">${iconChar}</div>`;
+        const iconHtml = `<div class="flex items-center justify-center transition-all duration-300" style="width:${markerTheme.DIAMETER}px; height:${markerTheme.DIAMETER}px; background-color:${color}; border-radius:50%; border: ${markerTheme.BORDER}; box-shadow: ${markerTheme.BOX_SHADOW}; font-size:${markerTheme.FONT_SIZE}; color: white; line-height: 1;">${markerTheme.ICON_CHAR}</div>`;
         const icon = L.divIcon({
           html: iconHtml,
           className: 'bg-transparent border-none',
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
-          popupAnchor: [0, -12],
+          iconSize: [markerTheme.DIAMETER, markerTheme.DIAMETER],
+          iconAnchor: [markerTheme.ANCHOR, markerTheme.ANCHOR],
+          popupAnchor: [0, -markerTheme.ANCHOR],
         });
         L.marker([m.lat, m.lng], { icon }).bindPopup(popupHtml).addTo(this.currentLayerGroup);
       }
