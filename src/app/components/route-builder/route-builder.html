@@ -357,9 +357,9 @@
     <ng-template #routeItemTemplate let-route="route">
       <div
         class="p-3 bg-white border border-stone-200 hover:bg-stone-50 rounded-lg flex justify-between items-start cursor-pointer transition shadow-sm mb-2"
-        [class.bg-blue-50]="(stateService.selectedRoute$ | async)?.id === route.id"
-        [class.border-blue-500]="(stateService.selectedRoute$ | async)?.id === route.id"
-        [class.border-2]="(stateService.selectedRoute$ | async)?.id === route.id"
+        [class.bg-blue-50]="(stateService.selectedRoute$ | async)?.id === route.id || ((stateService.selectedRoute$ | async)?.timestamp && (stateService.selectedRoute$ | async)?.timestamp === route.timestamp)"
+        [class.border-blue-500]="(stateService.selectedRoute$ | async)?.id === route.id || ((stateService.selectedRoute$ | async)?.timestamp && (stateService.selectedRoute$ | async)?.timestamp === route.timestamp)"
+        [class.border-2]="(stateService.selectedRoute$ | async)?.id === route.id || ((stateService.selectedRoute$ | async)?.timestamp && (stateService.selectedRoute$ | async)?.timestamp === route.timestamp)"
         (click)="stateService.setSelectedRoute(route)"
       >
         <div class="space-y-1.5 flex-1 min-w-0 pr-2">
@@ -430,7 +430,7 @@
             </svg>
           </button>
           <button
-            (click)="$event.stopPropagation(); deleteRoute(route.id)"
+            (click)="$event.stopPropagation(); deleteRoute(route.id || (route.timestamp ? '' + route.timestamp : ''))"
             class="text-red-400 hover:text-red-600 p-1 rounded hover:bg-stone-100 transition"
             title="Delete route"
           >

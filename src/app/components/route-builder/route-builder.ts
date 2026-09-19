@@ -65,7 +65,10 @@ export class RouteBuilderComponent implements OnInit {
 
   ngOnInit() {
     this.stateService.settings$.subscribe((settings) => {
-      this.savedRoutes = settings.savedRoutes || [];
+      this.savedRoutes = (settings.savedRoutes || []).map((r, i) => ({
+        ...r,
+        id: r.id || (r.timestamp ? String(r.timestamp) : `route-${i}`),
+      }));
       this.routingEngine = settings.routingEngine;
       this.routeReduction = settings.routeReduction ?? 0.01;
       this.familyMembers = settings.familyMembers || [];
@@ -169,6 +172,7 @@ export class RouteBuilderComponent implements OnInit {
   }
 
   loadAllRoutes() {
+    this.stateService.setMapMode('roads');
     this.stateService.setSelectedRoute(null);
   }
 
@@ -274,43 +278,71 @@ export class RouteBuilderComponent implements OnInit {
     let distance = 0;
     let duration = 0;
     let waypoints = this.calculatedWaypoints;
+    let optionRoute: [number, number][] = [];
 
     if (this.routeOptions.length > 0) {
       const option = this.routeOptions[this.selectedOptionIndex];
       distance = option.distance;
       duration = option.duration;
+      optionRoute = option.route || [];
     } else if (this.isEditing && this.originalRouteForEdit) {
       distance = this.originalRouteForEdit.distance;
       duration = this.originalRouteForEdit.duration;
       waypoints = this.originalRouteForEdit.waypoints;
+      optionRoute =
+        this.originalRouteForEdit.route && this.originalRouteForEdit.route.length > 0
+          ? this.originalRouteForEdit.route
+          : this.originalRouteForEdit.coordinates || [];
     } else {
       return;
     }
 
+    const routeId =
+      this.isEditing && this.editingId
+        ? this.editingId
+        : this.originalRouteForEdit?.id ||
+          (this.originalRouteForEdit?.timestamp
+            ? String(this.originalRouteForEdit.timestamp)
+            : crypto.randomUUID());
+
     const newRoute: RouteObject = {
-      id: this.isEditing && this.editingId ? this.editingId : crypto.randomUUID(),
+      id: routeId,
       name: this.name,
       description: this.description,
       startDate: this.startDate,
       endDate: this.endDate,
       members: [...this.selectedMembers],
       status: this.status,
-      engine: this.routingEngine,
+      engine: this.routingEngine || (this.originalRouteForEdit?.engine ?? 'osrm'),
       distance: distance,
       duration: duration,
-      timestamp: Date.now(),
+      timestamp:
+        this.isEditing && this.originalRouteForEdit?.timestamp
+          ? this.originalRouteForEdit.timestamp
+          : Date.now(),
       startQuery: this.startQuery,
       endQuery: this.endQuery,
       stopsQueries: [...this.stopsQueries],
-      waypoints: waypoints,
-      route: [], // Strip raw route out for localStorage savings
-      coordinates: undefined, // Strip coordinates, we fetch dynamically
+      waypoints: waypoints || [],
+      route: optionRoute,
+      coordinates: optionRoute.length > 0 ? optionRoute : undefined,
     };
 
     const updatedRoutes = [...this.savedRoutes];
     if (this.isEditing) {
-      const idx = updatedRoutes.findIndex((r) => r.id === this.editingId);
-      if (idx !== -1) updatedRoutes[idx] = newRoute;
+      const idx = updatedRoutes.findIndex(
+        (r) =>
+          (r.id && r.id === routeId) ||
+          (r.timestamp &&
+            this.originalRouteForEdit?.timestamp &&
+            r.timestamp === this.originalRouteForEdit.timestamp) ||
+          (r.name && this.originalRouteForEdit?.name && r.name === this.originalRouteForEdit.name),
+      );
+      if (idx !== -1) {
+        updatedRoutes[idx] = newRoute;
+      } else {
+        updatedRoutes.push(newRoute);
+      }
     } else {
       updatedRoutes.push(newRoute);
     }
@@ -321,17 +353,26 @@ export class RouteBuilderComponent implements OnInit {
 
   editRoute(route: RouteObject) {
     this.isEditing = true;
-    this.editingId = route.id;
+    this.editingId = route.id || (route.timestamp ? String(route.timestamp) : route.name);
     this.originalRouteForEdit = route;
     this.name = route.name;
     this.description = route.description || '';
-    this.startDate = route.startDate || '';
+    this.startDate = route.startDate || (route as unknown as Record<string, string>)['date'] || '';
     this.endDate = route.endDate || '';
     this.status = route.status || 'planned';
     this.selectedMembers = route.members ? [...route.members] : [];
-    this.startQuery = route.startQuery;
-    this.endQuery = route.endQuery;
-    this.stopsQueries = [...route.stopsQueries];
+
+    // Auto-infer start and end queries if missing from legacy name "A to B"
+    if (!route.startQuery && route.name && route.name.includes(' to ')) {
+      const parts = route.name.split(' to ');
+      this.startQuery = parts[0]?.trim() || '';
+      this.endQuery = parts[1]?.trim() || '';
+    } else {
+      this.startQuery = route.startQuery || '';
+      this.endQuery = route.endQuery || '';
+    }
+
+    this.stopsQueries = route.stopsQueries ? [...route.stopsQueries] : [];
 
     this.routeOptions = [];
     this.showNotes = !!route.description; // Auto-show notes if they exist
@@ -340,7 +381,11 @@ export class RouteBuilderComponent implements OnInit {
   }
 
   deleteRoute(routeId: string) {
-    const updatedRoutes = this.savedRoutes.filter((r) => r.id !== routeId);
+    const updatedRoutes = this.savedRoutes.filter(
+      (r) =>
+        (r.id || (r.timestamp ? String(r.timestamp) : '')) !== routeId &&
+        String(r.timestamp) !== routeId,
+    );
     this.updateSettingsAndReset(updatedRoutes);
     this.stateService.setSelectedRoute(null);
   }
@@ -408,8 +453,7 @@ export class RouteBuilderComponent implements OnInit {
   }
 
   private updateSettingsAndReset(routes: RouteObject[]) {
-    // Current settings
-    const currentSettings = (this.stateService as any).settingsSubject.getValue();
+    const currentSettings = this.stateService.getSettings();
     this.stateService.updateSettings({ ...currentSettings, savedRoutes: routes });
     this.resetForm();
   }
@@ -428,8 +472,8 @@ export class RouteBuilderComponent implements OnInit {
     this.showNotes = false;
 
     // reset startQuery to active hometown if applicable
-    const settings = (this.stateService as any).settingsSubject.getValue();
-    const activeHometown = settings.hometowns.find((h: any) => !h.endDate);
+    const settings = this.stateService.getSettings();
+    const activeHometown = settings.hometowns.find((h) => !h.endDate);
     this.startQuery = activeHometown ? activeHometown.name : '';
 
     this.endQuery = '';

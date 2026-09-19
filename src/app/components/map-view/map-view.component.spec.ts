@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MapViewComponent } from './map-view.component';
 import { StateService } from '../../services/state.service';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import * as L from 'leaflet';
 import { vi } from 'vitest';
 import { LocationDataService } from '../../services/location-data.service';
@@ -38,13 +39,20 @@ vi.mock('leaflet', () => {
         addTo: vi.fn(),
       }),
     }),
+    latLng: vi.fn().mockReturnValue({
+      toBounds: vi.fn().mockReturnValue({ isValid: vi.fn().mockReturnValue(true) }),
+    }),
     circle: vi.fn().mockReturnValue({
-      getBounds: vi.fn().mockReturnValue('mocked_bounds'),
+      getBounds: vi.fn().mockReturnValue({ isValid: vi.fn().mockReturnValue(true) }),
     }),
     polyline: vi.fn().mockReturnValue({
       addTo: vi.fn().mockReturnThis(),
-      getBounds: vi.fn().mockReturnValue('mocked_bounds'),
+      bindTooltip: vi.fn().mockReturnThis(),
+      getBounds: vi.fn().mockReturnValue({ isValid: vi.fn().mockReturnValue(true) }),
       remove: vi.fn(),
+    }),
+    FeatureGroup: vi.fn().mockReturnValue({
+      getBounds: vi.fn().mockReturnValue({ isValid: vi.fn().mockReturnValue(true) }),
     }),
   };
 });

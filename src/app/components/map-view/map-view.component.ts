@@ -17,6 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { StatsModal } from '../stats-modal/stats-modal';
 import { ParksStatesModal } from '../parks-states-modal/parks-states-modal';
+import { LoggerService } from '../../core/services/logger.service';
 
 @Component({
   selector: 'app-map-view',
@@ -64,6 +65,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     private locationDataService: LocationDataService,
     private routingService: RoutingService,
     private el: ElementRef,
+    private logger: LoggerService,
   ) {}
 
   ngOnInit() {
@@ -156,15 +158,17 @@ export class MapViewComponent implements OnInit, OnDestroy {
                 ? settings.hometowns[settings.hometowns.length - 1]
                 : undefined;
 
-            const showingAllRoutes =
+            const METERS_PER_MILE = 1609.34;
+            const DEFAULT_HOMETOWN_RADIUS_MILES = 200;
+            const hometownRadiusMeters = DEFAULT_HOMETOWN_RADIUS_MILES * METERS_PER_MILE;
+
+            const showingRoads =
               this.mapMode === 'roads' &&
-              !selectedRoute &&
-              settings.savedRoutes &&
-              settings.savedRoutes.length > 0;
-            if (activeHometown && !selectedRoute && !showingAllRoutes) {
-              const bounds = L.circle([activeHometown.lat, activeHometown.lng], {
-                radius: 321868,
-              }).getBounds();
+              (selectedRoute || (settings.savedRoutes && settings.savedRoutes.length > 0));
+            if (activeHometown && !showingRoads) {
+              const bounds = L.latLng(activeHometown.lat, activeHometown.lng).toBounds(
+                hometownRadiusMeters,
+              );
               this.map.fitBounds(bounds);
             }
           }, 100);
@@ -341,7 +345,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
     this.currentPolylines = [];
 
     if (selectedRoute) {
-      let coords = selectedRoute.coordinates || this.routeCoordinatesCache[selectedRoute.timestamp];
+      let coords =
+        selectedRoute.coordinates && selectedRoute.coordinates.length > 0
+          ? selectedRoute.coordinates
+          : selectedRoute.route && selectedRoute.route.length > 0
+            ? selectedRoute.route
+            : this.routeCoordinatesCache[selectedRoute.timestamp];
+
       if (!coords && selectedRoute.waypoints && selectedRoute.waypoints.length > 0) {
         try {
           const options = await firstValueFrom(
@@ -352,7 +362,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
             this.routeCoordinatesCache[selectedRoute.timestamp] = coords;
           }
         } catch (e) {
-          console.error('Failed to fetch route for selected route', e);
+          this.logger.error('Failed to fetch route for selected route', e);
         }
       }
 
@@ -363,14 +373,24 @@ export class MapViewComponent implements OnInit, OnDestroy {
           weight: MAP_THEME.ROUTE_POLYLINE_WEIGHT,
           opacity: MAP_THEME.ROUTE_POLYLINE_OPACITY,
         }).addTo(this.map);
+        polyline.bindTooltip(selectedRoute.name, { sticky: true });
         this.currentPolylines.push(polyline);
-        this.map.fitBounds(polyline.getBounds(), { padding: [50, 50] });
+        const bounds = polyline.getBounds();
+        if (bounds.isValid()) {
+          this.map.fitBounds(bounds, { padding: [50, 50] });
+        }
       }
     } else if (this.mapMode === 'roads' && savedRoutes && savedRoutes.length > 0) {
       // Render all routes if mode is roads
       await Promise.all(
         savedRoutes.map(async (route) => {
-          let coords = route.coordinates || this.routeCoordinatesCache[route.timestamp];
+          let coords =
+            route.coordinates && route.coordinates.length > 0
+              ? route.coordinates
+              : route.route && route.route.length > 0
+                ? route.route
+                : this.routeCoordinatesCache[route.timestamp];
+
           if (!coords && route.waypoints && route.waypoints.length > 0) {
             try {
               const options = await firstValueFrom(
@@ -381,7 +401,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
                 this.routeCoordinatesCache[route.timestamp] = coords;
               }
             } catch (e) {
-              console.error('Failed to fetch route for', route.name, e);
+              this.logger.error('Failed to fetch route for ' + route.name, e);
             }
           }
 
@@ -392,15 +412,19 @@ export class MapViewComponent implements OnInit, OnDestroy {
               weight: 4,
               opacity: 0.9,
             }).addTo(this.map);
+            polyline.bindTooltip(route.name, { sticky: true });
             this.currentPolylines.push(polyline);
           }
         }),
       );
 
-      // Optionally fit bounds to all routes
+      // Fit bounds to all routes
       if (this.currentPolylines.length > 0) {
         const group = new L.FeatureGroup(this.currentPolylines);
-        this.map.fitBounds(group.getBounds(), { padding: [50, 50] });
+        const bounds = group.getBounds();
+        if (bounds.isValid()) {
+          this.map.fitBounds(bounds, { padding: [50, 50] });
+        }
       }
     }
   }

@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { StateService } from './state.service';
 import { AppSettings, DEFAULT_SETTINGS, FamilyMember, VisitDetail } from '../models/settings.model';
+import { RouteObject } from '../models/route.model';
 import { LoggerService } from '../core/services/logger.service';
 import { HttpClient } from '@angular/common/http';
 import { NATIONAL_PARKS, STATES } from '../core/constants/geography.constants';
@@ -174,12 +175,26 @@ export class LocalStorageService {
         );
       }
 
+      const rawSavedRoutes = (rootSettings['savedRoutes'] || []) as RouteObject[];
+      const savedRoutes = rawSavedRoutes.map((r, i) => ({
+        ...r,
+        id: r.id || (r.timestamp ? String(r.timestamp) : `route-${i}`),
+        status: (r.status || 'planned') as 'planned' | 'completed',
+        engine: (r.engine || 'osrm') as 'osrm' | 'mapbox',
+        stopsQueries: r.stopsQueries || [],
+        members: r.members || [],
+        route: r.route && r.route.length > 0 ? r.route : r.coordinates || [],
+        coordinates: r.coordinates || (r.route && r.route.length > 0 ? r.route : undefined),
+        startDate: r.startDate || (r as unknown as Record<string, string>)['date'] || '',
+      }));
+
       const migratedSettings: AppSettings = {
         ...DEFAULT_SETTINGS,
         ...(rootSettings as Partial<AppSettings>),
         familyMembers,
         visitedStates,
         visitedParks,
+        savedRoutes,
       };
 
       this.stateService.updateSettings(migratedSettings);

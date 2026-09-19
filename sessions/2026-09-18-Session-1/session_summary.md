@@ -69,7 +69,24 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - Compacted Location Detail Modal (`LocationDetailModal`) family member visit rows:
   - Transitioned from vertical expanded card sections to single-row list items per member.
   - Placed the first visit date picker directly adjacent to the "Visited" checkbox, displayed conditionally only when the "Visited" box is enabled.
-  - Verified in live browser via Chrome DevTools MCP and passing unit tests.
+- Investigated and fixed road trip route loading and editing:
+  - Discovered root cause why "Load All Routes" showed nothing: `map-view.component.ts` looked exclusively for `route.coordinates` whereas legacy & imported routes store coordinate points in `route.route`. Added dual fallback (`route.coordinates || route.route`) across all route rendering paths.
+  - Resolved `Cannot read properties of undefined (reading 'layerPointToLatLng')` Leaflet runtime error: `L.circle(...).getBounds()` required map attachment; replaced with WGS84 native `L.latLng(...).toBounds(radiusMeters)` and eliminated magic numbers.
+  - Normalized `savedRoutes` in `LocalStorageService.applyParsedData` ensuring all loaded/imported routes possess unique `id`s, `route` polylines, and formatted `startDate`s.
+  - Fixed route edit workflow in `RouteBuilderComponent`:
+    - Auto-prepopulates start and end queries (including deriving from `"A to B"` route names when queries are missing).
+    - Preserves route coordinates, timestamps, and IDs on edit.
+    - Prevents `route.stopsQueries is not iterable` error with array null checks.
+    - Fixed delete route button to reliably match either `route.id` or `route.timestamp`.
+- Conducted full End-to-End browser testing via Chrome DevTools:
+  - Verified initial route list and 4 simultaneous rendered polylines (3 completed in green, 1 planned in blue) spanning WA, ID, MT, and BC.
+  - Verified selecting an individual route zooms in and highlights only that route.
+  - Verified clicking "🚗 Load All Routes" immediately re-renders all routes with fitted bounds.
+  - Verified clicking "Edit trip details" opens the pre-filled edit form with all metadata, notes, and locations.
+  - Verified modifying a route ("Spokane to Glacier Park (Edited)") and saving updates localStorage and the list view instantly.
+  - Verified creating a new trip via "+ Plan Trip" with OSRM calculation ("Spokane" to "Missoula, MT") and saving it dynamically.
+  - Verified deleting the newly created test trip removes it from the list and the map.
+  - Verified zero console errors on reload.
 
 ### Tasks Not Done
 - Optional GPX track file upload for road trips.
@@ -91,4 +108,9 @@ Comprehensive session catching up on the Travel Tracker architecture, implementi
 - "Also Add buttons for add parks, states, and roads next to the search box like the old UI"
 - "When I click outside of the statistics modal popup it should close, I shouldn't only close by hitting hide statsitics"
 - "For the edit details popup lets save some space and add the visted date right next to the checkbox for visted. Show the date only when we click visted box enabled"
+- "Investigate but don't implement shading the states with a color for visited in addition to the star indicators. Report back for me on that one"
+- "First push and commit what we have"
+- "Maybe a bug use chromedev tools to investigate. When I click show all routes nothing shows"
+- "Edit on clock routes also not working"
+- "I think routes NEED a full TEST via chrome dev tools END TO END"
 
