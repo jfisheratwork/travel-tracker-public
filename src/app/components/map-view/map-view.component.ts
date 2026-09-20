@@ -145,6 +145,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private currentSearchTerm = '';
   mapMode: MapMode = 'parks';
   private familyMembers: FamilyMember[] = [];
+  private previousMapMode?: MapMode;
+  private previousSelectedRoute?: RouteObject | null;
 
   constructor(
     private stateService: StateService,
@@ -285,12 +287,19 @@ export class MapViewComponent implements OnInit, OnDestroy {
           });
 
           const hasHometown = settings.hometowns && settings.hometowns.length > 0;
+          const modeChanged = this.previousMapMode !== mapMode;
+          const routeChanged =
+            this.mapMode === 'roads' && this.previousSelectedRoute !== selectedRoute;
+          this.previousMapMode = mapMode;
+          this.previousSelectedRoute = selectedRoute;
 
           if (this.map) {
             setTimeout(() => {
               if (!this.map || typeof this.map.invalidateSize !== 'function') return;
               this.map.invalidateSize();
-              this.applyModeZoom(settings, selectedRoute);
+              if (modeChanged || routeChanged) {
+                this.applyModeZoom(settings, selectedRoute);
+              }
             }, 100);
           }
 

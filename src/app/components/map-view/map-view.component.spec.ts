@@ -10,6 +10,8 @@ import { LocationDataService } from '../../services/location-data.service';
 vi.mock('leaflet', () => {
   const mapInstance = {
     setView: vi.fn().mockReturnThis(),
+    fitBounds: vi.fn().mockReturnThis(),
+    invalidateSize: vi.fn().mockReturnThis(),
     remove: vi.fn(),
     on: vi.fn(),
     createPane: vi.fn().mockReturnValue({ style: {} }),
@@ -171,6 +173,24 @@ describe('MapViewComponent', () => {
         visitedParks: {},
       });
       expect(setUrlSpy).toHaveBeenCalledWith(expect.stringContaining('?key=cb1_dynamic_test_key'));
+    });
+
+    it('should not re-apply mode zoom (fitBounds) when settings update within the same map mode', async () => {
+      const fitBoundsSpy = vi.fn();
+      component['map'].fitBounds = fitBoundsSpy;
+
+      // Allow initial setTimeout to settle
+      await new Promise((r) => setTimeout(r, 150));
+      fitBoundsSpy.mockClear();
+
+      // Trigger settings update (e.g. wishlist change)
+      settings$.next({
+        ...settings$.getValue(),
+        wantToVisitStates: { LA: [{ memberId: '1', dateVisited: '2026-09-20' }] },
+      });
+
+      await new Promise((r) => setTimeout(r, 150));
+      expect(fitBoundsSpy).not.toHaveBeenCalled();
     });
   });
 });
