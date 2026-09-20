@@ -81,6 +81,14 @@ describe('TripDeltaService', () => {
         'Here is the JSON you need to copy back into the Traveled Roads Tracker website:',
       );
     });
+
+    it('instructs LLM on long-distance travel, highway corridor reasoning, and intermediate transit states', () => {
+      const prompt = service.generatePrompt(sampleMembers);
+      expect(prompt).toContain('Highway Corridor Reasoning');
+      expect(prompt).toContain('Virginia to Michigan');
+      expect(prompt).toContain('Maryland');
+      expect(prompt).toContain('Ohio');
+    });
   });
 
   describe('extractAndParseJson', () => {
