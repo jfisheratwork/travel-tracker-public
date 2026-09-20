@@ -8,12 +8,13 @@ Traveled Roads Tracker supports natural language trip logging. When a user descr
 
 ### The Trip Delta Format
 
+Single Trip:
 ```json
 {
   "type": "trip_delta",
   "version": 1,
   "trip": {
-    "name": "Trip Title (e.g. Yellowstone & Grand Tetons Road Trip)",
+    "name": "Yellowstone & Grand Tetons Road Trip",
     "date": "YYYY-MM-DD",
     "members": ["all"],
     "parks": ["Yellowstone", "Grand Teton"],
@@ -22,6 +23,33 @@ Traveled Roads Tracker supports natural language trip logging. When a user descr
   }
 }
 ```
+
+Multiple Trips / Travel History (Batch Mode):
+```json
+{
+  "type": "trip_delta",
+  "version": 1,
+  "trips": [
+    {
+      "name": "Yellowstone & Grand Tetons Road Trip",
+      "date": "2024-07-15",
+      "members": ["all"],
+      "parks": ["Yellowstone", "Grand Teton"],
+      "states": ["Montana", "Wyoming", "Idaho"],
+      "notes": "Summer road trip."
+    },
+    {
+      "name": "Utah Mighty 5 Tour",
+      "date": "2025-05-10",
+      "members": ["all"],
+      "parks": ["Zion", "Bryce Canyon"],
+      "states": ["Utah"],
+      "notes": "Spring trip across southern Utah."
+    }
+  ]
+}
+```
+
 
 ### Schema Rules & Specifications
 - **`parks`**: Array of canonical US and Canadian National Park names (e.g., "Yellowstone", "Grand Teton", "Banff", "Acadia", "Zion", "Glacier"). Do not include prefixes/suffixes like "National Park and Preserve".

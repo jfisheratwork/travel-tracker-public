@@ -1,5 +1,6 @@
 export const SECURITY_LIMITS = {
-  MAX_INPUT_PAYLOAD_BYTES: 32768, // 32 KB maximum raw input
+  MAX_INPUT_PAYLOAD_BYTES: 131072, // 128 KB maximum raw input (for multi-trip batches)
+  MAX_TRIPS_PER_BATCH: 25, // Maximum trips allowed in a single batch
   MAX_TRIP_NAME_LENGTH: 100,
   MAX_TRIP_NOTES_LENGTH: 500,
   MAX_ENTITIES_PER_TRIP: 60,

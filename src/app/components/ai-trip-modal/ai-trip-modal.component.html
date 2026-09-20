@@ -3,312 +3,938 @@
   (click)="onBackdropClick($event)"
 >
   <div
-    class="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl md:rounded-3xl shadow-2xl border-[2.5px] overflow-hidden transition-all duration-200"
+    class="w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl md:rounded-3xl shadow-2xl border-[2.5px] overflow-hidden transition-all duration-200"
     [style.backgroundColor]="currentTheme.cardBg"
     [style.borderColor]="currentTheme.cardBorder"
     (click)="$event.stopPropagation()"
   >
-    <!-- Modal Header -->
-    <div
-      class="px-5 py-3.5 border-b flex items-center justify-between flex-shrink-0"
-      [style.borderBottomColor]="currentTheme.cardBorder"
-      [style.backgroundColor]="currentTheme.headerBg"
-      [style.color]="currentTheme.headerText"
-    >
-      <div class="flex items-center gap-2.5">
-        <span class="text-xl">🪄</span>
-        <div>
-          <h2 class="text-base sm:text-lg font-black tracking-tight leading-tight">
-            AI Trip Import & Quick Log
-          </h2>
-          <p class="text-xs opacity-80 font-medium">
-            Copy the prompt to ChatGPT, Gemini, or Claude, and paste the response below.
-          </p>
-        </div>
-      </div>
-      <button
-        type="button"
-        (click)="close.emit()"
-        class="w-8 h-8 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 hover:bg-black/10 transition cursor-pointer text-sm font-bold"
-        title="Close (Esc)"
-      >
-        ✕
-      </button>
-    </div>
-
-    <!-- Modal Scrollable Body -->
-    <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4">
-      <!-- Step 1: Prompt Generation -->
+    <!-- ========================================== -->
+    <!-- VIEW A: INPUT & BATCH PARSING STEP          -->
+    <!-- ========================================== -->
+    <ng-container *ngIf="currentStep === 'input'">
+      <!-- Modal Header -->
       <div
-        class="p-4 rounded-xl border flex flex-col gap-2.5 transition-colors"
-        [style.borderColor]="currentTheme.cardBorder"
-        [style.backgroundColor]="currentTheme.cardBg"
+        class="px-5 py-3.5 border-b flex items-center justify-between flex-shrink-0"
+        [style.borderBottomColor]="currentTheme.cardBorder"
+        [style.backgroundColor]="currentTheme.headerBg"
+        [style.color]="currentTheme.headerText"
       >
-        <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">🪄</span>
+          <div>
+            <h2 class="text-base sm:text-lg font-black tracking-tight leading-tight">
+              AI Trip Import & Quick Log
+            </h2>
+            <p class="text-xs opacity-80 font-medium">
+              Copy the prompt to your LLM, or paste single/multi-trip JSON below.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="close.emit()"
+          class="w-8 h-8 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 hover:bg-black/10 transition cursor-pointer text-sm font-bold"
+          title="Close (Esc)"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Modal Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4">
+        <!-- Step 1: Prompt Generation -->
+        <div
+          class="p-4 rounded-xl border flex flex-col gap-2.5 transition-colors"
+          [style.borderColor]="currentTheme.cardBorder"
+          [style.backgroundColor]="currentTheme.cardBg"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span
+                class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center"
+              >
+                1
+              </span>
+              <span class="text-xs sm:text-sm font-bold" [style.color]="currentTheme.textColor">
+                Copy Context-Aware Prompt
+              </span>
+              <span
+                *ngIf="activeMembers.length > 0"
+                class="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium"
+              >
+                Includes {{ activeMembers.length }} group member{{
+                  activeMembers.length > 1 ? 's' : ''
+                }}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              (click)="copyPrompt()"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
+              [ngClass]="
+                promptCopied
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-blue-600 hover:bg-blue-700 text-white'
+              "
+            >
+              <span>{{ promptCopied ? '✓' : '📋' }}</span>
+              <span>{{ promptCopied ? 'Copied to Clipboard!' : 'Copy AI Prompt' }}</span>
+            </button>
+          </div>
+
+          <p class="text-xs text-stone-500 leading-relaxed">
+            Paste this prompt into your favorite AI along with your trip story (supports single
+            trips or full multi-trip travel histories).
+          </p>
+
+          <!-- Prompt Preview Accordion -->
+          <div class="mt-1">
+            <button
+              type="button"
+              (click)="togglePromptAccordion()"
+              class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition flex items-center gap-1 cursor-pointer"
+            >
+              <span>{{ showPromptAccordion ? '▼ Hide' : '▶ View' }} prompt details</span>
+            </button>
+            <pre
+              *ngIf="showPromptAccordion"
+              class="mt-2 p-3 bg-stone-100 rounded-lg text-[11px] font-mono text-stone-700 whitespace-pre-wrap max-h-48 overflow-y-auto border border-stone-200 select-all"
+              >{{ promptText }}</pre
+            >
+          </div>
+        </div>
+
+        <!-- Step 2: Paste AI Response -->
+        <div
+          class="p-4 rounded-xl border flex flex-col gap-2.5 transition-colors"
+          [style.borderColor]="currentTheme.cardBorder"
+          [style.backgroundColor]="currentTheme.cardBg"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span
+                class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center"
+              >
+                2
+              </span>
+              <label
+                for="aiJsonInput"
+                class="text-xs sm:text-sm font-bold"
+                [style.color]="currentTheme.textColor"
+              >
+                Paste AI Response JSON
+              </label>
+            </div>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                (click)="loadSampleSingleTrip()"
+                class="text-[11px] font-semibold text-stone-500 hover:text-stone-800 underline decoration-dotted cursor-pointer"
+              >
+                Sample (1 Trip)
+              </button>
+              <span class="text-stone-300 text-xs">•</span>
+              <button
+                type="button"
+                (click)="loadSampleMultiTrip()"
+                class="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline decoration-dotted cursor-pointer"
+              >
+                Sample (2 Trips)
+              </button>
+            </div>
+          </div>
+
+          <textarea
+            id="aiJsonInput"
+            [(ngModel)]="aiInput"
+            (ngModelChange)="onInputChange()"
+            rows="5"
+            placeholder='Paste the JSON response from your AI here (e.g. { "type": "trip_delta", "trips": [ ... ] })...'
+            class="w-full p-3 rounded-lg border border-stone-300 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-stone-800 resize-y"
+          ></textarea>
+
+          <!-- Parse Error Banner -->
+          <div
+            *ngIf="parseError"
+            class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-fadeIn"
+          >
+            <span class="text-base flex-shrink-0">⚠️</span>
+            <span>{{ parseError }}</span>
+          </div>
+        </div>
+
+        <!-- Step 3: Live Detection Summary -->
+        <div
+          class="p-4 rounded-xl border flex flex-col gap-3 transition-colors"
+          [style.borderColor]="currentTheme.cardBorder"
+          [style.backgroundColor]="currentTheme.cardBg"
+        >
           <div class="flex items-center gap-2">
             <span
               class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center"
             >
-              1
+              3
             </span>
             <span class="text-xs sm:text-sm font-bold" [style.color]="currentTheme.textColor">
-              Copy Context-Aware Prompt
-            </span>
-            <span
-              *ngIf="activeMembers.length > 0"
-              class="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium"
-            >
-              Includes {{ activeMembers.length }} group member{{
-                activeMembers.length > 1 ? 's' : ''
-              }}
+              Validation & Batch Detection
             </span>
           </div>
 
-          <button
-            type="button"
-            (click)="copyPrompt()"
-            class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-xs cursor-pointer active:scale-95"
-            [ngClass]="
-              promptCopied
-                ? 'bg-emerald-600 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            "
+          <!-- Empty State Guide -->
+          <div
+            *ngIf="!batchResult && !parseError"
+            class="p-4 rounded-lg bg-stone-50 border border-dashed border-stone-200 text-center text-xs text-stone-400 flex flex-col items-center gap-1"
           >
-            <span>{{ promptCopied ? '✓' : '📋' }}</span>
-            <span>{{ promptCopied ? 'Copied to Clipboard!' : 'Copy AI Prompt' }}</span>
-          </button>
-        </div>
+            <span>Waiting for trip payload...</span>
+            <span class="text-[11px]"
+              >Paste the output from your AI above to inspect and review the parsed trip
+              details.</span
+            >
+          </div>
 
-        <p class="text-xs text-stone-500 leading-relaxed">
-          Paste this prompt into your favorite AI along with your trip story (e.g.
-          <i>"Last week all of us drove to Yellowstone and Grand Tetons..."</i>).
-        </p>
+          <!-- Validation Errors -->
+          <div
+            *ngIf="batchResult && !batchResult.valid"
+            class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex flex-col gap-1.5"
+          >
+            <div class="font-bold flex items-center gap-1.5">
+              <span>❌ Validation Failed</span>
+            </div>
+            <ul class="list-disc list-inside space-y-0.5">
+              <li *ngFor="let err of batchResult.errors">{{ err }}</li>
+            </ul>
+          </div>
 
-        <!-- Prompt Preview Accordion -->
-        <div class="mt-1">
-          <button
-            type="button"
-            (click)="togglePromptAccordion()"
-            class="text-[11px] font-semibold text-blue-600 hover:text-blue-800 transition flex items-center gap-1 cursor-pointer"
+          <!-- Batch Detection Success Cards -->
+          <div
+            *ngIf="batchResult && batchResult.valid"
+            class="flex flex-col gap-2.5 animate-fadeIn"
           >
-            <span>{{ showPromptAccordion ? '▼ Hide' : '▶ View' }} prompt details</span>
-          </button>
-          <pre
-            *ngIf="showPromptAccordion"
-            class="mt-2 p-3 bg-stone-100 rounded-lg text-[11px] font-mono text-stone-700 whitespace-pre-wrap max-h-48 overflow-y-auto border border-stone-200 select-all"
-            >{{ promptText }}</pre
-          >
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                <span>✨</span>
+                <span
+                  >{{ batchResult.validCount }} Trip{{
+                    batchResult.validCount > 1 ? 's' : ''
+                  }}
+                  Detected (Ready for Step-by-Step Review)</span
+                >
+              </span>
+              <span class="text-[11px] text-stone-500 font-medium">
+                Click "Review & Edit" below to inspect
+              </span>
+            </div>
+
+            <div class="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1">
+              <div
+                *ngFor="let t of batchResult.trips; let i = index"
+                class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs flex flex-col gap-1.5 shadow-2xs"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <span class="font-black text-stone-900 text-xs flex items-center gap-1.5">
+                    <span class="text-sm">🚗</span>
+                    <span>#{{ i + 1 }}. {{ t.name }}</span>
+                  </span>
+                  <span
+                    class="px-2 py-0.5 rounded-md bg-white border border-emerald-200 font-bold text-emerald-800 text-[10px]"
+                  >
+                    📅 {{ t.date }}
+                  </span>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2 text-[11px] text-stone-600">
+                  <span class="flex items-center gap-1">
+                    <span>⛰️</span>
+                    <strong class="text-stone-800">{{ t.parks.length }}</strong> park{{
+                      t.parks.length !== 1 ? 's' : ''
+                    }}
+                  </span>
+                  <span class="text-stone-300">•</span>
+                  <span class="flex items-center gap-1">
+                    <span>🗺️</span>
+                    <strong class="text-stone-800">{{ t.states.length }}</strong> state{{
+                      t.states.length !== 1 ? 's' : ''
+                    }}
+                  </span>
+                  <span class="text-stone-300">•</span>
+                  <span class="flex items-center gap-1">
+                    <span>👥</span>
+                    <strong class="text-stone-800">{{ t.members.length }}</strong> member{{
+                      t.members.length !== 1 ? 's' : ''
+                    }}
+                  </span>
+                </div>
+
+                <p *ngIf="t.notes" class="text-[11px] text-stone-500 italic truncate">
+                  "{{ t.notes }}"
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Step 2: Paste AI Response -->
+      <!-- Modal Footer -->
       <div
-        class="p-4 rounded-xl border flex flex-col gap-2.5 transition-colors"
-        [style.borderColor]="currentTheme.cardBorder"
+        class="px-5 py-3 border-t flex items-center justify-end gap-2.5 flex-shrink-0"
+        [style.borderTopColor]="currentTheme.cardBorder"
         [style.backgroundColor]="currentTheme.cardBg"
       >
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <span
-              class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center"
-            >
-              2
-            </span>
-            <label
-              for="aiJsonInput"
-              class="text-xs sm:text-sm font-bold"
-              [style.color]="currentTheme.textColor"
-            >
-              Paste AI Response JSON
-            </label>
-          </div>
-          <button
-            type="button"
-            (click)="loadSampleTrip()"
-            class="text-[11px] font-semibold text-stone-500 hover:text-stone-800 underline decoration-dotted cursor-pointer"
-          >
-            Load Sample Trip
-          </button>
-        </div>
-
-        <textarea
-          id="aiJsonInput"
-          [(ngModel)]="aiInput"
-          (ngModelChange)="onInputChange()"
-          rows="5"
-          placeholder='Paste the JSON response from your AI here (e.g. { "type": "trip_delta", "trip": { ... } })...'
-          class="w-full p-3 rounded-lg border border-stone-300 font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none bg-white text-stone-800 resize-y"
-        ></textarea>
-
-        <!-- Parse Error Banner -->
-        <div
-          *ngIf="parseError"
-          class="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 animate-fadeIn"
+        <button
+          type="button"
+          (click)="close.emit()"
+          class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-stone-300 text-stone-700 hover:bg-stone-100 transition cursor-pointer"
         >
-          <span class="text-base flex-shrink-0">⚠️</span>
-          <span>{{ parseError }}</span>
-        </div>
-      </div>
+          Cancel
+        </button>
 
-      <!-- Step 3: Live Validation Preview -->
-      <div
-        class="p-4 rounded-xl border flex flex-col gap-3 transition-colors"
-        [style.borderColor]="currentTheme.cardBorder"
-        [style.backgroundColor]="currentTheme.cardBg"
-      >
-        <div class="flex items-center gap-2">
+        <button
+          type="button"
+          (click)="startReview()"
+          [disabled]="!batchResult || !batchResult.valid || batchResult.trips.length === 0"
+          class="px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-white"
+          [style.backgroundColor]="
+            batchResult && batchResult.valid ? currentTheme.buttonActiveBg : '#94a3b8'
+          "
+        >
+          <span>📝</span>
           <span
-            class="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center"
+            >Review & Edit Trip{{
+              (batchResult?.validCount ?? 0) > 1 ? 's (' + batchResult?.validCount + ')' : ''
+            }}
+            →</span
           >
-            3
-          </span>
-          <span class="text-xs sm:text-sm font-bold" [style.color]="currentTheme.textColor">
-            Validation & Live Preview
-          </span>
-        </div>
+        </button>
+      </div>
+    </ng-container>
 
-        <!-- Empty State Guide -->
-        <div
-          *ngIf="!validationResult && !parseError"
-          class="p-4 rounded-lg bg-stone-50 border border-dashed border-stone-200 text-center text-xs text-stone-400 flex flex-col items-center gap-1"
-        >
-          <span>Waiting for trip payload...</span>
-          <span class="text-[11px]"
-            >Paste the output from your AI above to inspect the parsed trip details.</span
-          >
-        </div>
-
-        <!-- Validation Errors -->
-        <div
-          *ngIf="validationResult && !validationResult.valid"
-          class="p-3 rounded-lg bg-rose-50 border border-rose-200 text-xs text-rose-700 flex flex-col gap-1.5"
-        >
-          <div class="font-bold flex items-center gap-1.5">
-            <span>❌ Validation Failed</span>
+    <!-- ========================================== -->
+    <!-- VIEW B: STEP-BY-STEP REVIEW & EDIT STEP     -->
+    <!-- ========================================== -->
+    <ng-container *ngIf="currentStep === 'review' && currentTrip">
+      <!-- Review Header -->
+      <div
+        class="px-5 py-3.5 border-b flex items-center justify-between flex-shrink-0"
+        [style.borderBottomColor]="currentTheme.cardBorder"
+        [style.backgroundColor]="currentTheme.headerBg"
+        [style.color]="currentTheme.headerText"
+      >
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">📝</span>
+          <div>
+            <h2 class="text-base sm:text-lg font-black tracking-tight leading-tight">
+              Review & Edit Import (Trip {{ currentTripIndex + 1 }} of {{ reviewTrips.length }})
+            </h2>
+            <p class="text-xs opacity-80 font-medium">
+              Review and adjust details before merging into your Travel Tracker.
+            </p>
           </div>
-          <ul class="list-disc list-inside space-y-0.5">
-            <li *ngFor="let err of validationResult.errors">{{ err }}</li>
+        </div>
+        <button
+          type="button"
+          (click)="close.emit()"
+          class="w-8 h-8 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 hover:bg-black/10 transition cursor-pointer text-sm font-bold"
+          title="Close (Esc)"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Stepper Ribbon -->
+      <div
+        class="px-4 py-2 bg-stone-100/90 border-b border-stone-200 flex items-center gap-2 overflow-x-auto flex-shrink-0"
+      >
+        <span class="text-[11px] font-bold text-stone-500 uppercase tracking-wider flex-shrink-0">
+          Trips:
+        </span>
+        <button
+          *ngFor="let t of reviewTrips; let i = index"
+          type="button"
+          (click)="selectTrip(i)"
+          class="px-2.5 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 transition flex-shrink-0 cursor-pointer shadow-2xs border"
+          [ngClass]="{
+            'bg-blue-600 text-white border-blue-700 ring-2 ring-blue-300': i === currentTripIndex,
+            'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200':
+              i !== currentTripIndex && t.status === 'approved',
+            'bg-stone-200 text-stone-500 border-stone-300 line-through opacity-70':
+              i !== currentTripIndex && t.status === 'skipped',
+            'bg-white text-stone-700 border-stone-300 hover:bg-stone-50':
+              i !== currentTripIndex && t.status === 'pending',
+          }"
+        >
+          <span *ngIf="i === currentTripIndex">▶</span>
+          <span *ngIf="i !== currentTripIndex && t.status === 'approved'">✓</span>
+          <span *ngIf="i !== currentTripIndex && t.status === 'skipped'">⏭</span>
+          <span *ngIf="i !== currentTripIndex && t.status === 'pending'">⏳</span>
+          <span>#{{ i + 1 }}. {{ t.name | slice: 0 : 18 }}{{ t.name.length > 18 ? '…' : '' }}</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Mixed Edit Form -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4">
+        <!-- Warnings Banner if present -->
+        <div
+          *ngIf="currentTrip.warnings && currentTrip.warnings.length > 0"
+          class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs flex flex-col gap-0.5"
+        >
+          <div class="font-bold flex items-center gap-1">
+            <span>ℹ️ Notice</span>
+          </div>
+          <ul class="list-disc list-inside">
+            <li *ngFor="let w of currentTrip.warnings">{{ w }}</li>
           </ul>
         </div>
 
-        <!-- Validation Success Preview Card -->
-        <div
-          *ngIf="validationResult && validationResult.valid && validationResult.resolved as trip"
-          class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200 text-xs flex flex-col gap-2.5 animate-fadeIn"
-        >
-          <!-- Trip Title & Date Header -->
-          <div
-            class="flex flex-wrap items-center justify-between gap-1 pb-2 border-b border-emerald-200/80"
-          >
-            <div class="flex items-center gap-2">
-              <span class="text-base">🚗</span>
-              <span class="font-black text-stone-900 text-sm">{{ trip.name }}</span>
-            </div>
-            <span
-              class="px-2 py-0.5 rounded-md bg-white border border-emerald-200 font-bold text-emerald-800 text-[11px]"
+        <!-- Row 1: Trip Title & Date -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="sm:col-span-2 flex flex-col gap-1">
+            <label
+              class="text-xs font-bold text-stone-700 uppercase tracking-wider"
+              for="editTripName"
             >
-              📅 {{ trip.date }}
-            </span>
+              Trip Title
+            </label>
+            <input
+              id="editTripName"
+              type="text"
+              [(ngModel)]="currentTrip.name"
+              placeholder="e.g. Yellowstone & Grand Tetons Road Trip"
+              class="w-full p-2.5 rounded-lg border border-stone-300 text-xs font-semibold text-stone-800 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
           </div>
 
-          <!-- Group Members -->
           <div class="flex flex-col gap-1">
-            <span class="text-[11px] font-bold text-stone-600 uppercase tracking-wider">
-              Group Members ({{ trip.members.length }})
-            </span>
-            <div class="flex flex-wrap gap-1.5">
-              <span
-                *ngFor="let m of trip.members"
-                class="px-2 py-0.5 rounded-full bg-white border border-stone-200 text-stone-800 font-semibold text-[11px] flex items-center gap-1 shadow-2xs"
+            <div class="flex items-center justify-between">
+              <label
+                class="text-xs font-bold text-stone-700 uppercase tracking-wider"
+                for="editTripDate"
               >
-                <span>👤</span>
-                <span>{{ m.name }}</span>
+                Trip Start Date
+              </label>
+              <span
+                class="text-[10px] text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200"
+                title="LLMs often estimate dates. Please verify!"
+              >
+                ⚠️ Verify Date
               </span>
             </div>
+            <input
+              id="editTripDate"
+              type="date"
+              [(ngModel)]="currentTrip.date"
+              class="w-full p-2.5 rounded-lg border border-stone-300 text-xs font-semibold text-stone-800 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <!-- Row 2: Group Members Checklist -->
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-stone-700 uppercase tracking-wider">
+              Group Members on this Trip ({{ currentTrip.members.length }})
+            </label>
+            <button
+              type="button"
+              (click)="toggleAllMembers()"
+              class="text-[11px] font-bold text-blue-600 hover:text-blue-800 underline decoration-dotted cursor-pointer"
+            >
+              {{ isAllMembers() ? 'Deselect All' : 'Select Everyone' }}
+            </button>
           </div>
 
-          <!-- Parks Detected -->
-          <div *ngIf="trip.parks.length > 0" class="flex flex-col gap-1">
-            <span class="text-[11px] font-bold text-stone-600 uppercase tracking-wider">
-              National Parks ({{ trip.parks.length }})
-            </span>
-            <div class="flex flex-wrap gap-1.5">
-              <span
-                *ngFor="let p of trip.parks"
-                class="px-2 py-0.5 rounded-full bg-emerald-100/80 border border-emerald-300 text-emerald-900 font-bold text-[11px] flex items-center gap-1 shadow-2xs"
+          <div class="flex flex-wrap gap-1.5">
+            <button
+              *ngFor="let m of activeMembers"
+              type="button"
+              (click)="toggleMember(m)"
+              class="px-2.5 py-1 rounded-full text-xs font-bold transition flex items-center gap-1.5 cursor-pointer border shadow-2xs"
+              [ngClass]="
+                isMemberSelected(m.id)
+                  ? 'bg-blue-600 text-white border-blue-700'
+                  : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'
+              "
+            >
+              <span>{{ isMemberSelected(m.id) ? '✓' : '+' }}</span>
+              <span>{{ m.name }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 3: National Parks Visited -->
+        <div class="flex flex-col gap-2 p-3 rounded-xl border border-stone-200 bg-stone-50/50">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="text-xs font-bold text-stone-800 uppercase tracking-wider">
+              National Parks Visited ({{ currentTrip.parks.length }})
+            </label>
+
+            <!-- Quick Add Park Dropdown -->
+            <select
+              [(ngModel)]="selectedAddParkId"
+              (change)="onAddParkSelected()"
+              class="p-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-700 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">+ Add National Park...</option>
+              <option *ngFor="let p of allParks" [value]="p.id">
+                {{ p.country === 'Canada' ? '🏔️' : '⛰️' }} {{ p.name }} ({{ p.sub }})
+              </option>
+            </select>
+          </div>
+
+          <div class="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+            <span
+              *ngFor="let p of currentTrip.parks; let pIdx = index"
+              class="px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+            >
+              <span>{{ p.country === 'Canada' ? '🏔️' : '⛰️' }}</span>
+              <span>{{ p.name }}</span>
+              <button
+                type="button"
+                (click)="removePark(pIdx)"
+                class="hover:text-rose-700 font-black cursor-pointer ml-1 text-xs"
+                title="Remove this park"
               >
-                <span>{{ p.country === 'Canada' ? '🏔️' : '⛰️' }}</span>
-                <span>{{ p.name }}</span>
-              </span>
-            </div>
-          </div>
-
-          <!-- States Detected -->
-          <div *ngIf="trip.states.length > 0" class="flex flex-col gap-1">
-            <span class="text-[11px] font-bold text-stone-600 uppercase tracking-wider">
-              States & Provinces ({{ trip.states.length }})
+                ✕
+              </button>
             </span>
-            <div class="flex flex-wrap gap-1.5">
-              <span
-                *ngFor="let s of trip.states"
-                class="px-2 py-0.5 rounded-full bg-amber-50 border border-amber-300 text-amber-900 font-bold text-[11px] flex items-center gap-1 shadow-2xs"
-              >
-                <span>🗺️</span>
-                <span>{{ s.name }}</span>
-              </span>
-            </div>
+            <span *ngIf="currentTrip.parks.length === 0" class="text-xs text-stone-400 italic">
+              No national parks assigned. Use the dropdown above to add one.
+            </span>
+          </div>
+        </div>
+
+        <!-- Row 4: States & Provinces Visited -->
+        <div class="flex flex-col gap-2 p-3 rounded-xl border border-stone-200 bg-stone-50/50">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="text-xs font-bold text-stone-800 uppercase tracking-wider">
+              States & Provinces Visited ({{ currentTrip.states.length }})
+            </label>
+
+            <!-- Quick Add State Dropdown -->
+            <select
+              [(ngModel)]="selectedAddStateId"
+              (change)="onAddStateSelected()"
+              class="p-1.5 rounded-lg border border-stone-300 text-xs bg-white text-stone-700 focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="">+ Add State/Province...</option>
+              <option *ngFor="let s of allStates" [value]="s.id">
+                🗺️ {{ s.name }} ({{ s.country }})
+              </option>
+            </select>
           </div>
 
-          <!-- Notes -->
-          <div
-            *ngIf="trip.notes"
-            class="text-[11px] text-stone-600 italic bg-white/70 p-2 rounded border border-stone-200"
+          <div class="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+            <span
+              *ngFor="let s of currentTrip.states; let sIdx = index"
+              class="px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center gap-1.5 shadow-2xs"
+            >
+              <span>🗺️</span>
+              <span>{{ s.name }}</span>
+              <button
+                type="button"
+                (click)="removeState(sIdx)"
+                class="hover:text-rose-700 font-black cursor-pointer ml-1 text-xs"
+                title="Remove this state"
+              >
+                ✕
+              </button>
+            </span>
+            <span *ngIf="currentTrip.states.length === 0" class="text-xs text-stone-400 italic">
+              No states assigned. Use the dropdown above to add one.
+            </span>
+          </div>
+        </div>
+
+        <!-- Row 5: Notes / Highlights -->
+        <div class="flex flex-col gap-1">
+          <label
+            class="text-xs font-bold text-stone-700 uppercase tracking-wider"
+            for="editTripNotes"
           >
-            "{{ trip.notes }}"
+            Trip Notes & Highlights
+          </label>
+          <textarea
+            id="editTripNotes"
+            rows="2"
+            [(ngModel)]="currentTrip.notes"
+            placeholder="Route highlights, accommodations, or stories..."
+            class="w-full p-2.5 rounded-lg border border-stone-300 text-xs text-stone-800 bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
+          ></textarea>
+        </div>
+
+        <!-- Row 6: Optional Individual Location Dates & Notes -->
+        <div class="p-3 rounded-xl border border-stone-200 bg-stone-50/70 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-sm">📅</span>
+              <span class="text-xs font-bold text-stone-800">
+                Individual Location Dates & Memories
+              </span>
+            </div>
+            <button
+              type="button"
+              (click)="toggleLocationDates()"
+              class="px-2.5 py-1 rounded-lg text-xs font-bold transition border cursor-pointer"
+              [ngClass]="
+                showLocationDates
+                  ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-100'
+              "
+            >
+              {{ showLocationDates ? '▼ Hide Details' : '▶ Customize Dates/Notes' }}
+            </button>
           </div>
 
-          <!-- Warnings Banner -->
-          <div
-            *ngIf="trip.warnings.length > 0"
-            class="mt-1 p-2 rounded bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex flex-col gap-0.5"
-          >
-            <div class="font-bold flex items-center gap-1">
-              <span>⚠️ Notice</span>
+          <div *ngIf="showLocationDates" class="flex flex-col gap-3 mt-1 max-h-56 overflow-y-auto pr-1">
+            <p class="text-[11px] text-stone-500">
+              Customize exact visit dates or location-specific notes for each stop. Defaults to trip start date and trip notes if left blank.
+            </p>
+
+            <!-- Parks List -->
+            <div *ngIf="currentTrip.parks.length > 0" class="flex flex-col gap-1.5">
+              <span class="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                National Parks ({{ currentTrip.parks.length }})
+              </span>
+              <div
+                *ngFor="let p of currentTrip.parks"
+                class="grid grid-cols-1 sm:grid-cols-12 gap-1.5 items-center p-2 rounded-lg bg-white border border-stone-200 text-xs"
+              >
+                <span class="sm:col-span-4 font-bold text-stone-800 truncate">
+                  ⛰️ {{ p.name }}
+                </span>
+                <input
+                  type="date"
+                  [(ngModel)]="p.dateVisited"
+                  [placeholder]="currentTrip.date"
+                  class="sm:col-span-3 p-1 rounded border border-stone-300 text-xs text-stone-800 focus:ring-1 focus:ring-blue-500"
+                  title="Specific visit date for this park"
+                />
+                <input
+                  type="text"
+                  [(ngModel)]="p.notes"
+                  placeholder="Notes/highlights for this park..."
+                  class="sm:col-span-5 p-1 rounded border border-stone-300 text-xs text-stone-800 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
             </div>
-            <ul class="list-disc list-inside">
-              <li *ngFor="let w of trip.warnings">{{ w }}</li>
-            </ul>
+
+            <!-- States List -->
+            <div *ngIf="currentTrip.states.length > 0" class="flex flex-col gap-1.5">
+              <span class="text-[10px] font-bold text-stone-500 uppercase tracking-wider">
+                States & Provinces ({{ currentTrip.states.length }})
+              </span>
+              <div
+                *ngFor="let s of currentTrip.states"
+                class="grid grid-cols-1 sm:grid-cols-12 gap-1.5 items-center p-2 rounded-lg bg-white border border-stone-200 text-xs"
+              >
+                <span class="sm:col-span-4 font-bold text-stone-800 truncate">
+                  🗺️ {{ s.name }}
+                </span>
+                <input
+                  type="date"
+                  [(ngModel)]="s.dateVisited"
+                  [placeholder]="currentTrip.date"
+                  class="sm:col-span-3 p-1 rounded border border-stone-300 text-xs text-stone-800 focus:ring-1 focus:ring-blue-500"
+                  title="Specific visit date for this state"
+                />
+                <input
+                  type="text"
+                  [(ngModel)]="s.notes"
+                  placeholder="Transit or stay notes..."
+                  class="sm:col-span-5 p-1 rounded border border-stone-300 text-xs text-stone-800 focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Modal Footer -->
-    <div
-      class="px-5 py-3 border-t flex items-center justify-end gap-2.5 flex-shrink-0"
-      [style.borderTopColor]="currentTheme.cardBorder"
-      [style.backgroundColor]="currentTheme.cardBg"
-    >
-      <button
-        type="button"
-        (click)="close.emit()"
-        class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold border border-stone-300 text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+      <!-- Review Action Footer -->
+      <div
+        class="px-5 py-3 border-t flex flex-wrap items-center justify-between gap-2 flex-shrink-0"
+        [style.borderTopColor]="currentTheme.cardBorder"
+        [style.backgroundColor]="currentTheme.cardBg"
       >
-        Cancel
-      </button>
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            (click)="backToInput()"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-300 text-stone-600 hover:bg-stone-100 transition cursor-pointer"
+          >
+            ← Back to JSON
+          </button>
+          <button
+            *ngIf="currentTripIndex > 0"
+            type="button"
+            (click)="previousTrip()"
+            class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-stone-300 text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+          >
+            ← Previous
+          </button>
+        </div>
 
-      <button
-        type="button"
-        (click)="applyTrip()"
-        [disabled]="!validationResult || !validationResult.valid"
-        class="px-5 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95 text-white"
-        [style.backgroundColor]="
-          validationResult && validationResult.valid ? currentTheme.buttonActiveBg : '#94a3b8'
-        "
+        <div class="flex items-center gap-2">
+          <!-- Skip Button -->
+          <button
+            type="button"
+            (click)="skipAndNext()"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold text-stone-500 hover:text-stone-800 hover:bg-stone-100 transition cursor-pointer"
+            title="Skip importing this trip"
+          >
+            ⏭ Skip
+          </button>
+
+          <!-- Quick Approve All Remaining Button -->
+          <button
+            *ngIf="reviewTrips.length > 1 && pendingCount > 1"
+            type="button"
+            (click)="approveAllRemaining()"
+            class="px-3 py-1.5 rounded-lg text-xs font-bold bg-stone-100 hover:bg-stone-200 text-stone-800 border border-stone-300 transition cursor-pointer"
+            title="Approve all remaining pending trips at once"
+          >
+            ⚡ Approve All ({{ pendingCount }})
+          </button>
+
+          <!-- Primary: Approve & Next OR Final Apply -->
+          <button
+            *ngIf="currentTripIndex < reviewTrips.length - 1"
+            type="button"
+            (click)="approveAndNext()"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer text-white bg-blue-600 hover:bg-blue-700 active:scale-95"
+          >
+            <span>Approve & Next Trip ({{ currentTripIndex + 1 }}/{{ reviewTrips.length }}) →</span>
+          </button>
+
+          <button
+            *ngIf="currentTripIndex === reviewTrips.length - 1"
+            type="button"
+            (click)="finishAndApply()"
+            class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95"
+          >
+            <span>✨</span>
+            <span
+              >Approve & Apply {{ approvedCount + 1 }} Trip{{ approvedCount + 1 > 1 ? 's' : '' }} to
+              Tracker</span
+            >
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ========================================== -->
+    <!-- VIEW C: FINAL IMPORT RESULTS / RECEIPT     -->
+    <!-- ========================================== -->
+    <ng-container *ngIf="currentStep === 'results' && importReceipt">
+      <!-- Results Header -->
+      <div
+        class="px-5 py-3.5 border-b flex items-center justify-between flex-shrink-0"
+        [style.borderBottomColor]="currentTheme.cardBorder"
+        [style.backgroundColor]="currentTheme.headerBg"
+        [style.color]="currentTheme.headerText"
       >
-        <span>✨</span>
-        <span>Confirm & Apply to Tracker</span>
-      </button>
-    </div>
+        <div class="flex items-center gap-2.5">
+          <span class="text-xl">🎉</span>
+          <div>
+            <h2 class="text-base sm:text-lg font-black tracking-tight leading-tight">
+              Trip Import Complete!
+            </h2>
+            <p class="text-xs opacity-80 font-medium">
+              Here is a summary of what was merged into your Travel Tracker.
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="doneAndClose()"
+          class="w-8 h-8 rounded-full flex items-center justify-center opacity-80 hover:opacity-100 hover:bg-black/10 transition cursor-pointer text-sm font-bold"
+          title="Close (Esc)"
+        >
+          ✕
+        </button>
+      </div>
+
+      <!-- Results Scrollable Body -->
+      <div class="flex-1 overflow-y-auto p-4 sm:p-5 flex flex-col gap-4">
+        <!-- Overview Banner -->
+        <div
+          class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 flex flex-col gap-1.5 shadow-2xs"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-lg">✅</span>
+            <span class="text-sm font-black">
+              Successfully Imported {{ importReceipt.tripsCount }} Trip{{
+                importReceipt.tripsCount > 1 ? 's' : ''
+              }}
+            </span>
+          </div>
+          <p class="text-xs text-emerald-800 leading-relaxed">
+            All trip locations and dated logs have been saved to your tracker for:
+            <strong>{{ importReceipt.affectedMembers.join(', ') || 'Your Group' }}</strong>.
+          </p>
+        </div>
+
+        <!-- Section 1: Map & Geography Status -->
+        <div
+          class="p-4 rounded-xl border flex flex-col gap-3 transition-colors"
+          [style.borderColor]="currentTheme.cardBorder"
+          [style.backgroundColor]="currentTheme.cardBg"
+        >
+          <div class="flex items-center gap-2">
+            <span class="text-sm">🗺️</span>
+            <span class="text-xs sm:text-sm font-bold text-stone-800">
+              Map & Geography Status
+            </span>
+          </div>
+
+          <!-- National Parks Status -->
+          <div class="flex flex-col gap-2">
+            <div class="text-xs font-semibold text-stone-700">National Parks:</div>
+            <!-- Newly Visited -->
+            <div *ngIf="importReceipt.newParks.length > 0" class="flex flex-col gap-1">
+              <span class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                <span>🌟</span>
+                <span
+                  >Newly marked as visited on your map ({{ importReceipt.newParks.length }}):</span
+                >
+              </span>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  *ngFor="let p of importReceipt.newParks"
+                  class="px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold shadow-2xs"
+                >
+                  ⛰️ {{ p.name }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Already Visited -->
+            <div *ngIf="importReceipt.alreadyVisitedParks.length > 0" class="flex flex-col gap-1">
+              <span class="text-[11px] font-bold text-stone-600 flex items-center gap-1">
+                <span>ℹ️</span>
+                <span
+                  >Already marked as visited on your map ({{
+                    importReceipt.alreadyVisitedParks.length
+                  }}):</span
+                >
+              </span>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  *ngFor="let p of importReceipt.alreadyVisitedParks"
+                  class="px-2 py-0.5 rounded-full bg-stone-100 border border-stone-300 text-stone-700 text-xs font-medium"
+                >
+                  ⛰️ {{ p.name }}
+                </span>
+              </div>
+            </div>
+
+            <div
+              *ngIf="
+                importReceipt.newParks.length === 0 &&
+                importReceipt.alreadyVisitedParks.length === 0
+              "
+              class="text-xs text-stone-400 italic"
+            >
+              No national parks were in this import.
+            </div>
+          </div>
+
+          <div class="border-t border-stone-200"></div>
+
+          <!-- States Status -->
+          <div class="flex flex-col gap-2">
+            <div class="text-xs font-semibold text-stone-700">States & Provinces:</div>
+            <!-- Newly Visited -->
+            <div *ngIf="importReceipt.newStates.length > 0" class="flex flex-col gap-1">
+              <span class="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+                <span>🌟</span>
+                <span
+                  >Newly marked as visited on your map ({{ importReceipt.newStates.length }}):</span
+                >
+              </span>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  *ngFor="let s of importReceipt.newStates"
+                  class="px-2 py-0.5 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold shadow-2xs"
+                >
+                  🗺️ {{ s.name }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Already Visited -->
+            <div *ngIf="importReceipt.alreadyVisitedStates.length > 0" class="flex flex-col gap-1">
+              <span class="text-[11px] font-bold text-stone-600 flex items-center gap-1">
+                <span>ℹ️</span>
+                <span
+                  >Already marked as visited on your map ({{
+                    importReceipt.alreadyVisitedStates.length
+                  }}):</span
+                >
+              </span>
+              <div class="flex flex-wrap gap-1.5">
+                <span
+                  *ngFor="let s of importReceipt.alreadyVisitedStates"
+                  class="px-2 py-0.5 rounded-full bg-stone-100 border border-stone-300 text-stone-700 text-xs font-medium"
+                >
+                  🗺️ {{ s.name }}
+                </span>
+              </div>
+            </div>
+
+            <div
+              *ngIf="
+                importReceipt.newStates.length === 0 &&
+                importReceipt.alreadyVisitedStates.length === 0
+              "
+              class="text-xs text-stone-400 italic"
+            >
+              No states or provinces were in this import.
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 2: Visit Logs & Memories Added -->
+        <div
+          class="p-4 rounded-xl border flex flex-col gap-2.5 transition-colors"
+          [style.borderColor]="currentTheme.cardBorder"
+          [style.backgroundColor]="currentTheme.cardBg"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-sm">📖</span>
+              <span class="text-xs sm:text-sm font-bold text-stone-800">
+                Visit Logs & Memories Added
+              </span>
+            </div>
+            <span
+              class="text-xs font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200"
+            >
+              {{ importReceipt.totalLogEntriesAdded }} Log Entries Created
+            </span>
+          </div>
+
+          <p class="text-xs text-stone-600 leading-relaxed">
+            Each location received a dated visit entry with your trip comments and member tags. You can view, search, or edit these entries anytime in the location details drawer on the map.
+          </p>
+        </div>
+      </div>
+
+      <!-- Results Footer -->
+      <div
+        class="px-5 py-3.5 border-t flex items-center justify-end flex-shrink-0"
+        [style.borderTopColor]="currentTheme.cardBorder"
+        [style.backgroundColor]="currentTheme.cardBg"
+      >
+        <button
+          type="button"
+          (click)="doneAndClose()"
+          class="px-6 py-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-md transition flex items-center gap-2 cursor-pointer text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95"
+        >
+          <span>✓</span>
+          <span>Done / View on Map</span>
+        </button>
+      </div>
+    </ng-container>
   </div>
 </div>
+

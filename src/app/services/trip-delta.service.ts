@@ -17,8 +17,11 @@ import {
   ValidatedTripDelta,
   ParseResult,
   ValidationResult,
+  BatchValidationResult,
   ResolvedEntity,
   RawTripPayload,
+  ImportReceipt,
+  LocationImportSummary,
 } from '../core/models/trip-delta.model';
 
 @Injectable({
@@ -41,41 +44,84 @@ export class TripDeltaService {
         : `Active group members: (none defined yet). Use ["all"] for group-wide visits.`;
 
     return `You are an AI assistant for the "Traveled Roads Tracker" application.
-The user will describe a trip or vacation in natural language. Your task is to extract the visited National Parks, States/Provinces, group members, approximate date, and trip notes, and output strictly a valid JSON object matching the Trip Delta schema.
+Your task is to help the user log their travels by converting their natural language trip descriptions into a structured JSON object matching the Trip Delta schema.
 
 ### User Group Context:
 ${memberContext}
 
+### How to Interact with the User:
+1. **Initial Greeting / Standby**: If this prompt is provided without a trip description yet, reply warmly:
+   "Hey! I'm ready to help log your travels. Please tell me about the trip (or trips) you want to log — which national parks or states you visited, who went with you, and roughly when!"
+2. **Trip Date Verification**: If the user's travel date or year is ambiguous or unspecified, ask them to verify or approximate the start date (YYYY-MM-DD).
+3. **Processing Trip Stories**: Once details are provided, extract them and introduce the output with:
+   "Here is the JSON you need to copy back into the Traveled Roads Tracker website:"
+   followed immediately by the JSON code block wrapped in standard markdown fences (\`\`\`json ... \`\`\`).
+
 ### Extraction Rules:
-1. "parks": Extract all US and Canadian National Parks visited. Use canonical names (e.g. "Yellowstone", "Grand Teton", "Banff", "Acadia").
-2. "states": Extract all US States and Canadian Provinces visited, including arrival/departure transit states explicitly mentioned (e.g. "Montana", "Wyoming", "Idaho", or standard 2-letter postal codes like "MT", "WY", "ID").
-3. "members": Array of member names who took part, or ["all"] if everyone attended.
-4. "date": The trip date in YYYY-MM-DD format (use the approximate date if only month/year or "last week" is given).
+1. "date": The trip start date in YYYY-MM-DD format (use the best estimate if only month/year is given).
+2. "parks": Extract all US and Canadian National Parks visited. Can be simple string array (e.g. ["Grand Teton", "Yellowstone"]) or structured objects with individual dates and notes if known (e.g. [{"name": "Grand Teton", "date": "2019-07-03", "notes": "Jenny Lake hike"}]).
+3. "states": Extract all US States and Canadian Provinces visited, including arrival/departure transit states explicitly mentioned (e.g. ["Colorado", "Wyoming"] or postal codes ["CO", "WY"]). Can also be structured objects with dates/notes.
+4. "members": Array of member names who took part, or ["all"] if everyone attended.
 5. "name": A concise, descriptive trip title (e.g., "Yellowstone & Grand Tetons Road Trip").
 6. "notes": A brief 1-2 sentence summary of the route or highlights.
 
 ### Required Output Schema (JSON Only):
+For a single trip:
 \`\`\`json
 {
   "type": "trip_delta",
   "version": 1,
   "trip": {
-    "name": "Trip Title",
-    "date": "YYYY-MM-DD",
+    "name": "Northern Rockies Loop",
+    "date": "2019-07-01",
     "members": ["all"],
-    "parks": ["Yellowstone", "Grand Teton"],
-    "states": ["Montana", "Wyoming", "Idaho"],
-    "notes": "Route notes or highlights"
+    "parks": [
+      { "name": "Grand Teton", "date": "2019-07-03", "notes": "Jenny Lake hike" },
+      { "name": "Yellowstone", "date": "2019-07-05", "notes": "Old Faithful & wildlife" },
+      "Glacier"
+    ],
+    "states": [
+      "Virginia",
+      "Colorado",
+      "Wyoming",
+      "Montana",
+      "Idaho"
+    ],
+    "notes": "Flew to Denver, drove through Wyoming and Montana before returning through Idaho."
   }
 }
 \`\`\`
 
-IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding conversational text.`;
+For multiple trips / travel history:
+\`\`\`json
+{
+  "type": "trip_delta",
+  "version": 1,
+  "trips": [
+    {
+      "name": "Yellowstone & Grand Tetons Road Trip",
+      "date": "2024-07-15",
+      "members": ["all"],
+      "parks": ["Yellowstone", "Grand Teton"],
+      "states": ["Montana", "Wyoming", "Idaho"],
+      "notes": "Flew into Bozeman, drove through both parks."
+    },
+    {
+      "name": "Utah Mighty 5 Tour",
+      "date": "2025-05-10",
+      "members": ["all"],
+      "parks": ["Zion", "Bryce Canyon"],
+      "states": ["Utah"],
+      "notes": "Spring trip across southern Utah."
+    }
+  ]
+}
+\`\`\``;
   }
 
   /**
    * Safely extracts and parses JSON from raw user input, handling markdown
-   * code fences, leading/trailing conversational text, and partial payloads.
+   * code fences, leading/trailing conversational text, raw arrays, and batch payloads.
    */
   public extractAndParseJson(rawInput: string): ParseResult {
     if (!rawInput || typeof rawInput !== 'string') {
@@ -101,42 +147,91 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
     if (codeBlockMatch && codeBlockMatch[1]) {
       cleaned = codeBlockMatch[1].trim();
     } else {
-      // 2. Locate first '{' and last '}'
+      // 2. Locate first '{' or '[' and last '}' or ']'
       const firstBrace = cleaned.indexOf('{');
-      const lastBrace = cleaned.lastIndexOf('}');
-      if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-        cleaned = cleaned.substring(firstBrace, lastBrace + 1);
+      const firstBracket = cleaned.indexOf('[');
+      let startIndex = -1;
+      let endIndex = -1;
+
+      if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
+        startIndex = firstBracket;
+        endIndex = cleaned.lastIndexOf(']');
+      } else if (firstBrace !== -1) {
+        startIndex = firstBrace;
+        endIndex = cleaned.lastIndexOf('}');
+      }
+
+      if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+        cleaned = cleaned.substring(startIndex, endIndex + 1);
       }
     }
 
     try {
-      const parsed = JSON.parse(cleaned) as Record<string, unknown>;
+      const parsed = JSON.parse(cleaned) as unknown;
+
+      // Handle raw array of trips e.g. [ { ... }, { ... } ]
+      if (Array.isArray(parsed)) {
+        if (!isPrototypePollutionSafe(parsed)) {
+          this.logger.warn('Rejected array payload failing prototype pollution check', { parsed });
+          return {
+            success: false,
+            error: 'Security Alert: Potentially unsafe JSON array structure detected.',
+          };
+        }
+        return {
+          success: true,
+          payload: {
+            type: 'trip_delta',
+            version: 1,
+            trips: (parsed as RawTripPayload[]).slice(0, SECURITY_LIMITS.MAX_TRIPS_PER_BATCH),
+          },
+        };
+      }
+
+      const parsedObj = parsed as Record<string, unknown>;
 
       // Prototype pollution & excessive object depth defense
-      if (!isPrototypePollutionSafe(parsed)) {
-        this.logger.warn('Rejected payload failing prototype pollution or depth check', { parsed });
+      if (!isPrototypePollutionSafe(parsedObj)) {
+        this.logger.warn('Rejected payload failing prototype pollution or depth check', {
+          parsed: parsedObj,
+        });
         return {
           success: false,
           error: 'Security Alert: Potentially unsafe JSON object structure detected.',
         };
       }
 
-      // Normalize if user or LLM emitted { trip: { ... } } or just the inner { ... } directly
+      // Check for multi-trip "trips" array
+      if (Array.isArray(parsedObj['trips'])) {
+        return {
+          success: true,
+          payload: {
+            type: typeof parsedObj['type'] === 'string' ? parsedObj['type'] : 'trip_delta',
+            version: typeof parsedObj['version'] === 'number' ? parsedObj['version'] : 1,
+            trips: (parsedObj['trips'] as RawTripPayload[]).slice(
+              0,
+              SECURITY_LIMITS.MAX_TRIPS_PER_BATCH,
+            ),
+          },
+        };
+      }
+
+      // Single trip normalization
       let tripPayload: RawTripPayload;
-      if (parsed['trip'] && typeof parsed['trip'] === 'object') {
-        tripPayload = parsed['trip'] as RawTripPayload;
-      } else if (parsed['parks'] || parsed['states'] || parsed['name']) {
-        tripPayload = parsed as RawTripPayload;
+      if (parsedObj['trip'] && typeof parsedObj['trip'] === 'object') {
+        tripPayload = parsedObj['trip'] as RawTripPayload;
+      } else if (parsedObj['parks'] || parsedObj['states'] || parsedObj['name']) {
+        tripPayload = parsedObj as RawTripPayload;
       } else {
         return {
           success: false,
-          error: 'JSON is missing required "trip", "parks", or "states" fields.',
+          error: 'JSON is missing required "trip", "trips", "parks", or "states" fields.',
         };
       }
 
       const payload: TripDeltaPayload = {
-        type: typeof parsed['type'] === 'string' ? parsed['type'] : 'trip_delta',
-        version: typeof parsed['version'] === 'number' ? parsed['version'] : 1,
+        type: typeof parsedObj['type'] === 'string' ? parsedObj['type'] : 'trip_delta',
+        version: typeof parsedObj['version'] === 'number' ? parsedObj['version'] : 1,
         trip: tripPayload,
       };
 
@@ -151,14 +246,71 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
   /**
    * Validates and resolves a parsed Trip Delta payload against canonical
    * national park lists, state/province lists, and active family members.
+   * Supports both single-trip and multi-trip batch payloads.
    */
   public validateAndResolve(
     payload: TripDeltaPayload,
     currentSettings: AppSettings,
-  ): ValidationResult {
-    const trip = payload.trip;
+  ): BatchValidationResult & ValidationResult {
+    const rawTrips: RawTripPayload[] = [];
+    if (Array.isArray(payload.trips)) {
+      rawTrips.push(...payload.trips.slice(0, SECURITY_LIMITS.MAX_TRIPS_PER_BATCH));
+    } else if (payload.trip) {
+      rawTrips.push(payload.trip);
+    }
+
+    if (rawTrips.length === 0) {
+      return {
+        valid: false,
+        trips: [],
+        totalCount: 0,
+        validCount: 0,
+        errors: ['No recognized trip definitions found in payload.'],
+        warnings: [],
+      };
+    }
+
+    const validatedTrips: ValidatedTripDelta[] = [];
+    const allErrors: string[] = [];
+    const allWarnings: string[] = [];
+
+    rawTrips.forEach((rawTrip, idx) => {
+      const { resolved, errors, warnings } = this.validateSingleTrip(rawTrip, currentSettings, idx);
+      if (warnings.length > 0) {
+        allWarnings.push(...warnings);
+      }
+      if (errors.length > 0) {
+        allErrors.push(...errors);
+      }
+      if (resolved) {
+        validatedTrips.push(resolved);
+      }
+    });
+
+    const valid = validatedTrips.length > 0 && allErrors.length === 0;
+
+    return {
+      valid,
+      trips: validatedTrips,
+      resolved: validatedTrips[0], // for backwards compatibility with single-trip callers
+      totalCount: rawTrips.length,
+      validCount: validatedTrips.length,
+      errors: allErrors,
+      warnings: allWarnings,
+    };
+  }
+
+  /**
+   * Validates and resolves a single raw trip definition into a ValidatedTripDelta.
+   */
+  private validateSingleTrip(
+    trip: RawTripPayload,
+    currentSettings: AppSettings,
+    index: number,
+  ): { resolved?: ValidatedTripDelta; errors: string[]; warnings: string[] } {
     const errors: string[] = [];
     const warnings: string[] = [];
+    const prefix = `[Trip ${index + 1}]`;
 
     // 1. Validate Date with strict calendar arithmetic & limits
     let resolvedDate = (trip.date || '').trim();
@@ -166,25 +318,26 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
     if (!resolvedDate) {
       const today = new Date().toISOString().split('T')[0];
       resolvedDate = today;
-      warnings.push(`No date provided. Defaulted to today (${today}).`);
+      warnings.push(`${prefix} No date provided. Defaulted to today (${today}).`);
     } else if (!isoDateRegex.test(resolvedDate)) {
-      // Handle YYYY or YYYY-MM
       if (/^\d{4}$/.test(resolvedDate)) {
         resolvedDate = `${resolvedDate}-06-01`;
-        warnings.push(`Year-only date provided. Adjusted to ${resolvedDate}.`);
+        warnings.push(`${prefix} Year-only date provided. Adjusted to ${resolvedDate}.`);
       } else if (/^\d{4}-\d{2}$/.test(resolvedDate)) {
         resolvedDate = `${resolvedDate}-01`;
-        warnings.push(`Month-year date provided. Adjusted to ${resolvedDate}.`);
+        warnings.push(`${prefix} Month-year date provided. Adjusted to ${resolvedDate}.`);
       } else {
         const fallback = new Date().toISOString().split('T')[0];
-        warnings.push(`Unrecognized date format "${resolvedDate}". Defaulted to ${fallback}.`);
+        warnings.push(
+          `${prefix} Unrecognized date format "${resolvedDate}". Defaulted to ${fallback}.`,
+        );
         resolvedDate = fallback;
       }
     }
 
     if (!isValidCalendarDate(resolvedDate)) {
       const fallback = new Date().toISOString().split('T')[0];
-      warnings.push(`Invalid calendar date "${resolvedDate}". Defaulted to ${fallback}.`);
+      warnings.push(`${prefix} Invalid calendar date "${resolvedDate}". Defaulted to ${fallback}.`);
       resolvedDate = fallback;
     }
 
@@ -217,54 +370,108 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
             resolvedMembers.push({ id: found.id, name: found.name });
           }
         } else {
-          warnings.push(`Group member "${rawName}" was not found in your settings.`);
+          warnings.push(`${prefix} Group member "${rawName}" was not found in your settings.`);
         }
       }
       if (resolvedMembers.length === 0 && family.length > 0) {
         resolvedMembers.push(...family.map((f) => ({ id: f.id, name: f.name })));
-        warnings.push('No recognized members specified; assigned to all group members.');
+        warnings.push(`${prefix} No recognized members specified; assigned to all group members.`);
       }
     }
 
     // 3. Resolve National Parks (capped at MAX_ENTITIES_PER_TRIP)
     const resolvedParks: ResolvedEntity[] = [];
-    const rawParks = (Array.isArray(trip.parks) ? trip.parks : [])
-      .slice(0, SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP)
-      .map((p) => sanitizePlainText(String(p), SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH));
+    const rawParks = (Array.isArray(trip.parks) ? trip.parks : []).slice(
+      0,
+      SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP,
+    );
 
-    for (const rawPark of rawParks) {
-      if (!rawPark) continue;
-      const match = this.matchPark(rawPark);
+    for (const item of rawParks) {
+      if (!item) continue;
+      let rawName = '';
+      let itemDate: string | undefined;
+      let itemNotes: string | undefined;
+
+      if (typeof item === 'string') {
+        rawName = sanitizePlainText(item, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+      } else if (typeof item === 'object' && item !== null) {
+        const itemObj = item as { name?: unknown; date?: unknown; notes?: unknown };
+        if (typeof itemObj.name === 'string') {
+          rawName = sanitizePlainText(itemObj.name, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+        }
+        if (typeof itemObj.date === 'string' && isValidCalendarDate(itemObj.date.trim())) {
+          itemDate = itemObj.date.trim();
+        }
+        if (typeof itemObj.notes === 'string') {
+          itemNotes = sanitizePlainText(itemObj.notes, SECURITY_LIMITS.MAX_TRIP_NOTES_LENGTH);
+        }
+      }
+
+      if (!rawName) continue;
+      const match = this.matchPark(rawName);
       if (match) {
         if (!resolvedParks.some((p) => p.id === match.id)) {
-          resolvedParks.push({ id: match.id, name: match.name, country: match.country });
+          resolvedParks.push({
+            id: match.id,
+            name: match.name,
+            country: match.country,
+            dateVisited: itemDate,
+            notes: itemNotes,
+          });
         }
       } else {
-        warnings.push(`National Park "${rawPark}" could not be recognized.`);
+        warnings.push(`${prefix} National Park "${rawName}" could not be recognized.`);
       }
     }
 
     // 4. Resolve States & Provinces (capped at MAX_ENTITIES_PER_TRIP)
     const resolvedStates: ResolvedEntity[] = [];
-    const rawStates = (Array.isArray(trip.states) ? trip.states : [])
-      .slice(0, SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP)
-      .map((s) => sanitizePlainText(String(s), SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH));
+    const rawStates = (Array.isArray(trip.states) ? trip.states : []).slice(
+      0,
+      SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP,
+    );
 
-    for (const rawState of rawStates) {
-      if (!rawState) continue;
-      const match = this.matchState(rawState);
+    for (const item of rawStates) {
+      if (!item) continue;
+      let rawName = '';
+      let itemDate: string | undefined;
+      let itemNotes: string | undefined;
+
+      if (typeof item === 'string') {
+        rawName = sanitizePlainText(item, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+      } else if (typeof item === 'object' && item !== null) {
+        const itemObj = item as { name?: unknown; date?: unknown; notes?: unknown };
+        if (typeof itemObj.name === 'string') {
+          rawName = sanitizePlainText(itemObj.name, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+        }
+        if (typeof itemObj.date === 'string' && isValidCalendarDate(itemObj.date.trim())) {
+          itemDate = itemObj.date.trim();
+        }
+        if (typeof itemObj.notes === 'string') {
+          itemNotes = sanitizePlainText(itemObj.notes, SECURITY_LIMITS.MAX_TRIP_NOTES_LENGTH);
+        }
+      }
+
+      if (!rawName) continue;
+      const match = this.matchState(rawName);
       if (match) {
         if (!resolvedStates.some((s) => s.id === match.id)) {
-          resolvedStates.push({ id: match.id, name: match.name, country: match.country });
+          resolvedStates.push({
+            id: match.id,
+            name: match.name,
+            country: match.country,
+            dateVisited: itemDate,
+            notes: itemNotes,
+          });
         }
       } else {
-        warnings.push(`State/Province "${rawState}" could not be recognized.`);
+        warnings.push(`${prefix} State/Province "${rawName}" could not be recognized.`);
       }
     }
 
     // Must have at least one valid destination (either a park or a state)
     if (resolvedParks.length === 0 && resolvedStates.length === 0) {
-      errors.push('No recognized National Parks or States/Provinces found in this trip.');
+      errors.push(`${prefix} No recognized National Parks or States/Provinces found.`);
     }
 
     // Sanitize trip title and notes against XSS, control characters, and length limits
@@ -274,10 +481,11 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
       sanitizePlainText(trip.notes || '', SECURITY_LIMITS.MAX_TRIP_NOTES_LENGTH) || undefined;
 
     if (errors.length > 0) {
-      return { valid: false, errors, warnings };
+      return { errors, warnings };
     }
 
     const resolved: ValidatedTripDelta = {
+      id: crypto.randomUUID(),
       name: tripName,
       date: resolvedDate,
       members: resolvedMembers,
@@ -285,16 +493,24 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
       states: resolvedStates,
       notes: tripNotes,
       warnings,
+      status: 'pending',
     };
 
-    return { valid: true, resolved, errors: [], warnings };
+    return { resolved, errors: [], warnings };
   }
 
   /**
-   * Merges a validated trip delta incrementally into the central application state
-   * without overwriting existing visits or settings.
+   * Merges a batch of validated trip deltas incrementally into the central application state
+   * in a single atomic update. Only trips with status === 'approved' are merged.
+   * Returns an ImportReceipt detailing what was added and updated, or null on failure.
    */
-  public applyTripDelta(validated: ValidatedTripDelta): boolean {
+  public applyBatchTripDeltas(trips: ValidatedTripDelta[]): ImportReceipt | null {
+    const approvedTrips = trips.filter((t) => t.status === 'approved');
+    if (approvedTrips.length === 0) {
+      this.toastService.showInfo('No approved trips to import.');
+      return null;
+    }
+
     try {
       const current = this.stateService.getSettings();
       const updatedVisitedParks: Record<string, VisitDetail[]> = {
@@ -304,79 +520,164 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
         ...(current.visitedStates || {}),
       };
 
-      const dateStr = validated.date;
-      const comments = validated.notes || validated.name;
+      const initialVisitedParks = current.visitedParks || {};
+      const initialVisitedStates = current.visitedStates || {};
 
-      // 1. Merge Parks
-      for (const park of validated.parks) {
-        if (!updatedVisitedParks[park.id]) {
-          updatedVisitedParks[park.id] = [];
-        }
-        for (const member of validated.members) {
-          let memberDetail = updatedVisitedParks[park.id].find((v) => v.memberId === member.id);
-          const newLogEntry: VisitLogEntry = {
-            id: crypto.randomUUID(),
+      const previouslyVisitedParkIds = new Set(
+        Object.keys(initialVisitedParks).filter((id) => (initialVisitedParks[id] || []).length > 0),
+      );
+      const previouslyVisitedStateIds = new Set(
+        Object.keys(initialVisitedStates).filter(
+          (id) => (initialVisitedStates[id] || []).length > 0,
+        ),
+      );
+
+      const newParks: LocationImportSummary[] = [];
+      const alreadyVisitedParks: LocationImportSummary[] = [];
+      const newStates: LocationImportSummary[] = [];
+      const alreadyVisitedStates: LocationImportSummary[] = [];
+      const affectedMembersSet = new Set<string>();
+      let totalLogEntriesAdded = 0;
+
+      for (const trip of approvedTrips) {
+        trip.members.forEach((m) => affectedMembersSet.add(m.name));
+
+        // 1. Merge Parks
+        for (const park of trip.parks) {
+          const dateStr = park.dateVisited || trip.date;
+          const comments = park.notes || trip.notes || trip.name;
+
+          const isPriorVisited = previouslyVisitedParkIds.has(park.id);
+          const summaryItem: LocationImportSummary = {
+            id: park.id,
+            name: park.name,
+            isNewVisit: !isPriorVisited,
             dateVisited: dateStr,
-            comments,
+            notes: comments,
           };
 
-          if (!memberDetail) {
-            memberDetail = {
-              memberId: member.id,
-              dateVisited: dateStr,
-              firstVisitedDate: dateStr,
-              notes: comments,
-              visits: [newLogEntry],
-            };
-            updatedVisitedParks[park.id].push(memberDetail);
+          if (isPriorVisited) {
+            if (!alreadyVisitedParks.some((p) => p.id === park.id)) {
+              alreadyVisitedParks.push(summaryItem);
+            }
           } else {
-            if (!memberDetail.visits) {
-              memberDetail.visits = [];
+            if (!newParks.some((p) => p.id === park.id)) {
+              newParks.push(summaryItem);
             }
-            // Avoid duplicate entry on exact same date
-            const existingSameDate = memberDetail.visits.some((v) => v.dateVisited === dateStr);
-            if (!existingSameDate) {
-              memberDetail.visits.push(newLogEntry);
-            }
-            if (!memberDetail.firstVisitedDate || memberDetail.firstVisitedDate > dateStr) {
-              memberDetail.firstVisitedDate = dateStr;
+            previouslyVisitedParkIds.add(park.id);
+          }
+
+          if (!updatedVisitedParks[park.id]) {
+            updatedVisitedParks[park.id] = [];
+          }
+
+          for (const member of trip.members) {
+            let memberDetail = updatedVisitedParks[park.id].find((v) => v.memberId === member.id);
+            const newLogEntry: VisitLogEntry = {
+              id: crypto.randomUUID(),
+              dateVisited: dateStr,
+              comments,
+            };
+
+            if (!memberDetail) {
+              memberDetail = {
+                memberId: member.id,
+                dateVisited: dateStr,
+                firstVisitedDate: dateStr,
+                notes: comments,
+                visits: [newLogEntry],
+              };
+              updatedVisitedParks[park.id].push(memberDetail);
+              totalLogEntriesAdded++;
+            } else {
+              if (!memberDetail.visits) {
+                memberDetail.visits = [];
+              }
+              const existingSameDate = memberDetail.visits.find((v) => v.dateVisited === dateStr);
+              if (!existingSameDate) {
+                memberDetail.visits.push(newLogEntry);
+                totalLogEntriesAdded++;
+              } else if (
+                comments &&
+                (!existingSameDate.comments || !existingSameDate.comments.includes(comments))
+              ) {
+                existingSameDate.comments = existingSameDate.comments
+                  ? `${existingSameDate.comments}; ${comments}`
+                  : comments;
+              }
+              if (!memberDetail.firstVisitedDate || memberDetail.firstVisitedDate > dateStr) {
+                memberDetail.firstVisitedDate = dateStr;
+              }
             }
           }
         }
-      }
 
-      // 2. Merge States
-      for (const state of validated.states) {
-        if (!updatedVisitedStates[state.id]) {
-          updatedVisitedStates[state.id] = [];
-        }
-        for (const member of validated.members) {
-          let memberDetail = updatedVisitedStates[state.id].find((v) => v.memberId === member.id);
-          const newLogEntry: VisitLogEntry = {
-            id: crypto.randomUUID(),
+        // 2. Merge States
+        for (const state of trip.states) {
+          const dateStr = state.dateVisited || trip.date;
+          const comments = state.notes || trip.notes || trip.name;
+
+          const isPriorVisited = previouslyVisitedStateIds.has(state.id);
+          const summaryItem: LocationImportSummary = {
+            id: state.id,
+            name: state.name,
+            isNewVisit: !isPriorVisited,
             dateVisited: dateStr,
-            comments,
+            notes: comments,
           };
 
-          if (!memberDetail) {
-            memberDetail = {
-              memberId: member.id,
-              dateVisited: dateStr,
-              firstVisitedDate: dateStr,
-              notes: comments,
-              visits: [newLogEntry],
-            };
-            updatedVisitedStates[state.id].push(memberDetail);
+          if (isPriorVisited) {
+            if (!alreadyVisitedStates.some((s) => s.id === state.id)) {
+              alreadyVisitedStates.push(summaryItem);
+            }
           } else {
-            if (!memberDetail.visits) {
-              memberDetail.visits = [];
+            if (!newStates.some((s) => s.id === state.id)) {
+              newStates.push(summaryItem);
             }
-            const existingSameDate = memberDetail.visits.some((v) => v.dateVisited === dateStr);
-            if (!existingSameDate) {
-              memberDetail.visits.push(newLogEntry);
-            }
-            if (!memberDetail.firstVisitedDate || memberDetail.firstVisitedDate > dateStr) {
-              memberDetail.firstVisitedDate = dateStr;
+            previouslyVisitedStateIds.add(state.id);
+          }
+
+          if (!updatedVisitedStates[state.id]) {
+            updatedVisitedStates[state.id] = [];
+          }
+
+          for (const member of trip.members) {
+            let memberDetail = updatedVisitedStates[state.id].find((v) => v.memberId === member.id);
+            const newLogEntry: VisitLogEntry = {
+              id: crypto.randomUUID(),
+              dateVisited: dateStr,
+              comments,
+            };
+
+            if (!memberDetail) {
+              memberDetail = {
+                memberId: member.id,
+                dateVisited: dateStr,
+                firstVisitedDate: dateStr,
+                notes: comments,
+                visits: [newLogEntry],
+              };
+              updatedVisitedStates[state.id].push(memberDetail);
+              totalLogEntriesAdded++;
+            } else {
+              if (!memberDetail.visits) {
+                memberDetail.visits = [];
+              }
+              const existingSameDate = memberDetail.visits.find((v) => v.dateVisited === dateStr);
+              if (!existingSameDate) {
+                memberDetail.visits.push(newLogEntry);
+                totalLogEntriesAdded++;
+              } else if (
+                comments &&
+                (!existingSameDate.comments || !existingSameDate.comments.includes(comments))
+              ) {
+                existingSameDate.comments = existingSameDate.comments
+                  ? `${existingSameDate.comments}; ${comments}`
+                  : comments;
+              }
+              if (!memberDetail.firstVisitedDate || memberDetail.firstVisitedDate > dateStr) {
+                memberDetail.firstVisitedDate = dateStr;
+              }
             }
           }
         }
@@ -390,26 +691,68 @@ IMPORTANT: Output ONLY the JSON block. Do not include introductory or concluding
 
       this.stateService.updateSettings(updatedSettings);
 
-      const summaryParts: string[] = [];
-      if (validated.parks.length > 0) {
-        summaryParts.push(`${validated.parks.length} park(s)`);
-      }
-      if (validated.states.length > 0) {
-        summaryParts.push(`${validated.states.length} state(s)`);
-      }
+      const receipt: ImportReceipt = {
+        success: true,
+        tripsCount: approvedTrips.length,
+        newParks,
+        alreadyVisitedParks,
+        newStates,
+        alreadyVisitedStates,
+        totalLogEntriesAdded,
+        affectedMembers: Array.from(affectedMembersSet),
+      };
 
       this.toastService.showSuccess(
-        `Successfully logged "${validated.name}" with ${summaryParts.join(' & ')}!`,
+        `Successfully imported ${approvedTrips.length} trip${approvedTrips.length > 1 ? 's' : ''}!`,
       );
-      return true;
+
+      return receipt;
     } catch (e) {
-      this.logger.error('Failed to apply trip delta', e);
+      this.logger.error('Failed to apply batch trip deltas', e);
       this.toastService.showError({
         type: AppErrorType.VALIDATION_ERROR,
-        message: 'Failed to merge trip data into your tracker.',
+        message: 'Failed to merge trip batch into your tracker.',
       });
-      return false;
+      return null;
     }
+  }
+
+  /**
+   * Merges a single validated trip delta into the central application state.
+   */
+  public applyTripDelta(validated: ValidatedTripDelta): boolean {
+    validated.status = 'approved';
+    return !!this.applyBatchTripDeltas([validated]);
+  }
+
+  /**
+   * Resolves a single National Park name or alias to a canonical ResolvedEntity.
+   */
+  public resolveSinglePark(rawName: string): ResolvedEntity | null {
+    const match = this.matchPark(rawName);
+    return match ? { id: match.id, name: match.name, country: match.country } : null;
+  }
+
+  /**
+   * Resolves a single State/Province name or postal code to a canonical ResolvedEntity.
+   */
+  public resolveSingleState(rawState: string): ResolvedEntity | null {
+    const match = this.matchState(rawState);
+    return match ? { id: match.id, name: match.name, country: match.country } : null;
+  }
+
+  /**
+   * Returns all canonical National Parks for selection/autocomplete.
+   */
+  public getAllParks(): GeoLocation[] {
+    return NATIONAL_PARKS;
+  }
+
+  /**
+   * Returns all canonical States/Provinces for selection/autocomplete.
+   */
+  public getAllStates(): GeoLocation[] {
+    return STATES;
   }
 
   // --- Entity Matching Helpers ---

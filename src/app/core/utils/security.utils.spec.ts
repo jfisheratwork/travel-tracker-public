@@ -10,7 +10,8 @@ import {
 describe('security.utils', () => {
   describe('SECURITY_LIMITS', () => {
     it('defines security limits correctly', () => {
-      expect(SECURITY_LIMITS.MAX_INPUT_PAYLOAD_BYTES).toBe(32768);
+      expect(SECURITY_LIMITS.MAX_INPUT_PAYLOAD_BYTES).toBe(131072);
+      expect(SECURITY_LIMITS.MAX_TRIPS_PER_BATCH).toBe(25);
       expect(SECURITY_LIMITS.MAX_TRIP_NOTES_LENGTH).toBe(500);
     });
   });

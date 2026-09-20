@@ -73,6 +73,14 @@ describe('TripDeltaService', () => {
       const prompt = service.generatePrompt([]);
       expect(prompt).toContain('(none defined yet)');
     });
+
+    it('includes conversational user interaction instructions for standby and completion', () => {
+      const prompt = service.generatePrompt(sampleMembers);
+      expect(prompt).toContain("Hey! I'm ready to help log your travels");
+      expect(prompt).toContain(
+        'Here is the JSON you need to copy back into the Traveled Roads Tracker website:',
+      );
+    });
   });
 
   describe('extractAndParseJson', () => {
@@ -89,7 +97,7 @@ describe('TripDeltaService', () => {
 
       const result = service.extractAndParseJson(input);
       expect(result.success).toBe(true);
-      expect(result.payload?.trip.name).toBe('Yellowstone Trip');
+      expect(result.payload?.trip?.name).toBe('Yellowstone Trip');
     });
 
     it('extracts JSON from markdown code fence with conversational text', () => {
@@ -110,7 +118,43 @@ describe('TripDeltaService', () => {
 
       const result = service.extractAndParseJson(input);
       expect(result.success).toBe(true);
-      expect(result.payload?.trip.name).toBe('Tetons Trip');
+      expect(result.payload?.trip?.name).toBe('Tetons Trip');
+    });
+
+    it('parses raw array of trips directly', () => {
+      const input = JSON.stringify([
+        {
+          name: 'Trip 1',
+          parks: ['Yellowstone'],
+          states: ['WY'],
+        },
+        {
+          name: 'Trip 2',
+          parks: ['Zion'],
+          states: ['UT'],
+        },
+      ]);
+
+      const result = service.extractAndParseJson(input);
+      expect(result.success).toBe(true);
+      expect(result.payload?.trips?.length).toBe(2);
+      expect(result.payload?.trips?.[0].name).toBe('Trip 1');
+      expect(result.payload?.trips?.[1].name).toBe('Trip 2');
+    });
+
+    it('parses multi-trip payload with trips array', () => {
+      const input = JSON.stringify({
+        type: 'trip_delta',
+        version: 1,
+        trips: [
+          { name: 'Trip 1', parks: ['Acadia'], states: ['ME'] },
+          { name: 'Trip 2', parks: ['Banff'], states: ['AB'] },
+        ],
+      });
+
+      const result = service.extractAndParseJson(input);
+      expect(result.success).toBe(true);
+      expect(result.payload?.trips?.length).toBe(2);
     });
 
     it('returns an error for empty or invalid input', () => {
@@ -151,6 +195,35 @@ describe('TripDeltaService', () => {
       expect(r.states.map((s) => s.name)).toContain('Montana');
       expect(r.states.map((s) => s.name)).toContain('Wyoming');
       expect(r.states.map((s) => s.name)).toContain('Idaho');
+      expect(r.status).toBe('pending');
+      expect(r.id).toBeDefined();
+    });
+
+    it('validates batch of multiple trips in a single payload', () => {
+      const payload: TripDeltaPayload = {
+        type: 'trip_delta',
+        version: 1,
+        trips: [
+          {
+            name: 'Trip 1',
+            parks: ['Yellowstone'],
+            states: ['WY'],
+          },
+          {
+            name: 'Trip 2',
+            parks: ['Zion'],
+            states: ['UT'],
+          },
+        ],
+      };
+
+      const result = service.validateAndResolve(payload, DEFAULT_SETTINGS);
+      expect(result.valid).toBe(true);
+      expect(result.totalCount).toBe(2);
+      expect(result.validCount).toBe(2);
+      expect(result.trips.length).toBe(2);
+      expect(result.trips[0].parks[0].name).toBe('Yellowstone');
+      expect(result.trips[1].parks[0].name).toBe('Zion');
     });
 
     it('reports an error when no recognizable parks or states are present', () => {
@@ -164,9 +237,11 @@ describe('TripDeltaService', () => {
 
       const result = service.validateAndResolve(payload, DEFAULT_SETTINGS);
       expect(result.valid).toBe(false);
-      expect(result.errors).toContain(
-        'No recognized National Parks or States/Provinces found in this trip.',
-      );
+      expect(
+        result.errors.some((e) =>
+          e.includes('No recognized National Parks or States/Provinces found'),
+        ),
+      ).toBe(true);
     });
 
     it('handles year-only date and formats as mid-year fallback with warning', () => {
@@ -185,7 +260,7 @@ describe('TripDeltaService', () => {
     });
   });
 
-  describe('applyTripDelta', () => {
+  describe('applyTripDelta and applyBatchTripDeltas', () => {
     it('merges new visits without overwriting existing ones', () => {
       const initialSettings: AppSettings = {
         ...DEFAULT_SETTINGS,
@@ -204,6 +279,7 @@ describe('TripDeltaService', () => {
       mockStateService.getSettings.mockReturnValue(initialSettings);
 
       const validated: ValidatedTripDelta = {
+        id: 'trip-1',
         name: 'Yellowstone Trip',
         date: '2026-09-12',
         members: sampleMembers.map((m) => ({ id: m.id, name: m.name })),
@@ -211,6 +287,7 @@ describe('TripDeltaService', () => {
         states: [{ id: 'Wyoming', name: 'Wyoming' }],
         notes: 'Great road trip',
         warnings: [],
+        status: 'approved',
       };
 
       const success = service.applyTripDelta(validated);
@@ -232,11 +309,153 @@ describe('TripDeltaService', () => {
 
       expect(mockToastService.showSuccess).toHaveBeenCalled();
     });
+
+    it('merges multiple approved trips in batch mode', () => {
+      mockStateService.getSettings.mockReturnValue({
+        ...DEFAULT_SETTINGS,
+        familyMembers: sampleMembers,
+        visitedParks: {},
+        visitedStates: {},
+      });
+
+      const trips: ValidatedTripDelta[] = [
+        {
+          id: 't-1',
+          name: 'Trip 1',
+          date: '2024-07-01',
+          members: [{ id: 'mem-1', name: 'Jacob' }],
+          parks: [{ id: 'Yellowstone', name: 'Yellowstone' }],
+          states: [{ id: 'Wyoming', name: 'Wyoming' }],
+          warnings: [],
+          status: 'approved',
+        },
+        {
+          id: 't-2',
+          name: 'Trip 2',
+          date: '2025-08-01',
+          members: [{ id: 'mem-1', name: 'Jacob' }],
+          parks: [{ id: 'Zion', name: 'Zion' }],
+          states: [{ id: 'Utah', name: 'Utah' }],
+          warnings: [],
+          status: 'approved',
+        },
+        {
+          id: 't-3',
+          name: 'Skipped Trip',
+          date: '2026-01-01',
+          members: [{ id: 'mem-1', name: 'Jacob' }],
+          parks: [{ id: 'Acadia', name: 'Acadia' }],
+          states: [{ id: 'Maine', name: 'Maine' }],
+          warnings: [],
+          status: 'skipped',
+        },
+      ];
+
+      const receipt = service.applyBatchTripDeltas(trips);
+      expect(receipt).toBeTruthy();
+      expect(receipt?.success).toBe(true);
+      expect(receipt?.tripsCount).toBe(2);
+      expect(receipt?.totalLogEntriesAdded).toBe(4);
+
+      const updated = mockStateService.updateSettings.mock.calls[0][0] as AppSettings;
+      expect(updated.visitedParks?.['Yellowstone']).toBeDefined();
+      expect(updated.visitedParks?.['Zion']).toBeDefined();
+      // Skipped trip was not imported
+      expect(updated.visitedParks?.['Acadia']).toBeUndefined();
+    });
+
+    it('correctly categorizes already visited vs newly visited locations in receipt', () => {
+      // Setup state where Yellowstone and Wyoming were already visited
+      mockStateService.getSettings.mockReturnValue({
+        ...DEFAULT_SETTINGS,
+        familyMembers: [{ id: 'mem-1', name: 'Jacob', color: '#10b981' }],
+        visitedParks: {
+          Yellowstone: [{ memberId: 'mem-1', dateVisited: '2020-01-01', visits: [] }],
+        },
+        visitedStates: {
+          Wyoming: [{ memberId: 'mem-1', dateVisited: '2020-01-01', visits: [] }],
+        },
+      });
+
+      const trip: ValidatedTripDelta = {
+        id: 't-1',
+        name: 'Northern Rockies',
+        date: '2026-09-12',
+        members: [{ id: 'mem-1', name: 'Jacob' }],
+        parks: [
+          { id: 'Yellowstone', name: 'Yellowstone' },
+          { id: 'Glacier', name: 'Glacier' },
+        ],
+        states: [
+          { id: 'Wyoming', name: 'Wyoming' },
+          { id: 'Montana', name: 'Montana' },
+        ],
+        warnings: [],
+        status: 'approved',
+      };
+
+      const receipt = service.applyBatchTripDeltas([trip]);
+      expect(receipt).toBeTruthy();
+      expect(receipt?.alreadyVisitedParks.map((p) => p.id)).toEqual(['Yellowstone']);
+      expect(receipt?.newParks.map((p) => p.id)).toEqual(['Glacier']);
+      expect(receipt?.alreadyVisitedStates.map((s) => s.id)).toEqual(['Wyoming']);
+      expect(receipt?.newStates.map((s) => s.id)).toEqual(['Montana']);
+    });
+
+    it('parses per-location custom dates and notes from payload', () => {
+      const payload: TripDeltaPayload = {
+        type: 'trip_delta',
+        version: 1,
+        trip: {
+          name: 'Northern Rockies Loop',
+          date: '2019-07-01',
+          members: ['all'],
+          parks: [
+            { name: 'Grand Teton', date: '2019-07-03', notes: 'Jenny Lake hike' },
+            'Yellowstone',
+          ],
+          states: [{ name: 'Colorado', date: '2019-07-01', notes: 'Flew into Denver' }, 'Wyoming'],
+        },
+      };
+
+      const res = service.validateAndResolve(payload, {
+        ...DEFAULT_SETTINGS,
+        familyMembers: [{ id: 'mem-1', name: 'Jacob', color: '#10b981' }],
+      });
+
+      expect(res.valid).toBe(true);
+      const trip = res.resolved!;
+      expect(trip.parks[0].name).toBe('Grand Teton');
+      expect(trip.parks[0].dateVisited).toBe('2019-07-03');
+      expect(trip.parks[0].notes).toBe('Jenny Lake hike');
+
+      expect(trip.parks[1].name).toBe('Yellowstone');
+      expect(trip.parks[1].dateVisited).toBeUndefined();
+
+      expect(trip.states[0].name).toBe('Colorado');
+      expect(trip.states[0].dateVisited).toBe('2019-07-01');
+      expect(trip.states[0].notes).toBe('Flew into Denver');
+    });
+  });
+
+  describe('entity resolution helpers', () => {
+    it('resolves single park by name and alias', () => {
+      expect(service.resolveSinglePark('Yellowstone')?.id).toBe('Yellowstone');
+      expect(service.resolveSinglePark('Grand Tentons')?.id).toBe('Grand Teton');
+      expect(service.resolveSinglePark('Nonexistent Park')).toBeNull();
+    });
+
+    it('resolves single state by name and postal abbreviation', () => {
+      expect(service.resolveSingleState('Wyoming')?.name).toBe('Wyoming');
+      expect(service.resolveSingleState('MT')?.name).toBe('Montana');
+      expect(service.resolveSingleState('BC')?.name).toBe('British Columbia');
+      expect(service.resolveSingleState('Nonexistent State')).toBeNull();
+    });
   });
 
   describe('security & adversarial input handling', () => {
-    it('rejects payloads exceeding 32 KB byte limit', () => {
-      const hugeInput = ' '.repeat(35000);
+    it('rejects payloads exceeding 128 KB byte limit', () => {
+      const hugeInput = ' '.repeat(140000);
       const result = service.extractAndParseJson(hugeInput);
       expect(result.success).toBe(false);
       expect(result.error).toContain('Input payload exceeds maximum allowed size');

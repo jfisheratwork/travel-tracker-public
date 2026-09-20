@@ -21,7 +21,7 @@ export class ToastService {
       id: crypto.randomUUID(),
       type: 'error',
       message: error.message,
-      duration: 5000,
+      // Errors must be explicitly dismissed by the user - no duration
     });
   }
 
@@ -30,7 +30,7 @@ export class ToastService {
       id: crypto.randomUUID(),
       type: 'success',
       message,
-      duration: 3000,
+      duration: 3500,
     });
   }
 
@@ -39,7 +39,7 @@ export class ToastService {
       id: crypto.randomUUID(),
       type: 'info',
       message,
-      duration: 3000,
+      duration: 3500,
     });
   }
 

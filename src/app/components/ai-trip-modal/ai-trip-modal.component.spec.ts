@@ -18,7 +18,11 @@ describe('AiTripModalComponent', () => {
     extractAndParseJson: ReturnType<typeof vi.fn>;
     validateAndResolve: ReturnType<typeof vi.fn>;
     applyTripDelta: ReturnType<typeof vi.fn>;
+    applyBatchTripDeltas: ReturnType<typeof vi.fn>;
+    getAllParks: ReturnType<typeof vi.fn>;
+    getAllStates: ReturnType<typeof vi.fn>;
   };
+
   let mockToastService: {
     showSuccess: ReturnType<typeof vi.fn>;
     showInfo: ReturnType<typeof vi.fn>;
@@ -38,6 +42,29 @@ describe('AiTripModalComponent', () => {
       extractAndParseJson: vi.fn(),
       validateAndResolve: vi.fn(),
       applyTripDelta: vi.fn().mockReturnValue(true),
+      applyBatchTripDeltas: vi.fn().mockReturnValue({
+        success: true,
+        tripsCount: 1,
+        newParks: [
+          {
+            id: 'Yellowstone',
+            name: 'Yellowstone',
+            isNewVisit: true,
+            dateVisited: '2026-09-12',
+          },
+        ],
+        alreadyVisitedParks: [],
+        newStates: [
+          { id: 'Wyoming', name: 'Wyoming', isNewVisit: true, dateVisited: '2026-09-12' },
+        ],
+        alreadyVisitedStates: [],
+        totalLogEntriesAdded: 2,
+        affectedMembers: ['Jacob'],
+      }),
+      getAllParks: vi
+        .fn()
+        .mockReturnValue([{ id: 'Yellowstone', name: 'Yellowstone', state: 'WY', country: 'USA' }]),
+      getAllStates: vi.fn().mockReturnValue([{ id: 'Wyoming', name: 'Wyoming', country: 'USA' }]),
     };
 
     mockToastService = {
@@ -64,6 +91,8 @@ describe('AiTripModalComponent', () => {
     expect(component).toBeTruthy();
     expect(component.activeMembers.length).toBe(1);
     expect(component.promptText).toBe('Mock Prompt Text');
+    expect(component.allParks.length).toBe(1);
+    expect(component.allStates.length).toBe(1);
   });
 
   it('emits close event on escape key', () => {
@@ -103,45 +132,166 @@ describe('AiTripModalComponent', () => {
     expect(mockToastService.showSuccess).toHaveBeenCalledWith('AI Prompt copied to clipboard!');
   });
 
-  it('loads sample trip and triggers parsing', () => {
+  it('loads sample single and multi-trip and triggers parsing', () => {
     mockTripDeltaService.extractAndParseJson.mockReturnValue({
       success: true,
       payload: { trip: { name: 'Sample' } },
     });
     mockTripDeltaService.validateAndResolve.mockReturnValue({
       valid: true,
-      resolved: { name: 'Sample', date: '2026-09-12' },
+      trips: [
+        {
+          id: '1',
+          name: 'Sample',
+          date: '2026-09-12',
+          parks: [],
+          states: [],
+          members: [],
+          warnings: [],
+          status: 'pending',
+        },
+      ],
+      totalCount: 1,
+      validCount: 1,
       errors: [],
       warnings: [],
     });
 
-    component.loadSampleTrip();
+    component.loadSampleSingleTrip();
     expect(component.aiInput).toContain('Yellowstone & Grand Tetons Road Trip');
     expect(mockTripDeltaService.extractAndParseJson).toHaveBeenCalled();
-    expect(component.validationResult?.valid).toBe(true);
+    expect(component.batchResult?.valid).toBe(true);
+
+    component.loadSampleMultiTrip();
+    expect(component.aiInput).toContain('Utah Mighty 5 Desert Tour');
   });
 
-  it('applies trip delta and emits close on success', () => {
-    const validDelta: ValidatedTripDelta = {
-      name: 'Yellowstone Trip',
+  it('transitions to review step and navigates stepper', () => {
+    const trip1: ValidatedTripDelta = {
+      id: 't-1',
+      name: 'Trip 1',
       date: '2026-09-12',
       members: [{ id: 'mem-1', name: 'Jacob' }],
       parks: [{ id: 'Yellowstone', name: 'Yellowstone' }],
       states: [{ id: 'Wyoming', name: 'Wyoming' }],
       warnings: [],
+      status: 'pending',
+    };
+    const trip2: ValidatedTripDelta = {
+      id: 't-2',
+      name: 'Trip 2',
+      date: '2026-09-20',
+      members: [{ id: 'mem-1', name: 'Jacob' }],
+      parks: [],
+      states: [],
+      warnings: [],
+      status: 'pending',
     };
 
-    component.validationResult = {
+    component.batchResult = {
       valid: true,
-      resolved: validDelta,
+      trips: [trip1, trip2],
+      totalCount: 2,
+      validCount: 2,
       errors: [],
       warnings: [],
     };
 
-    const closeSpy = vi.spyOn(component.close, 'emit');
-    component.applyTrip();
+    component.startReview();
+    expect(component.currentStep).toBe('review');
+    expect(component.currentTripIndex).toBe(0);
+    expect(component.currentTrip?.name).toBe('Trip 1');
 
-    expect(mockTripDeltaService.applyTripDelta).toHaveBeenCalledWith(validDelta);
+    // Approve & Next advances index
+    component.approveAndNext();
+    expect(component.reviewTrips[0].status).toBe('approved');
+    expect(component.currentTripIndex).toBe(1);
+    expect(component.currentTrip?.name).toBe('Trip 2');
+
+    // Previous moves back
+    component.previousTrip();
+    expect(component.currentTripIndex).toBe(0);
+
+    // Skip & Next advances
+    component.skipAndNext();
+    expect(component.reviewTrips[0].status).toBe('skipped');
+    expect(component.currentTripIndex).toBe(1);
+  });
+
+  it('supports inline editing: park, state, and member modifications', () => {
+    const trip: ValidatedTripDelta = {
+      id: 't-1',
+      name: 'Trip 1',
+      date: '2026-09-12',
+      members: [{ id: 'mem-1', name: 'Jacob' }],
+      parks: [{ id: 'Yellowstone', name: 'Yellowstone' }],
+      states: [{ id: 'Wyoming', name: 'Wyoming' }],
+      warnings: [],
+      status: 'pending',
+    };
+
+    component.reviewTrips = [trip];
+    component.currentTripIndex = 0;
+    component.currentStep = 'review';
+
+    // Remove park
+    component.removePark(0);
+    expect(trip.parks.length).toBe(0);
+
+    // Add park
+    component.selectedAddParkId = 'Yellowstone';
+    component.onAddParkSelected();
+    expect(trip.parks.length).toBe(1);
+    expect(trip.parks[0].id).toBe('Yellowstone');
+
+    // Remove state
+    component.removeState(0);
+    expect(trip.states.length).toBe(0);
+
+    // Add state
+    component.selectedAddStateId = 'Wyoming';
+    component.onAddStateSelected();
+    expect(trip.states.length).toBe(1);
+
+    // Member toggle
+    expect(component.isMemberSelected('mem-1')).toBe(true);
+    component.toggleMember({ id: 'mem-1', name: 'Jacob', color: '#10b981' });
+    expect(component.isMemberSelected('mem-1')).toBe(false);
+
+    component.toggleAllMembers();
+    expect(component.isMemberSelected('mem-1')).toBe(true);
+  });
+
+  it('applies batch trip deltas, shows results screen, and emits close on done', () => {
+    const closeSpy = vi.spyOn(component.close, 'emit');
+    const trip: ValidatedTripDelta = {
+      id: 't-1',
+      name: 'Trip 1',
+      date: '2026-09-12',
+      members: [{ id: 'mem-1', name: 'Jacob' }],
+      parks: [{ id: 'Yellowstone', name: 'Yellowstone' }],
+      states: [{ id: 'Wyoming', name: 'Wyoming' }],
+      warnings: [],
+      status: 'pending',
+    };
+
+    component.reviewTrips = [trip];
+    component.finishAndApply();
+
+    expect(trip.status).toBe('approved');
+    expect(mockTripDeltaService.applyBatchTripDeltas).toHaveBeenCalledWith([trip]);
+    expect(component.currentStep).toBe('results');
+    expect(component.importReceipt).toBeTruthy();
+
+    component.doneAndClose();
     expect(closeSpy).toHaveBeenCalled();
+  });
+
+  it('toggles location dates editor', () => {
+    expect(component.showLocationDates).toBe(false);
+    component.toggleLocationDates();
+    expect(component.showLocationDates).toBe(true);
+    component.toggleLocationDates();
+    expect(component.showLocationDates).toBe(false);
   });
 });
