@@ -48,16 +48,6 @@ export class MapShadingService {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getFeatureStyle = (feature: any): L.PathOptions => {
-      if (isParksMode) {
-        return {
-          fillColor: 'transparent',
-          fillOpacity: 0,
-          color: currentTheme.stateUnvisitedStroke,
-          weight: 1.2,
-          opacity: 0.65,
-          interactive: false,
-        };
-      }
       if (!feature) {
         return {
           fillColor: currentTheme.stateUnvisitedFill,

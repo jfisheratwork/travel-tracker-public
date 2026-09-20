@@ -12,11 +12,11 @@ This document outlines the global rules for contributing to the Travel Tracker p
   > Written with the assistance of Google Gemini
 
 ## 3. Session Management
-- **Session Directories:** At the start of every new coding session, a session directory tracking the session details must be created in the `sessions/` directory.
-- **Naming Convention:** `sessions/YYYY-MM-DD-Session-{n}/` where `{n}` is an incrementing integer starting at 1 for the first session of that day (e.g. `sessions/2026-05-23-Session-1/`, `sessions/2026-05-23-Session-2/`).
+- **Session Directories:** At the start of every new coding session, a session directory tracking the session details must be created in the `my_sessions/` directory (which is `.gitignore`d to prevent local/personal session summaries and logs from being committed to GitHub).
+- **Naming Convention:** `my_sessions/YYYY-MM-DD-Session-{n}/` where `{n}` is an incrementing integer starting at 1 for the first session of that day (e.g. `my_sessions/2026-05-23-Session-1/`, `my_sessions/2026-05-23-Session-2/`).
 - **New Session Trigger:** A new session folder MUST be created when starting work on a new feature branch, or when wrapping up previous work after a merged PR (ensuring that subsequent tasks are isolated and their history/plans are not overwritten).
 - **Session Directory Contents & Update Frequency:**
-  Each session directory MUST contain the a session_summary markdown file, which should only be updated when committing or pushing to optimize token usage:
+  Each session directory MUST contain a `session_summary.md` markdown file, which should only be updated when committing or pushing to optimize token usage:
   1. `session_summary.md`: The main summary of the session. It must follow this structured layout:
      - **Executive Summary:** A concise overview of the session, goals, and results at the top.
      - **Outcomes:** The specific results, updates, and milestones achieved.

@@ -3,9 +3,13 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
+    "generate-env": "node scripts/generate-env.js",
+    "prestart": "node scripts/generate-env.js",
     "start": "ng serve",
+    "prebuild": "node scripts/generate-env.js",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
+    "pretest": "node scripts/generate-env.js",
     "test": "ng test",
     "lint": "eslint src/",
     "format": "prettier --write \"src/**/*.{ts,html,css}\" \"*.json\"",

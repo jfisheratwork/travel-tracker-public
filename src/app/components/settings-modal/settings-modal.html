@@ -201,7 +201,7 @@
             <input
               type="text"
               [(ngModel)]="newMemberName"
-              placeholder="Enter name"
+              placeholder="Enter names, comma-separated (e.g. Alice, Bob)"
               class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
               (keydown.enter)="addFamilyMember()"
             />
@@ -264,11 +264,18 @@
             </div>
 
             <div *ngIf="viewModel.routingEngine === 'mapbox'">
-              <label class="block text-sm font-semibold text-stone-800 mb-1">Mapbox API Key</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-sm font-semibold text-stone-800">Mapbox API Key</label>
+                <span
+                  *ngIf="hasEnvMapboxKey && !viewModel.mapboxKey"
+                  class="text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded"
+                  >Configured via .env</span
+                >
+              </div>
               <input
                 type="text"
                 [(ngModel)]="viewModel.mapboxKey"
-                placeholder="pk.ey..."
+                [placeholder]="hasEnvMapboxKey ? 'Configured via .env (or override here)' : 'pk.ey...'"
                 class="w-full border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-green-600"
               />
               <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
@@ -280,13 +287,29 @@
             </div>
 
             <div>
-              <label class="block text-sm font-semibold text-stone-800 mb-1"
-                >CARTO Basemap API Key</label
-              >
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-sm font-semibold text-stone-800"
+                  >CARTO Basemap API Key</label
+                >
+                <span
+                  *ngIf="isCartoActive"
+                  class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium flex items-center gap-1"
+                >
+                  <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  CARTO Voyager Active
+                </span>
+                <span
+                  *ngIf="!isCartoActive"
+                  class="text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded"
+                  >OpenStreetMap Fallback</span
+                >
+              </div>
               <input
                 type="text"
                 [(ngModel)]="viewModel.cartoKey"
-                placeholder="cb1_..."
+                [placeholder]="hasEnvCartoKey ? 'Configured via .env (or override here)' : 'cb1_...'"
                 class="w-full border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-green-600"
               />
               <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
@@ -303,7 +326,7 @@
                   target="_blank"
                   class="text-blue-600 underline"
                   >CARTO Basemaps FAQ</a
-                >).
+                >). Can also be set in <code class="text-xs bg-stone-100 px-1 py-0.5 rounded">.env</code> as <code class="text-xs bg-stone-100 px-1 py-0.5 rounded">CARTO_API_KEY</code>.
               </p>
             </div>
 

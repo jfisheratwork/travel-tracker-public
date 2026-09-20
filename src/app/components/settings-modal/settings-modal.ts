@@ -9,6 +9,7 @@ import { GeocodingService } from '../../services/routing/geocoding.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { ToastService } from '../../core/services/toast.service';
 import { AppErrorType } from '../../core/models/app-error.model';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-settings-modal',
@@ -56,7 +57,26 @@ export class SettingsModal implements OnInit, OnDestroy {
     if (this.sub) this.sub.unsubscribe();
   }
 
+  get hasEnvCartoKey(): boolean {
+    return !!(environment.cartoKey && environment.cartoKey !== 'YOUR_CARTO_API_KEY');
+  }
+
+  get hasEnvMapboxKey(): boolean {
+    return !!(environment.mapboxKey && environment.mapboxKey !== 'YOUR_MAPBOX_API_KEY');
+  }
+
+  get isCartoActive(): boolean {
+    const key = (this.viewModel.cartoKey || environment.cartoKey || '').trim();
+    return !!(key && key !== 'YOUR_CARTO_API_KEY');
+  }
+
   save(): void {
+    if (this.viewModel.cartoKey) {
+      this.viewModel.cartoKey = this.viewModel.cartoKey.trim();
+    }
+    if (this.viewModel.mapboxKey) {
+      this.viewModel.mapboxKey = this.viewModel.mapboxKey.trim();
+    }
     this.stateService.updateSettings(this.viewModel);
     this.close.emit();
   }
@@ -67,19 +87,25 @@ export class SettingsModal implements OnInit, OnDestroy {
 
   // --- Family Members ---
   addFamilyMember(): void {
-    const name = this.newMemberName.trim();
-    if (!name) return;
+    const raw = this.newMemberName.trim();
+    if (!raw) return;
 
-    // Check if exists
-    if (this.viewModel.familyMembers.find((m) => m.name.toLowerCase() === name.toLowerCase())) {
-      return;
+    // Support comma-separated names (e.g. "Bob, Brittany, Ben")
+    const names = raw
+      .split(',')
+      .map((n) => n.trim())
+      .filter((n) => n.length > 0);
+
+    for (const name of names) {
+      if (this.viewModel.familyMembers.some((m) => m.name.toLowerCase() === name.toLowerCase())) {
+        continue;
+      }
+      this.viewModel.familyMembers.push({
+        id: crypto.randomUUID(),
+        name,
+        color: this.getRandomColor(),
+      });
     }
-
-    this.viewModel.familyMembers.push({
-      id: crypto.randomUUID(),
-      name,
-      color: this.getRandomColor(),
-    });
 
     this.newMemberName = '';
   }

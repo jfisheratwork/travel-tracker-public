@@ -5,8 +5,7 @@ export
 
 # Generate environment files dynamically
 generate-env:
-	@mkdir -p src/environments
-	@printf "export const environment = {\n  production: false,\n  networkTimeoutMs: 10000,\n  mapboxKey:\n    '$$MAPBOX_API_KEY',\n  cartoKey: '$$CARTO_API_KEY',\n};\n" > src/environments/environment.ts
+	@node scripts/generate-env.js
 
 
 # Install all dependencies

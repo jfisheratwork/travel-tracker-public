@@ -53,6 +53,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   private map!: L.Map;
   private baseTileLayer!: L.TileLayer;
+  private currentTileUrl = '';
   private destroy$ = new Subject<void>();
 
   private resizeObserver?: ResizeObserver;
@@ -285,17 +286,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
             }, 100);
           }
 
-          const effectiveCartoKey = settings.cartoKey || environment.cartoKey;
-          if (
-            this.baseTileLayer &&
-            effectiveCartoKey &&
-            effectiveCartoKey !== 'YOUR_CARTO_API_KEY'
-          ) {
-            this.baseTileLayer.setUrl(
-              `${API_ENDPOINTS.CARTO_TILE_LAYER}?api_key=${effectiveCartoKey}`,
-            );
-          } else if (this.baseTileLayer) {
-            this.baseTileLayer.setUrl(API_ENDPOINTS.OSM_TILE_LAYER);
+          const effectiveCartoKey = this.getEffectiveCartoKey(settings);
+          const targetTileUrl = this.getTileUrl(effectiveCartoKey);
+          if (this.baseTileLayer && this.currentTileUrl !== targetTileUrl) {
+            this.currentTileUrl = targetTileUrl;
+            this.baseTileLayer.setUrl(targetTileUrl);
           }
 
           this.mapRouteService.renderRoutes({
@@ -307,6 +302,37 @@ export class MapViewComponent implements OnInit, OnDestroy {
           });
         },
       );
+  }
+
+  /**
+   * Retrieves the effective CARTO API key, preferring user custom settings over .env.
+   */
+  getEffectiveCartoKey(settings?: AppSettings): string {
+    const fromSettings = (
+      settings?.cartoKey ||
+      this.currentSettings?.cartoKey ||
+      this.stateService?.getSettings?.()?.cartoKey ||
+      ''
+    ).trim();
+    if (fromSettings && fromSettings !== 'YOUR_CARTO_API_KEY') {
+      return fromSettings;
+    }
+    const fromEnv = (environment.cartoKey || '').trim();
+    if (fromEnv && fromEnv !== 'YOUR_CARTO_API_KEY') {
+      return fromEnv;
+    }
+    return '';
+  }
+
+  /**
+   * Returns the tile layer URL. CARTO Basemaps requires the '?key=' query parameter.
+   * DOCS: https://carto.com/basemaps/apikey/
+   */
+  getTileUrl(cartoKey: string): string {
+    if (cartoKey) {
+      return `${API_ENDPOINTS.CARTO_TILE_LAYER}?key=${encodeURIComponent(cartoKey)}`;
+    }
+    return API_ENDPOINTS.OSM_TILE_LAYER;
   }
 
   private initMap() {
@@ -323,13 +349,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
       }
     }
 
-    const cartoKey = environment.cartoKey;
-    const tileUrl =
-      cartoKey && cartoKey !== 'YOUR_CARTO_API_KEY'
-        ? `${API_ENDPOINTS.CARTO_TILE_LAYER}?api_key=${cartoKey}`
-        : API_ENDPOINTS.OSM_TILE_LAYER;
+    const effectiveCartoKey = this.getEffectiveCartoKey();
+    this.currentTileUrl = this.getTileUrl(effectiveCartoKey);
 
-    this.baseTileLayer = L.tileLayer(tileUrl, {
+    this.baseTileLayer = L.tileLayer(this.currentTileUrl, {
       maxZoom: 19,
       attribution: '© OpenStreetMap, © CARTO',
     }).addTo(this.map);

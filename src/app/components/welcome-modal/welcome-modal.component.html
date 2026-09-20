@@ -265,7 +265,7 @@
             <input
               type="text"
               [(ngModel)]="mapboxKeyInput"
-              placeholder="pk.eyJ1I..."
+              [placeholder]="hasEnvMapboxKey ? 'Configured via .env (or override here)' : 'pk.eyJ1I...'"
               class="w-full border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
             />
           </div>
@@ -286,12 +286,12 @@
               </a>
             </div>
             <p class="text-[11px] text-stone-500">
-              Powers clean, crisp Voyager vector basemap tiles with labels.
+              Powers clean, crisp Voyager basemap tiles with labels. Can also be set in <code class="text-[10px] bg-stone-100 px-1 py-0.5 rounded">.env</code>.
             </p>
             <input
               type="text"
               [(ngModel)]="cartoKeyInput"
-              placeholder="cb1_..."
+              [placeholder]="hasEnvCartoKey ? 'Configured via .env (or override here)' : 'cb1_...'"
               class="w-full border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
             />
           </div>

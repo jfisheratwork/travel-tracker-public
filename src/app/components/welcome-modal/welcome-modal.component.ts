@@ -13,6 +13,7 @@ import { ToastService } from '../../core/services/toast.service';
 import { LoggerService } from '../../core/services/logger.service';
 import { AppErrorType } from '../../core/models/app-error.model';
 import { FamilyMember, Hometown } from '../../models/settings.model';
+import { environment } from '../../../environments/environment';
 
 const MEMBER_COLOR_PALETTE = [
   '#10b981', // emerald
@@ -66,6 +67,14 @@ export class WelcomeModalComponent implements OnInit {
     }
     this.mapboxKeyInput = current.mapboxKey || '';
     this.cartoKeyInput = current.cartoKey || '';
+  }
+
+  get hasEnvCartoKey(): boolean {
+    return !!(environment.cartoKey && environment.cartoKey !== 'YOUR_CARTO_API_KEY');
+  }
+
+  get hasEnvMapboxKey(): boolean {
+    return !!(environment.mapboxKey && environment.mapboxKey !== 'YOUR_MAPBOX_API_KEY');
   }
 
   @HostListener('document:keydown.escape')

@@ -23,7 +23,8 @@ vi.mock('leaflet', () => {
     },
     map: vi.fn().mockReturnValue(mapInstance),
     tileLayer: vi.fn().mockReturnValue({
-      addTo: vi.fn(),
+      addTo: vi.fn().mockReturnThis(),
+      setUrl: vi.fn(),
     }),
     layerGroup: vi.fn().mockReturnValue({
       addTo: vi.fn().mockReturnValue({
@@ -99,6 +100,7 @@ describe('MapViewComponent', () => {
       setColorTheme: vi.fn(),
       setMapMode: vi.fn(),
       triggerNewRoadTrip: vi.fn(),
+      getSettings: vi.fn().mockImplementation(() => settings$.getValue()),
     };
 
     const locationDataServiceMock = {
@@ -136,5 +138,39 @@ describe('MapViewComponent', () => {
   it('should call remove on map destroy', () => {
     component.ngOnDestroy();
     expect(component['map'].remove).toHaveBeenCalled();
+  });
+
+  describe('CARTO tile layer configuration', () => {
+    it('should return settings.cartoKey when provided and trimmed', () => {
+      const key = component.getEffectiveCartoKey({
+        cartoKey: '  cb1_user_key  ',
+      } as any);
+      expect(key).toBe('cb1_user_key');
+    });
+
+    it('should construct CARTO tile URL with ?key= parameter', () => {
+      const url = component.getTileUrl('cb1_user_key');
+      expect(url).toContain(
+        'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=cb1_user_key',
+      );
+      expect(url).not.toContain('api_key=');
+    });
+
+    it('should fallback to OpenStreetMap when no key is available', () => {
+      const url = component.getTileUrl('');
+      expect(url).toBe('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    });
+
+    it('should update tile layer with ?key= when settings update with a valid CARTO key', () => {
+      const setUrlSpy = vi.spyOn(component['baseTileLayer'], 'setUrl');
+      settings$.next({
+        cartoKey: 'cb1_dynamic_test_key',
+        hometowns: [],
+        familyMembers: [],
+        visitedStates: {},
+        visitedParks: {},
+      });
+      expect(setUrlSpy).toHaveBeenCalledWith(expect.stringContaining('?key=cb1_dynamic_test_key'));
+    });
   });
 });
