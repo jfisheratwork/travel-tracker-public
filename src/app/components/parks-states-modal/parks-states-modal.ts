@@ -4,7 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { AppSettings } from '../../models/settings.model';
 import { Subscription } from 'rxjs';
-import { NATIONAL_PARKS, STATES, GeoLocation } from '../../core/constants/geography.constants';
+import {
+  NATIONAL_PARKS,
+  STATES,
+  GeoLocation,
+  StateFilterOption,
+  getAvailableStateOptions,
+} from '../../core/constants/geography.constants';
 
 type SortColumn = 'name' | 'country' | string; // string for family member IDs
 
@@ -23,8 +29,12 @@ export class ParksStatesModal implements OnInit, OnDestroy {
 
   // Filters
   searchQuery: string = '';
+  countryFilter: string = 'all'; // 'all', 'USA', 'Canada'
+  stateFilter: string = 'all';
   memberFilter: string = 'all'; // 'all' or member ID
   visibilityFilter: string = 'all'; // 'all', 'visited', 'unvisited'
+
+  availableStates: StateFilterOption[] = [];
 
   // Sorting
   sortColumn: SortColumn = 'name';
@@ -36,6 +46,7 @@ export class ParksStatesModal implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.locations = this.mode === 'parks' ? NATIONAL_PARKS : STATES;
+    this.updateAvailableStates();
     this.sub = this.stateService.settings$.subscribe((settings) => {
       this.viewModel = JSON.parse(JSON.stringify(settings));
     });
@@ -45,15 +56,52 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     if (this.sub) this.sub.unsubscribe();
   }
 
+  updateAvailableStates(): void {
+    this.availableStates = getAvailableStateOptions(this.countryFilter, this.mode);
+  }
+
+  onCountryChange(): void {
+    this.updateAvailableStates();
+    if (this.stateFilter !== 'all') {
+      const validCodes = this.availableStates.map((s) => s.code);
+      if (!validCodes.includes(this.stateFilter)) {
+        this.stateFilter = 'all';
+      }
+    }
+  }
+
+  trackByCode(_index: number, item: StateFilterOption): string {
+    return item.code;
+  }
+
   get filteredLocations(): GeoLocation[] {
     if (!this.viewModel) return [];
 
     let result = this.locations;
 
-    // Search filter
+    // Search filter (name & abbreviation/sub)
     if (this.searchQuery) {
       const q = this.searchQuery.toLowerCase();
-      result = result.filter((l) => l.name.toLowerCase().includes(q));
+      result = result.filter(
+        (l) => l.name.toLowerCase().includes(q) || (l.sub && l.sub.toLowerCase().includes(q)),
+      );
+    }
+
+    // Country filter
+    if (this.countryFilter !== 'all') {
+      result = result.filter((l) => this.getCountry(l) === this.countryFilter);
+    }
+
+    // State / Province filter
+    if (this.stateFilter !== 'all') {
+      result = result.filter((l) => {
+        if (this.mode === 'parks') {
+          const subs = (l.sub || '').split('/');
+          return subs.includes(this.stateFilter);
+        } else {
+          return l.name === this.stateFilter || l.id === this.stateFilter;
+        }
+      });
     }
 
     // Visibility filter

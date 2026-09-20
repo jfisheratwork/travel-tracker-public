@@ -48,18 +48,48 @@
         />
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <!-- Country Filter -->
+        <select
+          [(ngModel)]="countryFilter"
+          (ngModelChange)="onCountryChange()"
+          class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+          title="Filter by Country"
+        >
+          <option value="all">All Countries</option>
+          <option value="USA">USA</option>
+          <option value="Canada">Canada</option>
+        </select>
+
+        <!-- State / Province Filter -->
+        <select
+          [(ngModel)]="stateFilter"
+          class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+          title="Filter by State or Province"
+        >
+          <option value="all">
+            {{ mode === 'parks' ? 'All States/Provinces' : 'All States & Provinces' }}
+          </option>
+          <option *ngFor="let s of availableStates; trackBy: trackByCode" [value]="s.code">
+            {{ s.label }}
+          </option>
+        </select>
+
+        <!-- Member Filter -->
         <select
           [(ngModel)]="memberFilter"
           class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+          title="Filter by Group Member"
         >
           <option value="all">All Members</option>
           <option *ngFor="let m of viewModel?.familyMembers" [value]="m.id">{{ m.name }}</option>
         </select>
 
+        <!-- Visibility Filter -->
         <select
           [(ngModel)]="visibilityFilter"
           class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+          title="Filter by Visit Status"
         >
           <option value="all">All Visible Locations</option>
           <option value="visited">Visited</option>

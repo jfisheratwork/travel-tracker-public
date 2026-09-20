@@ -828,3 +828,156 @@ export const TOTAL_PARKS = 85;
 export const TOTAL_US_STATES = 50;
 export const TOTAL_CA_PROVINCES = 13;
 export const TOTAL_STATES = 63;
+
+export const STATE_CODE_TO_NAME: Record<string, string> = {
+  AL: 'Alabama',
+  AK: 'Alaska',
+  AZ: 'Arizona',
+  AR: 'Arkansas',
+  CA: 'California',
+  CO: 'Colorado',
+  CT: 'Connecticut',
+  DE: 'Delaware',
+  FL: 'Florida',
+  GA: 'Georgia',
+  HI: 'Hawaii',
+  ID: 'Idaho',
+  IL: 'Illinois',
+  IN: 'Indiana',
+  IA: 'Iowa',
+  KS: 'Kansas',
+  KY: 'Kentucky',
+  LA: 'Louisiana',
+  ME: 'Maine',
+  MD: 'Maryland',
+  MA: 'Massachusetts',
+  MI: 'Michigan',
+  MN: 'Minnesota',
+  MS: 'Mississippi',
+  MO: 'Missouri',
+  MT: 'Montana',
+  NE: 'Nebraska',
+  NV: 'Nevada',
+  NH: 'New Hampshire',
+  NJ: 'New Jersey',
+  NM: 'New Mexico',
+  NY: 'New York',
+  NC: 'North Carolina',
+  ND: 'North Dakota',
+  OH: 'Ohio',
+  OK: 'Oklahoma',
+  OR: 'Oregon',
+  PA: 'Pennsylvania',
+  RI: 'Rhode Island',
+  SC: 'South Carolina',
+  SD: 'South Dakota',
+  TN: 'Tennessee',
+  TX: 'Texas',
+  UT: 'Utah',
+  VT: 'Vermont',
+  VA: 'Virginia',
+  WA: 'Washington',
+  WV: 'West Virginia',
+  WI: 'Wisconsin',
+  WY: 'Wyoming',
+  DC: 'District of Columbia',
+  AS: 'American Samoa',
+  VI: 'Virgin Islands',
+  AB: 'Alberta',
+  BC: 'British Columbia',
+  MB: 'Manitoba',
+  NB: 'New Brunswick',
+  NL: 'Newfoundland and Labrador',
+  NS: 'Nova Scotia',
+  NT: 'Northwest Territories',
+  NU: 'Nunavut',
+  ON: 'Ontario',
+  PE: 'Prince Edward Island',
+  QC: 'Quebec',
+  SK: 'Saskatchewan',
+  YT: 'Yukon',
+};
+
+export interface StateFilterOption {
+  code: string;
+  name: string;
+  label: string;
+  country: 'USA' | 'Canada';
+}
+
+const CANADIAN_POSTAL_CODES = new Set([
+  'AB',
+  'BC',
+  'MB',
+  'NB',
+  'NL',
+  'NS',
+  'NT',
+  'NU',
+  'ON',
+  'PE',
+  'QC',
+  'SK',
+  'YT',
+]);
+
+/**
+ * Returns available state/province filter options based on mode and active country filter.
+ */
+export function getAvailableStateOptions(
+  country: string,
+  mode: 'parks' | 'states',
+): StateFilterOption[] {
+  if (mode === 'parks') {
+    const parkCodes = new Set<string>();
+    for (const park of NATIONAL_PARKS) {
+      if (park.sub) {
+        for (const code of park.sub.split('/')) {
+          parkCodes.add(code);
+        }
+      }
+    }
+
+    const options: StateFilterOption[] = [];
+    for (const code of parkCodes) {
+      const name = STATE_CODE_TO_NAME[code] || code;
+      const isCanada = CANADIAN_POSTAL_CODES.has(code);
+      const optCountry: 'USA' | 'Canada' = isCanada ? 'Canada' : 'USA';
+
+      if (country !== 'all' && optCountry !== country) {
+        continue;
+      }
+
+      options.push({
+        code,
+        name,
+        label: `${name} (${code})`,
+        country: optCountry,
+      });
+    }
+
+    return options.sort((a, b) => a.name.localeCompare(b.name));
+  } else {
+    const options: StateFilterOption[] = [];
+    for (const state of STATES) {
+      const isCanada = state.sub === 'Canada' || state.country === 'Canada';
+      const optCountry: 'USA' | 'Canada' = isCanada ? 'Canada' : 'USA';
+
+      if (country !== 'all' && optCountry !== country) {
+        continue;
+      }
+
+      const codeEntry = Object.entries(STATE_CODE_TO_NAME).find(([, name]) => name === state.name);
+      const code = codeEntry ? codeEntry[0] : '';
+
+      options.push({
+        code: state.name,
+        name: state.name,
+        label: code ? `${state.name} (${code})` : state.name,
+        country: optCountry,
+      });
+    }
+
+    return options.sort((a, b) => a.name.localeCompare(b.name));
+  }
+}

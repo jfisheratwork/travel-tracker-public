@@ -316,43 +316,28 @@
   </div>
 
   <!-- Main Display Container: Stacked Map and Details Drawer -->
-  <div class="flex flex-col gap-4">
-    <!-- Map Row: Map Widget + Right Action Column + Side Details Pane -->
-    <div class="flex flex-col lg:flex-row gap-3 items-start w-full">
-      <!-- Map Area (Occupies 56% when details pane is open, flex-1 full width when closed) -->
-      <div
-        class="w-full rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0 h-[calc(100vh-140px)] sm:h-[calc(100vh-122px)] min-h-[600px]"
-        [class.flex-1]="!showDetailsDrawer"
-        [class.lg:w-[56%]]="showDetailsDrawer"
-        [class.lg:flex-none]="showDetailsDrawer"
-        [style.backgroundColor]="currentTheme.cardBg"
-        [style.borderColor]="currentTheme.cardBorder"
-        style="border-width: 3.5px; border-style: solid"
-      >
-        <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
-      </div>
-
-      <!-- Right Action Column: Visited Header, Mode Tabs, Line, Edit Header, Add __, Show Details, Line -->
-      <div
-        class="flex flex-col gap-2 flex-shrink-0 w-full lg:w-44 p-3 rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] transition-colors duration-200"
-        [style.backgroundColor]="currentTheme.cardBg"
-        [style.borderColor]="currentTheme.cardBorder"
-      >
-        <!-- "Visited" Header with darker background and no rounded border -->
+  <div class="flex flex-col gap-3">
+    <!-- Horizontal Action Toolbar: Visited Mode Switcher + Action Buttons -->
+    <div
+      class="w-full px-3 py-2 rounded-2xl md:rounded-3xl shadow-md border-[2px] transition-colors duration-200 flex flex-wrap items-center justify-between gap-2.5"
+      [style.backgroundColor]="currentTheme.cardBg"
+      [style.borderColor]="currentTheme.cardBorder"
+    >
+      <!-- Visited Mode Switcher Group -->
+      <div class="flex items-center gap-1.5 flex-wrap">
         <div
-          class="w-full py-1.5 px-3 text-center text-xs font-extrabold uppercase tracking-wider rounded-none shadow-xs transition-colors duration-200"
+          class="py-1 px-2.5 text-xs font-black uppercase tracking-wider rounded-lg shadow-2xs"
           [style.backgroundColor]="currentTheme.headerBg"
           [style.color]="currentTheme.headerText"
         >
           Visited
         </div>
 
-        <!-- Mode Selection Tabs -->
         <ng-container *ngIf="stateService.mapMode$ | async as mode">
           <button
             type="button"
             (click)="setMapMode('roads')"
-            class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
+            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
             [style.backgroundColor]="
               mode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
             "
@@ -369,7 +354,7 @@
           <button
             type="button"
             (click)="setMapMode('parks')"
-            class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
+            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
             [style.backgroundColor]="
               mode === 'parks' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
             "
@@ -386,7 +371,7 @@
           <button
             type="button"
             (click)="setMapMode('states')"
-            class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
+            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
             [style.backgroundColor]="
               mode === 'states' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
             "
@@ -400,26 +385,17 @@
             ⭐ Places Visited
           </button>
         </ng-container>
+      </div>
 
-        <!-- Horizontal line separator -->
-        <div class="w-full h-px my-0.5" [style.backgroundColor]="currentTheme.cardBorder"></div>
-
-        <!-- "Edit" Header with darker background and no rounded border -->
-        <div
-          class="w-full py-1.5 px-3 text-center text-xs font-extrabold uppercase tracking-wider rounded-none shadow-xs transition-colors duration-200"
-          [style.backgroundColor]="currentTheme.headerBg"
-          [style.color]="currentTheme.headerText"
-        >
-          Edit
-        </div>
-
-        <!-- "Add __" Contextual Add button matching active mode -->
+      <!-- Action Buttons Group -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Contextual Add Button matching active mode -->
         <ng-container *ngIf="stateService.mapMode$ | async as mode">
           <button
             type="button"
             *ngIf="mode === 'roads'"
             (click)="openRoads()"
-            class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
+            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
             [style.backgroundColor]="currentTheme.buttonBg"
             [style.borderColor]="currentTheme.buttonBorder"
             [style.color]="currentTheme.buttonText"
@@ -430,7 +406,7 @@
             type="button"
             *ngIf="mode === 'parks'"
             (click)="openParksModal()"
-            class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
+            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
             [style.backgroundColor]="currentTheme.buttonBg"
             [style.borderColor]="currentTheme.buttonBorder"
             [style.color]="currentTheme.buttonText"
@@ -441,7 +417,7 @@
             type="button"
             *ngIf="mode === 'states'"
             (click)="openStatesModal()"
-            class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
+            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
             [style.backgroundColor]="currentTheme.buttonBg"
             [style.borderColor]="currentTheme.buttonBorder"
             [style.color]="currentTheme.buttonText"
@@ -450,11 +426,11 @@
           </button>
         </ng-container>
 
-        <!-- "AI Trip Import" Button -->
+        <!-- AI Trip Import Button -->
         <button
           type="button"
           (click)="showAiTripModal = true"
-          class="w-full h-10 px-2.5 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
+          class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
           [style.backgroundColor]="currentTheme.buttonBg"
           [style.borderColor]="currentTheme.buttonBorder"
           [style.color]="currentTheme.buttonText"
@@ -463,11 +439,11 @@
           <span>🪄 AI Trip Import</span>
         </button>
 
-        <!-- "Show Details" Button -->
+        <!-- Show / Hide Details Button -->
         <button
           type="button"
           (click)="toggleDetailsDrawer()"
-          class="w-full h-10 px-2.5 rounded-xl font-bold text-xs sm:text-sm shadow-xs transition border active:scale-95 whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer"
+          class="h-9 px-3 rounded-xl font-bold text-xs sm:text-sm shadow-xs transition border active:scale-95 whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer"
           [style.backgroundColor]="
             showDetailsDrawer ? currentTheme.buttonActiveBg : currentTheme.buttonBg
           "
@@ -481,16 +457,29 @@
         >
           <span>{{ showDetailsDrawer ? '▶ Hide Details' : '◀ Show Details' }}</span>
         </button>
+      </div>
+    </div>
 
-        <!-- Horizontal line separator -->
-        <div class="w-full h-px my-0.5" [style.backgroundColor]="currentTheme.cardBorder"></div>
+    <!-- Map Row: Map Widget + Side Details Pane (NO middle vertical column!) -->
+    <div class="flex flex-col lg:flex-row gap-3 items-start w-full">
+      <!-- Map Area (Occupies ~62% when details pane is open, flex-1 full width when closed) -->
+      <div
+        class="w-full rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0 h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px]"
+        [class.flex-1]="!showDetailsDrawer"
+        [class.lg:w-[62%]]="showDetailsDrawer"
+        [class.lg:flex-none]="showDetailsDrawer"
+        [style.backgroundColor]="currentTheme.cardBg"
+        [style.borderColor]="currentTheme.cardBorder"
+        style="border-width: 3.5px; border-style: solid"
+      >
+        <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
       </div>
 
       <!-- Right Side Details Pane: Expands from right pushing map to 50-60% of viewport -->
       <div
         id="detailsDrawer"
         *ngIf="showDetailsDrawer && (stateService.mapMode$ | async) as mode"
-        class="flex-1 w-full lg:min-w-[360px] lg:max-w-[540px] h-[calc(100vh-140px)] sm:h-[calc(100vh-122px)] min-h-[600px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
+        class="flex-1 w-full lg:min-w-[360px] lg:max-w-[500px] h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
       >

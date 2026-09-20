@@ -51,7 +51,7 @@
   </div>
 
   <!-- Search Input Bar in Drawer -->
-  <div class="relative mb-3">
+  <div class="relative mb-2">
     <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -75,7 +75,7 @@
       [placeholder]="
         'Search visited ' +
         (mode === 'parks' ? 'parks' : 'states') +
-        ', members, dates, comments...'
+        ' by name, state, or notes...'
       "
       class="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-lg text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs transition"
     />
@@ -100,14 +100,82 @@
     </button>
   </div>
 
+  <!-- Filter Selectors Row: Country, State/Province, Member -->
+  <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+    <!-- Country Filter -->
+    <div>
+      <select
+        [(ngModel)]="countryFilter"
+        (ngModelChange)="onCountryChange()"
+        class="w-full py-1.5 px-2 bg-white border border-stone-200 rounded-lg text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs cursor-pointer truncate"
+        title="Filter by Country"
+      >
+        <option value="all">All Countries</option>
+        <option value="USA">USA</option>
+        <option value="Canada">Canada</option>
+      </select>
+    </div>
+
+    <!-- State / Province Filter -->
+    <div>
+      <select
+        [(ngModel)]="stateFilter"
+        class="w-full py-1.5 px-2 bg-white border border-stone-200 rounded-lg text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs cursor-pointer truncate"
+        title="Filter by State or Province"
+      >
+        <option value="all">
+          {{ mode === 'parks' ? 'All States/Prov' : 'All States/Prov' }}
+        </option>
+        <option *ngFor="let s of availableStates; trackBy: trackByCode" [value]="s.code">
+          {{ s.label }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Member Filter -->
+    <div>
+      <select
+        [(ngModel)]="memberFilter"
+        class="w-full py-1.5 px-2 bg-white border border-stone-200 rounded-lg text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs cursor-pointer truncate"
+        title="Filter by Family Member"
+      >
+        <option value="all">All Members</option>
+        <option *ngFor="let m of settings?.familyMembers" [value]="m.id">
+          {{ m.name }}
+        </option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Active Filters Reset Bar (when any filter is active) -->
+  <div
+    *ngIf="hasActiveFilters"
+    class="flex items-center justify-between px-2.5 py-1 mb-2 bg-stone-100 border border-stone-200 rounded-lg text-[11px] text-stone-600"
+  >
+    <div class="flex items-center gap-1.5 truncate">
+      <span class="font-bold text-stone-500">Filtered:</span>
+      <span *ngIf="countryFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">{{ countryFilter }}</span>
+      <span *ngIf="stateFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">{{ stateFilter }}</span>
+      <span *ngIf="memberFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">Member</span>
+      <span *ngIf="searchTerm" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 italic">"{{ searchTerm }}"</span>
+    </div>
+    <button
+      (click)="resetFilters()"
+      class="text-emerald-700 hover:text-emerald-900 font-bold ml-2 shrink-0 cursor-pointer hover:underline"
+      title="Clear all filters"
+    >
+      Reset
+    </button>
+  </div>
+
   <div class="flex flex-col gap-2 text-sm text-stone-500 flex-1 overflow-y-auto pr-1 min-h-0">
     <div
       *ngIf="visitedLocations.length === 0"
       class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400"
     >
       {{
-        searchTerm
-          ? 'No ' + (mode === 'parks' ? 'parks' : 'states') + ' matching "' + searchTerm + '".'
+        hasActiveFilters
+          ? 'No visited ' + (mode === 'parks' ? 'parks' : 'states') + ' match the selected filters.'
           : 'No ' +
             (mode === 'parks' ? 'parks' : 'states') +
             ' visited yet. Use "Add ' +

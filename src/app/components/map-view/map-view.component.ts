@@ -70,7 +70,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   get visitedUSStatesCount(): number {
     const visited = this.currentSettings?.visitedStates || {};
     return Object.keys(visited).filter((id) => {
-      const isUS = STATES.some((s) => s.id === id && s.country !== 'Canada');
+      const isUS = STATES.some((s) => s.id === id && s.country !== 'Canada' && s.sub !== 'Canada');
       const logs = this.currentSettings?.locationVisits?.[id] || [];
       return isUS && ((visited[id] && visited[id].length > 0) || logs.length > 0);
     }).length;
@@ -79,7 +79,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
   get visitedCAProvincesCount(): number {
     const visited = this.currentSettings?.visitedStates || {};
     return Object.keys(visited).filter((id) => {
-      const isCA = STATES.some((s) => s.id === id && s.country === 'Canada');
+      const isCA = STATES.some(
+        (s) => s.id === id && (s.country === 'Canada' || s.sub === 'Canada'),
+      );
       const logs = this.currentSettings?.locationVisits?.[id] || [];
       return isCA && ((visited[id] && visited[id].length > 0) || logs.length > 0);
     }).length;
