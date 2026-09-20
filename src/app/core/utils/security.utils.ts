@@ -8,8 +8,17 @@ export const SECURITY_LIMITS = {
   MAX_STRING_ITEM_LENGTH: 80,
   MIN_VALID_YEAR: 1900,
   MAX_VALID_YEAR: 2100,
-  MAX_OBJECT_DEPTH: 4,
+  MAX_OBJECT_DEPTH: 8,
 } as const;
+
+/**
+ * Result returned by payload safety verification.
+ */
+export interface PayloadSafetyResult {
+  safe: boolean;
+  reason?: 'prototype_pollution' | 'excessive_depth';
+  errorMessage?: string;
+}
 
 /**
  * Escapes characters with special meaning in HTML to prevent XSS.
@@ -61,26 +70,32 @@ export function sanitizePlainText(
 }
 
 /**
- * Inspects a parsed JSON object recursively to ensure it is free from
- * prototype pollution keys (__proto__, constructor, prototype) and stays
- * within a safe object tree depth.
+ * Inspects a parsed JSON structure recursively to ensure:
+ * 1. It is free from prototype pollution keys (__proto__, constructor, prototype).
+ * 2. It does not exceed the safe maximum object nesting depth (8 levels).
+ * Returns specific, user-friendly diagnostic guidance when unsafe patterns are found.
  */
-export function isPrototypePollutionSafe(obj: unknown, currentDepth = 0): boolean {
+export function checkPayloadSafety(obj: unknown, currentDepth = 0): PayloadSafetyResult {
   if (currentDepth > SECURITY_LIMITS.MAX_OBJECT_DEPTH) {
-    return false;
+    return {
+      safe: false,
+      reason: 'excessive_depth',
+      errorMessage: `JSON nesting depth exceeds the allowed limit (${SECURITY_LIMITS.MAX_OBJECT_DEPTH} levels). Please simplify or flatten the structure.`,
+    };
   }
 
   if (!obj || typeof obj !== 'object') {
-    return true;
+    return { safe: true };
   }
 
   if (Array.isArray(obj)) {
     for (const item of obj) {
-      if (!isPrototypePollutionSafe(item, currentDepth + 1)) {
-        return false;
+      const res = checkPayloadSafety(item, currentDepth + 1);
+      if (!res.safe) {
+        return res;
       }
     }
-    return true;
+    return { safe: true };
   }
 
   const record = obj as Record<string, unknown>;
@@ -88,14 +103,26 @@ export function isPrototypePollutionSafe(obj: unknown, currentDepth = 0): boolea
 
   for (const key of Object.keys(record)) {
     if (forbiddenKeys.includes(key)) {
-      return false;
+      return {
+        safe: false,
+        reason: 'prototype_pollution',
+        errorMessage: `JSON contains forbidden property key "${key}". Please remove it from the input.`,
+      };
     }
-    if (!isPrototypePollutionSafe(record[key], currentDepth + 1)) {
-      return false;
+    const res = checkPayloadSafety(record[key], currentDepth + 1);
+    if (!res.safe) {
+      return res;
     }
   }
 
-  return true;
+  return { safe: true };
+}
+
+/**
+ * Convenience boolean check for backward compatibility.
+ */
+export function isPrototypePollutionSafe(obj: unknown, currentDepth = 0): boolean {
+  return checkPayloadSafety(obj, currentDepth).safe;
 }
 
 /**

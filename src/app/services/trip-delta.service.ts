@@ -14,7 +14,7 @@ import {
 import {
   SECURITY_LIMITS,
   sanitizePlainText,
-  isPrototypePollutionSafe,
+  checkPayloadSafety,
   isValidCalendarDate,
 } from '../core/utils/security.utils';
 import {
@@ -137,45 +137,41 @@ For multiple trips / travel history:
   }
 
   /**
-   * Safely extracts and parses JSON from raw user input, handling markdown
-   * code fences, leading/trailing conversational text, raw arrays, and batch payloads.
+   * Pre-processes raw text from the AI prompt, cleans Markdown code fences,
+   * extracts the JSON payload, checks prototype pollution safety, and parses it.
    */
   public extractAndParseJson(rawInput: string): ParseResult {
     if (!rawInput || typeof rawInput !== 'string') {
-      return { success: false, error: 'Input is empty. Please paste your trip JSON.' };
+      return { success: false, error: 'Input is empty or not a valid string.' };
     }
 
-    // Input size guardrail (DoS / memory exhaustion prevention)
     if (rawInput.length > SECURITY_LIMITS.MAX_INPUT_PAYLOAD_BYTES) {
       return {
         success: false,
-        error: `Input payload exceeds maximum allowed size (${SECURITY_LIMITS.MAX_INPUT_PAYLOAD_BYTES / 1024} KB).`,
+        error: `Input payload exceeds maximum allowed size (${Math.round(SECURITY_LIMITS.MAX_INPUT_PAYLOAD_BYTES / 1024)} KB).`,
       };
-    }
-
-    if (!rawInput.trim()) {
-      return { success: false, error: 'Input is empty. Please paste your trip JSON.' };
     }
 
     let cleaned = rawInput.trim();
 
-    // 1. Extract content from markdown code block if present
-    const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-    if (codeBlockMatch && codeBlockMatch[1]) {
+    // 1. Strip Markdown ```json ... ``` code blocks
+    const codeBlockMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
       cleaned = codeBlockMatch[1].trim();
     } else {
-      // 2. Locate first '{' or '[' and last '}' or ']'
-      const firstBrace = cleaned.indexOf('{');
-      const firstBracket = cleaned.indexOf('[');
+      // Find the outermost { ... } or [ ... ]
+      const firstCurly = cleaned.indexOf('{');
+      const firstSquare = cleaned.indexOf('[');
+
       let startIndex = -1;
       let endIndex = -1;
 
-      if (firstBracket !== -1 && (firstBrace === -1 || firstBracket < firstBrace)) {
-        startIndex = firstBracket;
-        endIndex = cleaned.lastIndexOf(']');
-      } else if (firstBrace !== -1) {
-        startIndex = firstBrace;
+      if (firstCurly !== -1 && (firstSquare === -1 || firstCurly < firstSquare)) {
+        startIndex = firstCurly;
         endIndex = cleaned.lastIndexOf('}');
+      } else if (firstSquare !== -1) {
+        startIndex = firstSquare;
+        endIndex = cleaned.lastIndexOf(']');
       }
 
       if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
@@ -188,11 +184,15 @@ For multiple trips / travel history:
 
       // Handle raw array of trips e.g. [ { ... }, { ... } ]
       if (Array.isArray(parsed)) {
-        if (!isPrototypePollutionSafe(parsed)) {
-          this.logger.warn('Rejected array payload failing prototype pollution check', { parsed });
+        const safety = checkPayloadSafety(parsed);
+        if (!safety.safe) {
+          this.logger.warn('Rejected array payload failing safety check', {
+            parsed,
+            reason: safety.reason,
+          });
           return {
             success: false,
-            error: 'Security Alert: Potentially unsafe JSON array structure detected.',
+            error: safety.errorMessage || 'Invalid JSON array structure detected.',
           };
         }
         return {
@@ -208,13 +208,15 @@ For multiple trips / travel history:
       const parsedObj = parsed as Record<string, unknown>;
 
       // Prototype pollution & excessive object depth defense
-      if (!isPrototypePollutionSafe(parsedObj)) {
-        this.logger.warn('Rejected payload failing prototype pollution or depth check', {
+      const safety = checkPayloadSafety(parsedObj);
+      if (!safety.safe) {
+        this.logger.warn('Rejected payload failing safety check', {
           parsed: parsedObj,
+          reason: safety.reason,
         });
         return {
           success: false,
-          error: 'Security Alert: Potentially unsafe JSON object structure detected.',
+          error: safety.errorMessage || 'Invalid JSON object structure detected.',
         };
       }
 
@@ -237,12 +239,18 @@ For multiple trips / travel history:
       let tripPayload: RawTripPayload;
       if (parsedObj['trip'] && typeof parsedObj['trip'] === 'object') {
         tripPayload = parsedObj['trip'] as RawTripPayload;
-      } else if (parsedObj['parks'] || parsedObj['states'] || parsedObj['name']) {
+      } else if (
+        parsedObj['parks'] ||
+        parsedObj['states'] ||
+        parsedObj['name'] ||
+        parsedObj['route']
+      ) {
         tripPayload = parsedObj as RawTripPayload;
       } else {
         return {
           success: false,
-          error: 'JSON is missing required "trip", "trips", "parks", or "states" fields.',
+          error:
+            'JSON is missing required trip data. Please include a "trip" or "trips" section with at least one park, state, or road trip route.',
         };
       }
 

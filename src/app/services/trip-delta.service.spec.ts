@@ -473,7 +473,32 @@ describe('TripDeltaService', () => {
       const maliciousJson = '{"__proto__": {"injected": true}, "trip": {"parks": ["Acadia"]}}';
       const result = service.extractAndParseJson(maliciousJson);
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Security Alert');
+      expect(result.error).toContain('forbidden property key "__proto__"');
+    });
+
+    it('successfully parses road trip payloads with nested route segments and highways', () => {
+      const roadTripJson = JSON.stringify({
+        type: 'trip_delta',
+        version: 1,
+        trip: {
+          name: 'Pacific Northwest to Monterey Road Trip',
+          date: '2022-04-15',
+          members: ['all'],
+          parks: [{ name: 'Crater Lake' }],
+          states: ['Washington', 'Oregon', 'California'],
+          route: [
+            {
+              segment: 1,
+              from: 'Spokane, WA',
+              to: 'Bend, OR',
+              highways: ['I-90 W', 'US-395 S', 'I-82 W', 'US-97 S'],
+            },
+          ],
+        },
+      });
+      const result = service.extractAndParseJson(roadTripJson);
+      expect(result.success).toBe(true);
+      expect(result.payload?.trip?.name).toBe('Pacific Northwest to Monterey Road Trip');
     });
 
     it('sanitizes HTML tags and XSS attempts from trip name and notes', () => {

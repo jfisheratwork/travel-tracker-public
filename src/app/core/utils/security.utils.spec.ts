@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   escapeHtml,
   sanitizePlainText,
+  checkPayloadSafety,
   isPrototypePollutionSafe,
   isValidCalendarDate,
   SECURITY_LIMITS,
@@ -49,21 +50,35 @@ describe('security.utils', () => {
     });
   });
 
-  describe('isPrototypePollutionSafe', () => {
-    it('returns true for safe payloads', () => {
+  describe('isPrototypePollutionSafe & checkPayloadSafety', () => {
+    it('returns true for safe payloads including road trip route segments', () => {
       const safe = {
         trip: {
           name: 'Yellowstone',
           parks: ['Yellowstone'],
           states: ['Wyoming'],
+          route: [
+            {
+              segment: 1,
+              from: 'Spokane, WA',
+              to: 'Bend, OR',
+              highways: ['I-90 W', 'US-395 S'],
+            },
+          ],
         },
       };
       expect(isPrototypePollutionSafe(safe)).toBe(true);
+      expect(checkPayloadSafety(safe).safe).toBe(true);
     });
 
-    it('detects and rejects prototype pollution attempts', () => {
+    it('detects and rejects prototype pollution attempts with actionable error message', () => {
       const malicious = JSON.parse('{"__proto__": {"admin": true}}');
       expect(isPrototypePollutionSafe(malicious)).toBe(false);
+
+      const check = checkPayloadSafety(malicious);
+      expect(check.safe).toBe(false);
+      expect(check.reason).toBe('prototype_pollution');
+      expect(check.errorMessage).toContain('forbidden property key "__proto__"');
 
       const maliciousNested = {
         trip: {
@@ -73,9 +88,16 @@ describe('security.utils', () => {
       expect(isPrototypePollutionSafe(maliciousNested)).toBe(false);
     });
 
-    it('rejects objects exceeding maximum tree depth', () => {
-      const deeplyNested = { a: { b: { c: { d: { e: { f: 1 } } } } } };
+    it('rejects objects exceeding maximum tree depth with clear limit explanation', () => {
+      const deeplyNested = {
+        a: { b: { c: { d: { e: { f: { g: { h: { i: { j: 1 } } } } } } } } },
+      };
       expect(isPrototypePollutionSafe(deeplyNested)).toBe(false);
+
+      const check = checkPayloadSafety(deeplyNested);
+      expect(check.safe).toBe(false);
+      expect(check.reason).toBe('excessive_depth');
+      expect(check.errorMessage).toContain('exceeds the allowed limit (8 levels)');
     });
   });
 
