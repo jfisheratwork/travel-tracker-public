@@ -175,13 +175,13 @@ describe('MapViewComponent', () => {
       expect(setUrlSpy).toHaveBeenCalledWith(expect.stringContaining('?key=cb1_dynamic_test_key'));
     });
 
-    it('should not re-apply mode zoom (fitBounds) when settings update within the same map mode', async () => {
-      const fitBoundsSpy = vi.fn();
-      component['map'].fitBounds = fitBoundsSpy;
+    it('should not re-apply mode zoom when settings update within the same map mode', async () => {
+      const setViewSpy = vi.fn();
+      component['map'].setView = setViewSpy;
 
       // Allow initial setTimeout to settle
       await new Promise((r) => setTimeout(r, 150));
-      fitBoundsSpy.mockClear();
+      setViewSpy.mockClear();
 
       // Trigger settings update (e.g. wishlist change)
       settings$.next({
@@ -190,7 +190,7 @@ describe('MapViewComponent', () => {
       });
 
       await new Promise((r) => setTimeout(r, 150));
-      expect(fitBoundsSpy).not.toHaveBeenCalled();
+      expect(setViewSpy).not.toHaveBeenCalled();
     });
   });
 });

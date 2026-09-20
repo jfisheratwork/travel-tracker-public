@@ -43,10 +43,8 @@ import { MapRouteService } from './services/map-route.service';
 
 const METERS_PER_MILE = 1609.34;
 const ROADS_HOMETOWN_RADIUS_MILES = 300;
-const NORTH_AMERICA_BOUNDS: L.LatLngBoundsLiteral = [
-  [25.0, -165.0],
-  [64.0, -52.0],
-];
+const NORTH_AMERICA_CENTER: L.LatLngExpression = [44.5, -100.0];
+const NORTH_AMERICA_ZOOM = 4.0;
 
 @Component({
   selector: 'app-map-view',
@@ -147,6 +145,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private familyMembers: FamilyMember[] = [];
   private previousMapMode?: MapMode;
   private previousSelectedRoute?: RouteObject | null;
+  private initialZoomApplied = false;
+  private selectedRoute: RouteObject | null = null;
 
   constructor(
     private stateService: StateService,
@@ -292,13 +292,19 @@ export class MapViewComponent implements OnInit, OnDestroy {
             this.mapMode === 'roads' && this.previousSelectedRoute !== selectedRoute;
           this.previousMapMode = mapMode;
           this.previousSelectedRoute = selectedRoute;
+          this.selectedRoute = selectedRoute;
 
           if (this.map) {
             setTimeout(() => {
               if (!this.map || typeof this.map.invalidateSize !== 'function') return;
               this.map.invalidateSize();
-              if (modeChanged || routeChanged) {
-                this.applyModeZoom(settings, selectedRoute);
+              const mapEl = this.el.nativeElement.querySelector('#map') as HTMLElement | null;
+              const hasValidHeight = (mapEl?.clientHeight ?? 0) > 200;
+              if (modeChanged || routeChanged || !this.initialZoomApplied) {
+                if (hasValidHeight) {
+                  this.initialZoomApplied = true;
+                  this.applyModeZoom(settings, selectedRoute);
+                }
               }
             }, 100);
           }
@@ -358,7 +364,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
     this.map = L.map(mapContainer, {
       zoomSnap: 0.5,
       zoomDelta: 0.5,
-    }).setView([48.0, -108.0], 4);
+      minZoom: 3.5,
+    }).setView(NORTH_AMERICA_CENTER, NORTH_AMERICA_ZOOM);
 
     // DOCS: https://leafletjs.com/reference.html#map-createpane
     if (!this.map.getPane(STATE_SHADING_THEME.PANE_NAME)) {
@@ -382,6 +389,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
     if (typeof ResizeObserver !== 'undefined' && mapContainer) {
       this.resizeObserver = new ResizeObserver(() => {
         this.invalidateSize();
+        if (!this.initialZoomApplied && mapContainer.clientHeight > 200) {
+          this.initialZoomApplied = true;
+          this.applyModeZoom(this.currentSettings ?? ({} as AppSettings), this.selectedRoute);
+        }
       });
       this.resizeObserver.observe(mapContainer);
     }
@@ -463,7 +474,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
     if (!this.map || typeof this.map.fitBounds !== 'function') return;
 
     if (this.mapMode === 'parks' || this.mapMode === 'states' || this.mapMode === 'places') {
-      this.map.fitBounds(NORTH_AMERICA_BOUNDS, { padding: [5, 5] });
+      this.map.setView(NORTH_AMERICA_CENTER, NORTH_AMERICA_ZOOM);
     } else if (this.mapMode === 'roads') {
       if (selectedRoute) {
         return;
