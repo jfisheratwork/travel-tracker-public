@@ -336,19 +336,19 @@
         <ng-container *ngIf="stateService.mapMode$ | async as mode">
           <button
             type="button"
-            (click)="setMapMode('roads')"
+            (click)="setMapMode('places')"
             class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
             [style.backgroundColor]="
-              mode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
+              mode === 'places' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
             "
             [style.color]="
-              mode === 'roads' ? currentTheme.buttonActiveText : currentTheme.buttonText
+              mode === 'places' ? currentTheme.buttonActiveText : currentTheme.buttonText
             "
             [style.borderColor]="
-              mode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
+              mode === 'places' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
             "
           >
-            🚗 Roads Visited
+            📍 Places Visited
           </button>
 
           <button
@@ -388,19 +388,19 @@
 
           <button
             type="button"
-            (click)="setMapMode('places')"
+            (click)="setMapMode('roads')"
             class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
             [style.backgroundColor]="
-              mode === 'places' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
+              mode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
             "
             [style.color]="
-              mode === 'places' ? currentTheme.buttonActiveText : currentTheme.buttonText
+              mode === 'roads' ? currentTheme.buttonActiveText : currentTheme.buttonText
             "
             [style.borderColor]="
-              mode === 'places' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
+              mode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
             "
           >
-            📍 Places Visited
+            🚗 Roads Visited
           </button>
         </ng-container>
       </div>

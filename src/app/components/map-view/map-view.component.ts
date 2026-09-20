@@ -143,7 +143,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private currentLayerGroup!: L.LayerGroup;
   private allLocations: LocationPoint[] = [];
   private currentSearchTerm = '';
-  mapMode: MapMode = 'parks';
+  mapMode: MapMode = 'places';
   private familyMembers: FamilyMember[] = [];
   private previousMapMode?: MapMode;
   private previousSelectedRoute?: RouteObject | null;

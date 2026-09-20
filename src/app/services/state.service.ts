@@ -12,7 +12,7 @@ export class StateService {
   private searchTermSubject = new BehaviorSubject<string>('');
   public searchTerm$ = this.searchTermSubject.asObservable();
 
-  private mapModeSubject = new BehaviorSubject<MapMode>('parks');
+  private mapModeSubject = new BehaviorSubject<MapMode>('places');
   public mapMode$ = this.mapModeSubject.asObservable();
 
   private settingsSubject = new BehaviorSubject<AppSettings>(DEFAULT_SETTINGS);

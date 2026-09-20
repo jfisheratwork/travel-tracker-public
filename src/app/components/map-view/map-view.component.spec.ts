@@ -79,7 +79,7 @@ describe('MapViewComponent', () => {
     searchTerm$ = new BehaviorSubject<string>('');
     selectedRoute$ = new BehaviorSubject<any>(null);
     settings$ = new BehaviorSubject<any>({ hometowns: [] });
-    mapMode$ = new BehaviorSubject<string>('parks');
+    mapMode$ = new BehaviorSubject<string>('places');
     const initialTheme = {
       id: 'dunes-deep-lake',
       name: 'Dunes & Deep Lake',
