@@ -502,12 +502,9 @@
 
     <!-- Map Row: Map Widget + Side Details Pane (NO middle vertical column!) -->
     <div class="flex flex-col lg:flex-row gap-3 items-start w-full">
-      <!-- Map Area (Occupies ~62% when details pane is open, flex-1 full width when closed) -->
+      <!-- Map Area (Fills remaining horizontal space when details pane is open, full width when closed) -->
       <div
-        class="w-full rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0 h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px]"
-        [class.flex-1]="!showDetailsDrawer"
-        [class.lg:w-[62%]]="showDetailsDrawer"
-        [class.lg:flex-none]="showDetailsDrawer"
+        class="w-full flex-1 rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0 h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px]"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
         style="border-width: 3.5px; border-style: solid"
@@ -515,11 +512,11 @@
         <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
       </div>
 
-      <!-- Right Side Details Pane: Expands from right pushing map to 50-60% of viewport -->
+      <!-- Right Side Details Pane: Docked cleanly on the right taking fixed 500px on desktop -->
       <div
         id="detailsDrawer"
         *ngIf="showDetailsDrawer && (stateService.mapMode$ | async) as mode"
-        class="flex-1 w-full lg:min-w-[360px] lg:max-w-[500px] h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
+        class="w-full lg:w-[500px] lg:flex-none h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
       >
