@@ -6,6 +6,7 @@ export interface GeoLocation {
   sub?: string;
   country?: string;
   capital?: string;
+  isCountryCapital?: boolean;
 }
 
 export const NATIONAL_PARKS: GeoLocation[] = [
@@ -818,6 +819,29 @@ export const STATES: GeoLocation[] = [
     capital: 'Whitehorse',
     lat: 60.7212,
     lng: -135.0568,
+  },
+];
+
+export const COUNTRY_CAPITALS: GeoLocation[] = [
+  {
+    id: 'District of Columbia',
+    name: 'Washington, D.C.',
+    sub: 'USA',
+    country: 'USA',
+    capital: 'Washington, D.C.',
+    lat: 38.9072,
+    lng: -77.0369,
+    isCountryCapital: true,
+  },
+  {
+    id: 'Ottawa',
+    name: 'Ottawa',
+    sub: 'Canada',
+    country: 'Canada',
+    capital: 'Ottawa',
+    lat: 45.4215,
+    lng: -75.6972,
+    isCountryCapital: true,
   },
 ];
 

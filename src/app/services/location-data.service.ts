@@ -7,7 +7,7 @@ import { BehaviorSubject, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { LocationPoint } from '../models/location.model';
 import { LoggerService } from '../core/services/logger.service';
-import { NATIONAL_PARKS, STATES } from '../core/constants/geography.constants';
+import { COUNTRY_CAPITALS, NATIONAL_PARKS, STATES } from '../core/constants/geography.constants';
 
 @Injectable({
   providedIn: 'root',
@@ -44,19 +44,32 @@ export class LocationDataService {
       })),
     );
 
-    this.statesSubject.next(
-      STATES.map((s) => ({
-        id: `state-${s.id}`,
-        name: s.name,
-        lat: s.lat,
-        lng: s.lng,
-        region: s.sub || '',
-        country: s.country || (s.sub === 'Canada' ? 'Canada' : 'USA'),
-        sub: s.sub || '',
-        visited: false,
-        visitedBy: [],
-      })),
-    );
+    const mappedStates = STATES.map((s) => ({
+      id: `state-${s.id}`,
+      name: s.name,
+      lat: s.lat,
+      lng: s.lng,
+      region: s.sub || '',
+      country: s.country || (s.sub === 'Canada' ? 'Canada' : 'USA'),
+      sub: s.sub || '',
+      visited: false,
+      visitedBy: [],
+    }));
+
+    const mappedCountryCapitals = COUNTRY_CAPITALS.map((c) => ({
+      id: `state-${c.id}`,
+      name: c.name,
+      lat: c.lat,
+      lng: c.lng,
+      region: c.sub || '',
+      country: c.country || (c.sub === 'Canada' ? 'Canada' : 'USA'),
+      sub: c.sub || '',
+      visited: false,
+      visitedBy: [],
+      isCountryCapital: true,
+    }));
+
+    this.statesSubject.next([...mappedStates, ...mappedCountryCapitals]);
 
     this.http
       .get<GeoJSON.FeatureCollection>('assets/data/us_ca_states.geojson')

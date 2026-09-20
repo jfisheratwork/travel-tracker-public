@@ -14,6 +14,7 @@ export interface LocationPopupMemberVisit {
 export interface LocationPopupParams {
   name: string;
   isPark: boolean;
+  isCountryCapital?: boolean;
   originalId: string;
   visitedByMembers?: LocationPopupMemberVisit[];
   visitLogs?: unknown[];
@@ -30,7 +31,11 @@ export function buildLocationPopupHtml(
   params: LocationPopupParams,
   familyMembers: FamilyMember[],
 ): string {
-  const subLabel = params.isPark ? 'National Park' : 'State / Province';
+  const subLabel = params.isPark
+    ? 'National Park'
+    : params.isCountryCapital
+      ? 'Country Capital'
+      : 'State / Province';
   const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(params.name).replace(/%20/g, '_')}`;
 
   const membersHtml = (familyMembers || [])

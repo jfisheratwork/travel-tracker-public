@@ -8,6 +8,7 @@ export interface LocationPoint {
   visited: boolean;
   country?: string;
   sub?: string;
+  isCountryCapital?: boolean;
 }
 
 export type MapMode = 'parks' | 'states' | 'roads';

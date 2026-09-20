@@ -108,6 +108,7 @@ export class MapMarkerService {
           {
             name: m.name,
             isPark,
+            isCountryCapital: !!m.isCountryCapital,
             originalId,
             visitedByMembers: m.visitedByMembers,
             visitLogs: m.visitLogs,
@@ -133,17 +134,21 @@ export class MapMarkerService {
           .bindPopup(`<strong>${m.name} (${m.isLast ? 'Hometown' : 'Previous Hometown'})</strong>`)
           .addTo(layerGroup);
       } else {
-        const iconChar = isPark
-          ? m.country === 'Canada'
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (markerTheme as any).ICON_CHAR_CA || '🏔️'
-            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (markerTheme as any).ICON_CHAR_US || '⛰️'
-          : m.country === 'Canada' || m.sub === 'Canada'
-            ? // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (markerTheme as any).ICON_CHAR_CA || '🇨🇦'
-            : // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (markerTheme as any).ICON_CHAR_US || '🇺🇸';
+        const isCanada = m.country === 'Canada' || m.sub === 'Canada';
+        let iconChar: string;
+        if (isPark) {
+          iconChar = isCanada
+            ? MAP_MARKER_THEME.PARK.ICON_CHAR_CA
+            : MAP_MARKER_THEME.PARK.ICON_CHAR_US;
+        } else if (m.isCountryCapital) {
+          iconChar = isCanada
+            ? MAP_MARKER_THEME.STATE.ICON_COUNTRY_CAPITAL_CA
+            : MAP_MARKER_THEME.STATE.ICON_COUNTRY_CAPITAL_US;
+        } else {
+          iconChar = isCanada
+            ? MAP_MARKER_THEME.STATE.ICON_CHAR_CA
+            : MAP_MARKER_THEME.STATE.ICON_CHAR_US;
+        }
         const iconHtml = `<div class="flex items-center justify-center transition-all duration-300" style="width:${markerTheme.DIAMETER}px; height:${markerTheme.DIAMETER}px; background-color:${bgColor}; border-radius:50%; border: ${border}; box-shadow: ${boxShadow}; opacity: ${opacity}; font-size:${markerTheme.FONT_SIZE}; line-height: 1;">${iconChar}</div>`;
         const icon = L.divIcon({
           html: iconHtml,
