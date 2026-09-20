@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 // DOCS: https://leafletjs.com/reference.html
 import * as L from 'leaflet';
+import { MapMode } from '../../../models/location.model';
 import { MAP_THEME } from '../../../core/constants/map.constants';
 import { RouteObject } from '../../../models/route.model';
 import { RoutingService } from '../../../services/routing/routing.service';
@@ -12,7 +13,7 @@ export interface RenderRoutesOptions {
   map: L.Map;
   savedRoutes?: RouteObject[];
   selectedRoute?: RouteObject | null;
-  mapMode: 'parks' | 'states' | 'roads';
+  mapMode: MapMode;
   hasHometown?: boolean;
 }
 

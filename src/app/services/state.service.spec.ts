@@ -24,4 +24,36 @@ describe('StateService', () => {
     const term = await firstValueFrom(service.searchTerm$);
     expect(term).toBe('Yosemite');
   });
+
+  it('should correctly transition location status between visited, want, and unvisited', () => {
+    // Initial status: unvisited
+    expect(service.getLocationStatus('yosemite', 'parks')).toBe('unvisited');
+
+    // Transition to want
+    service.setLocationStatus('yosemite', 'parks', 'want');
+    expect(service.getLocationStatus('yosemite', 'parks')).toBe('want');
+    expect(service.getSettings().wantToVisitParks?.['yosemite']).toBeDefined();
+    expect(service.getSettings().visitedParks?.['yosemite']).toBeUndefined();
+
+    // Transition to visited (should clear from want)
+    service.setLocationStatus('yosemite', 'parks', 'visited');
+    expect(service.getLocationStatus('yosemite', 'parks')).toBe('visited');
+    expect(service.getSettings().visitedParks?.['yosemite']).toBeDefined();
+    expect(service.getSettings().wantToVisitParks?.['yosemite']).toBeUndefined();
+
+    // Transition to unvisited (should clear from both)
+    service.setLocationStatus('yosemite', 'parks', 'unvisited');
+    expect(service.getLocationStatus('yosemite', 'parks')).toBe('unvisited');
+    expect(service.getSettings().visitedParks?.['yosemite']).toBeUndefined();
+    expect(service.getSettings().wantToVisitParks?.['yosemite']).toBeUndefined();
+  });
+
+  it('should manage member-specific want and visited statuses', () => {
+    service.setLocationStatus('banff', 'parks', 'visited', 'member-1');
+    service.setLocationStatus('banff', 'parks', 'want', 'member-2');
+
+    expect(service.getLocationStatus('banff', 'parks', 'member-1')).toBe('visited');
+    expect(service.getLocationStatus('banff', 'parks', 'member-2')).toBe('want');
+    expect(service.getLocationStatus('banff', 'parks', 'member-3')).toBe('unvisited');
+  });
 });

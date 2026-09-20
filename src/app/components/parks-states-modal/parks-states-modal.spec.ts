@@ -100,4 +100,33 @@ describe('ParksStatesModal', () => {
     component.toggleVisit('Banff', 'm-1');
     expect(component.isVisited('Banff', 'm-1')).toBe(true);
   });
+
+  it('should cycle member status from unvisited -> visited -> want -> unvisited', () => {
+    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('unvisited');
+
+    // Cycle 1: unvisited -> visited
+    component.cycleMemberStatus('Acadia', 'm-1');
+    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('visited');
+
+    // Cycle 2: visited -> want
+    component.cycleMemberStatus('Acadia', 'm-1');
+    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('want');
+
+    // Cycle 3: want -> unvisited
+    component.cycleMemberStatus('Acadia', 'm-1');
+    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('unvisited');
+  });
+
+  it('should set all member statuses at once and support want visibility filter', () => {
+    // Set all members to want for Acadia
+    component.setAllStatus('Acadia', 'want');
+    expect(component.isAllWant('Acadia')).toBe(true);
+    expect(component.getWantCount('Acadia')).toBe(2);
+
+    // Filter by want
+    component.visibilityFilter = 'want';
+    const wantLocations = component.filteredLocations.map((l) => l.name);
+    expect(wantLocations).toContain('Acadia');
+    expect(wantLocations).not.toContain('Banff'); // Banff is visited
+  });
 });

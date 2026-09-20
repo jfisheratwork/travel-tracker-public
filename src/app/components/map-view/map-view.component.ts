@@ -7,7 +7,7 @@ import { Subject, Observable, takeUntil, combineLatest } from 'rxjs';
 import * as L from 'leaflet';
 import { RouteObject } from '../../models/route.model';
 import { LocationDataService } from '../../services/location-data.service';
-import { LocationPoint } from '../../models/location.model';
+import { LocationPoint, MapMode } from '../../models/location.model';
 import { API_ENDPOINTS } from '../../core/constants/api.constants';
 import { environment } from '../../../environments/environment';
 import { ParksStatesModal } from '../parks-states-modal/parks-states-modal';
@@ -27,7 +27,14 @@ import {
   TOTAL_CA_PARKS,
 } from '../../core/constants/geography.constants';
 import { AppSettings, FamilyMember } from '../../models/settings.model';
-import { MAP_THEME, STATE_SHADING_THEME } from '../../core/constants/map.constants';
+import {
+  MAP_THEME,
+  STATE_SHADING_THEME,
+  CLUSTER_SEPARATE_PADDING_TOP_LEFT,
+  CLUSTER_SEPARATE_PADDING_BOTTOM_RIGHT,
+  CLUSTER_BOUNDS_BUFFER_RATIO,
+  CLUSTER_SEPARATE_MAX_ZOOM,
+} from '../../core/constants/map.constants';
 import { MapStatsLegendComponent } from './components/map-stats-legend/map-stats-legend.component';
 import { MapVisitedLegendComponent } from './components/map-visited-legend/map-visited-legend.component';
 import { MapShadingService } from './services/map-shading.service';
@@ -37,8 +44,8 @@ import { MapRouteService } from './services/map-route.service';
 const METERS_PER_MILE = 1609.34;
 const ROADS_HOMETOWN_RADIUS_MILES = 300;
 const NORTH_AMERICA_BOUNDS: L.LatLngBoundsLiteral = [
-  [22.0, -132.0],
-  [60.0, -55.0],
+  [25.0, -165.0],
+  [64.0, -52.0],
 ];
 
 @Component({
@@ -136,7 +143,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private currentLayerGroup!: L.LayerGroup;
   private allLocations: LocationPoint[] = [];
   private currentSearchTerm = '';
-  mapMode: 'parks' | 'states' | 'roads' = 'parks';
+  mapMode: MapMode = 'parks';
   private familyMembers: FamilyMember[] = [];
 
   constructor(
@@ -191,6 +198,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
           const mergedParks = parks.map((p) => {
             const originalId = p.id.replace('park-', '');
             const visitDetails = settings.visitedParks?.[originalId] || [];
+            const wantDetails = settings.wantToVisitParks?.[originalId] || [];
             const visitors = visitDetails
               .map((v) => {
                 const mem = settings.familyMembers.find((m) => m.id === v.memberId);
@@ -210,11 +218,14 @@ export class MapViewComponent implements OnInit, OnDestroy {
                 : visitDetails.length > 0 || locationLogs.length > 0;
             const isPartiallyVisited =
               totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
+            const isVisited = visitDetails.length > 0 || locationLogs.length > 0;
+            const wantToVisit = !isVisited && wantDetails.length > 0;
             return {
               ...p,
               country: p.country || 'USA',
               sub: p.sub || '',
-              visited: visitDetails.length > 0 || locationLogs.length > 0,
+              visited: isVisited,
+              wantToVisit,
               isAllVisited,
               isPartiallyVisited,
               visitedByMembers: visitors,
@@ -225,6 +236,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
           const mergedStates = states.map((s) => {
             const originalId = s.id.replace('state-', '');
             const visitDetails = settings.visitedStates?.[originalId] || [];
+            const wantDetails = settings.wantToVisitStates?.[originalId] || [];
             const visitors = visitDetails
               .map((v) => {
                 const mem = settings.familyMembers.find((m) => m.id === v.memberId);
@@ -244,10 +256,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
                 : visitDetails.length > 0 || locationLogs.length > 0;
             const isPartiallyVisited =
               totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
+            const isVisited = visitDetails.length > 0 || locationLogs.length > 0;
+            const wantToVisit = !isVisited && wantDetails.length > 0;
             return {
               ...s,
               country: s.country || (s.sub === 'Canada' ? 'Canada' : 'USA'),
-              visited: visitDetails.length > 0 || locationLogs.length > 0,
+              visited: isVisited,
+              wantToVisit,
               isAllVisited,
               isPartiallyVisited,
               visitedByMembers: visitors,
@@ -257,14 +272,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
           this.allLocations = [...mergedParks, ...mergedStates, ...hometowns];
 
-          this.mapMarkerService.renderMarkers({
-            layerGroup: this.currentLayerGroup,
-            locations: this.allLocations,
-            searchTerm: this.currentSearchTerm,
-            mapMode: this.mapMode,
-            currentTheme: this.currentTheme,
-            familyMembers: this.familyMembers,
-          });
+          this.refreshMarkers();
 
           this.mapShadingService.renderStateShading({
             map: this.map,
@@ -338,7 +346,10 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private initMap() {
     L.Icon.Default.imagePath = 'leaflet/';
     const mapContainer = this.el.nativeElement.querySelector('#map');
-    this.map = L.map(mapContainer).setView([39.8283, -98.5795], 4);
+    this.map = L.map(mapContainer, {
+      zoomSnap: 0.5,
+      zoomDelta: 0.5,
+    }).setView([48.0, -108.0], 4);
 
     // DOCS: https://leafletjs.com/reference.html#map-createpane
     if (!this.map.getPane(STATE_SHADING_THEME.PANE_NAME)) {
@@ -366,31 +377,84 @@ export class MapViewComponent implements OnInit, OnDestroy {
       this.resizeObserver.observe(mapContainer);
     }
 
+    this.map.on('zoomend', () => {
+      this.refreshMarkers();
+    });
+
     this.map.on('popupopen', (e: L.PopupEvent) => {
       const contentNode = (e.popup as L.Popup & { _contentNode?: HTMLElement })._contentNode;
-      const editBtn = contentNode?.querySelector('.edit-location-btn');
-      if (editBtn) {
-        editBtn.addEventListener('click', () => {
-          const locId = editBtn.getAttribute('data-id');
-          const mode = editBtn.getAttribute('data-mode');
+      if (!contentNode) return;
+
+      const editBtns = contentNode.querySelectorAll<HTMLButtonElement>('.edit-location-btn');
+      editBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const locId = btn.getAttribute('data-id');
+          const mode = btn.getAttribute('data-mode');
           if (locId && mode) {
             this.stateService.setEditingLocation({ id: locId, mode: mode as 'parks' | 'states' });
             this.map?.closePopup();
+          }
+        });
+      });
+
+      const statusBtns = contentNode.querySelectorAll<HTMLButtonElement>('.status-toggle-btn');
+      statusBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const locId = btn.getAttribute('data-id');
+          const mode = btn.getAttribute('data-mode') as 'parks' | 'states';
+          const targetStatus = btn.getAttribute('data-status') as 'visited' | 'want' | 'unvisited';
+          if (locId && mode && targetStatus) {
+            this.stateService.setLocationStatus(locId, mode, targetStatus);
+            this.map?.closePopup();
+          }
+        });
+      });
+
+      const zoomBtn = contentNode.querySelector<HTMLButtonElement>('.zoom-cluster-btn');
+      if (zoomBtn) {
+        zoomBtn.addEventListener('click', () => {
+          const rawBounds = zoomBtn.getAttribute('data-bounds');
+          if (rawBounds) {
+            try {
+              const bounds = JSON.parse(rawBounds) as L.LatLngBoundsLiteral;
+              const bufferedBounds = L.latLngBounds(bounds).pad(CLUSTER_BOUNDS_BUFFER_RATIO);
+              this.map.flyToBounds(bufferedBounds, {
+                paddingTopLeft: CLUSTER_SEPARATE_PADDING_TOP_LEFT,
+                paddingBottomRight: CLUSTER_SEPARATE_PADDING_BOTTOM_RIGHT,
+                maxZoom: CLUSTER_SEPARATE_MAX_ZOOM,
+                duration: 0.75,
+              });
+            } catch (err) {
+              this.logger.error('Failed to parse cluster bounds', err);
+            }
           }
         });
       }
     });
   }
 
-  setMapMode(mode: 'parks' | 'states' | 'roads') {
+  private refreshMarkers(): void {
+    if (!this.currentLayerGroup) return;
+    this.mapMarkerService.renderMarkers({
+      layerGroup: this.currentLayerGroup,
+      locations: this.allLocations,
+      searchTerm: this.currentSearchTerm,
+      mapMode: this.mapMode,
+      currentTheme: this.currentTheme,
+      familyMembers: this.familyMembers,
+      map: this.map,
+    });
+  }
+
+  setMapMode(mode: MapMode) {
     this.stateService.setMapMode(mode);
   }
 
   private applyModeZoom(settings: AppSettings, selectedRoute?: RouteObject | null): void {
     if (!this.map || typeof this.map.fitBounds !== 'function') return;
 
-    if (this.mapMode === 'parks' || this.mapMode === 'states') {
-      this.map.fitBounds(NORTH_AMERICA_BOUNDS, { padding: [20, 20] });
+    if (this.mapMode === 'parks' || this.mapMode === 'states' || this.mapMode === 'places') {
+      this.map.fitBounds(NORTH_AMERICA_BOUNDS, { padding: [5, 5] });
     } else if (this.mapMode === 'roads') {
       if (selectedRoute) {
         return;

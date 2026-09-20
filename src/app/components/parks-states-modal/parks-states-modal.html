@@ -9,7 +9,7 @@
     <!-- Header -->
     <div class="p-5 border-b border-stone-100 flex justify-between items-center flex-shrink-0">
       <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
-        {{ mode === 'parks' ? '⛰️ Log National Parks Visits' : '⭐ Log States & Provinces Visits' }}
+        {{ mode === 'parks' ? '⛰️ Log National Parks Visits' : '🏛️ Log Regions & States Visits' }}
       </h2>
       <button
         (click)="cancel()"
@@ -93,6 +93,7 @@
         >
           <option value="all">All Visible Locations</option>
           <option value="visited">Visited</option>
+          <option value="want">Want to Visit</option>
           <option value="unvisited">Not Visited</option>
         </select>
       </div>
@@ -113,7 +114,7 @@
       >
         <thead class="bg-stone-50 text-stone-600 sticky top-0 z-10 shadow-sm font-bold">
           <tr>
-            <th class="px-4 py-4 w-16 text-center">All</th>
+            <th class="px-2 py-4 w-28 text-center">All</th>
             <th
               class="px-4 py-4 cursor-pointer hover:bg-stone-100 transition"
               (click)="setSort('name')"
@@ -146,18 +147,39 @@
         <tbody>
           <tr
             *ngFor="let loc of filteredLocations"
-            [class.bg-green-50]="getVisitCount(loc.id) > 0"
-            [class.bg-white]="getVisitCount(loc.id) === 0"
+            [class.bg-emerald-50]="getVisitCount(loc.id) > 0"
+            [class.bg-purple-50]="getVisitCount(loc.id) === 0 && getWantCount(loc.id) > 0"
+            [class.bg-white]="getVisitCount(loc.id) === 0 && getWantCount(loc.id) === 0"
             class="border-b border-stone-100 hover:bg-opacity-80 transition group"
           >
-            <!-- All Checkbox -->
-            <td class="px-4 py-3 text-center">
-              <input
-                type="checkbox"
-                [checked]="isAllVisited(loc.id)"
-                (change)="toggleAllVisits(loc.id)"
-                class="w-5 h-5 rounded border-stone-300 text-green-600 focus:ring-green-500 cursor-pointer"
-              />
+            <!-- All Column: Tri-state Control -->
+            <td class="px-2 py-3 text-center">
+              <div class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200 text-xs">
+                <button
+                  type="button"
+                  (click)="setAllStatus(loc.id, 'visited')"
+                  [class]="isAllVisited(loc.id) ? 'bg-emerald-600 text-white font-bold px-1.5 py-1 rounded shadow-xs' : 'text-stone-500 hover:text-stone-900 px-1.5 py-1 rounded transition cursor-pointer'"
+                  title="Mark all as Visited"
+                >
+                  🌲
+                </button>
+                <button
+                  type="button"
+                  (click)="setAllStatus(loc.id, 'want')"
+                  [class]="isAllWant(loc.id) ? 'bg-purple-600 text-white font-bold px-1.5 py-1 rounded shadow-xs' : 'text-stone-500 hover:text-stone-900 px-1.5 py-1 rounded transition cursor-pointer'"
+                  title="Mark all as Want to Visit"
+                >
+                  💜
+                </button>
+                <button
+                  type="button"
+                  (click)="setAllStatus(loc.id, 'unvisited')"
+                  [class]="!hasAnyVisitOrWant(loc.id) ? 'bg-stone-300 text-stone-800 font-bold px-1.5 py-1 rounded shadow-xs' : 'text-stone-400 hover:text-stone-600 px-1.5 py-1 rounded transition cursor-pointer'"
+                  title="Clear all (Not Visited)"
+                >
+                  ⚪
+                </button>
+              </div>
             </td>
 
             <!-- Name -->
@@ -165,7 +187,7 @@
               {{ loc.name }}
               <button
                 (click)="openExternal(loc.name)"
-                class="text-stone-300 hover:text-stone-500"
+                class="text-stone-300 hover:text-stone-500 cursor-pointer"
                 title="Open search"
               >
                 <svg
@@ -192,7 +214,7 @@
                 [class.bg-stone-50]="!hasLocationDetails(loc.id)"
                 [class.text-stone-400]="!hasLocationDetails(loc.id)"
                 [class.border-stone-200]="!hasLocationDetails(loc.id)"
-                class="hover:text-blue-700 hover:bg-stone-100 px-1.5 py-0.5 rounded border transition flex items-center gap-1 text-[11px] font-semibold"
+                class="hover:text-blue-700 hover:bg-stone-100 px-1.5 py-0.5 rounded border transition flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
                 [title]="
                   hasLocationDetails(loc.id)
                     ? 'Edit visit details (memories logged)'
@@ -211,42 +233,53 @@
               {{ getCountry(loc) }}
             </td>
 
-            <!-- Member Checkboxes -->
-            <td *ngFor="let member of viewModel?.familyMembers" class="px-4 py-3 text-center">
-              <input
-                type="checkbox"
-                [checked]="isVisited(loc.id, member.id)"
-                (change)="toggleVisit(loc.id, member.id)"
-                class="w-5 h-5 rounded border-stone-300 text-green-600 focus:ring-green-500 cursor-pointer"
-              />
+            <!-- Member Status Cycle -->
+            <td *ngFor="let member of viewModel?.familyMembers" class="px-3 py-3 text-center">
+              <button
+                type="button"
+                (click)="cycleMemberStatus(loc.id, member.id)"
+                class="w-7 h-7 inline-flex items-center justify-center rounded-lg text-xs font-bold border transition cursor-pointer"
+                [ngClass]="{
+                  'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs hover:scale-105': getMemberStatus(loc.id, member.id) === 'visited',
+                  'bg-purple-100 text-purple-800 border-purple-300 shadow-xs hover:scale-105': getMemberStatus(loc.id, member.id) === 'want',
+                  'bg-stone-100 text-stone-400 border-stone-200 hover:bg-stone-200': getMemberStatus(loc.id, member.id) === 'unvisited'
+                }"
+                [title]="
+                  getMemberStatus(loc.id, member.id) === 'visited'
+                    ? member.name + ': Visited (click to cycle to Want to Visit)'
+                    : getMemberStatus(loc.id, member.id) === 'want'
+                      ? member.name + ': Want to Visit (click to cycle to Not Visited)'
+                      : member.name + ': Not Visited (click to cycle to Visited)'
+                "
+              >
+                <span *ngIf="getMemberStatus(loc.id, member.id) === 'visited'">🌲</span>
+                <span *ngIf="getMemberStatus(loc.id, member.id) === 'want'">💜</span>
+                <span *ngIf="getMemberStatus(loc.id, member.id) === 'unvisited'">⚪</span>
+              </button>
             </td>
 
             <!-- Family Summary -->
-            <td class="px-4 py-3 bg-stone-50 border-l border-stone-200 font-bold text-center w-24">
-              <div class="flex items-center justify-center">
+            <td class="px-4 py-3 bg-stone-50 border-l border-stone-200 font-bold text-center w-28 text-xs">
+              <div class="flex items-center justify-center gap-1.5 flex-wrap">
                 <span
-                  *ngIf="getVisitCount(loc.id) === viewModel?.familyMembers?.length"
-                  class="text-green-600"
+                  *ngIf="getVisitCount(loc.id) > 0"
+                  class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
+                  title="Visited count"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="3"
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                  >
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
+                  🌲 {{ getVisitCount(loc.id) }}/{{ viewModel?.familyMembers?.length }}
                 </span>
                 <span
-                  *ngIf="getVisitCount(loc.id) !== viewModel?.familyMembers?.length"
-                  class="text-stone-400"
+                  *ngIf="getWantCount(loc.id) > 0"
+                  class="text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded border border-purple-200"
+                  title="Want to visit count"
                 >
-                  {{ getVisitCount(loc.id) }}/{{ viewModel?.familyMembers?.length }}
+                  💜 {{ getWantCount(loc.id) }}
+                </span>
+                <span
+                  *ngIf="getVisitCount(loc.id) === 0 && getWantCount(loc.id) === 0"
+                  class="text-stone-300"
+                >
+                  —
                 </span>
               </div>
             </td>

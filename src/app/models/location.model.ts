@@ -6,9 +6,10 @@ export interface LocationPoint {
   lng: number;
   visitedBy: string[];
   visited: boolean;
+  wantToVisit?: boolean;
   country?: string;
   sub?: string;
   isCountryCapital?: boolean;
 }
 
-export type MapMode = 'parks' | 'states' | 'roads';
+export type MapMode = 'parks' | 'states' | 'roads' | 'places';

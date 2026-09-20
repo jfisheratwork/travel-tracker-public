@@ -5,13 +5,14 @@ import * as L from 'leaflet';
 import { ColorThemeDefinition } from '../../../core/constants/theme.constants';
 import { STATE_SHADING_THEME } from '../../../core/constants/map.constants';
 import { AppSettings, FamilyMember } from '../../../models/settings.model';
+import { MapMode } from '../../../models/location.model';
 import { buildLocationPopupHtml, LocationPopupMemberVisit } from '../utils/map-popup.util';
 
 export interface RenderStateShadingOptions {
   map: L.Map;
   settings: AppSettings;
   statesGeoJson: GeoJSON.GeoJsonObject | null | undefined;
-  mapMode: 'parks' | 'states' | 'roads';
+  mapMode: MapMode;
   currentTheme: ColorThemeDefinition;
   currentSearchTerm: string;
   familyMembers: FamilyMember[];
@@ -39,7 +40,11 @@ export class MapShadingService {
 
     this.clear();
 
-    if (!map || (mapMode !== 'states' && mapMode !== 'parks') || !statesGeoJson) {
+    if (
+      !map ||
+      (mapMode !== 'states' && mapMode !== 'parks' && mapMode !== 'places') ||
+      !statesGeoJson
+    ) {
       return undefined;
     }
 
@@ -82,6 +87,9 @@ export class MapShadingService {
           weight: 0.5,
         };
       }
+      const wantDetails = settings.wantToVisitStates?.[stateId] || [];
+      const hasWantToVisit = wantDetails.length > 0;
+
       if (isAllVisited) {
         return {
           fillColor: currentTheme.stateVisitedFill,
@@ -95,6 +103,14 @@ export class MapShadingService {
           fillColor: currentTheme.statePartialFill,
           fillOpacity: 0.4,
           color: currentTheme.statePartialStroke,
+          weight: 1.5,
+        };
+      }
+      if (hasWantToVisit) {
+        return {
+          fillColor: '#9333ea',
+          fillOpacity: 0.35,
+          color: '#7e22ce',
           weight: 1.5,
         };
       }
@@ -118,7 +134,11 @@ export class MapShadingService {
         const stateId = feature.id as string;
         const stateName = feature.properties?.name || feature.id;
         const visitDetails = settings.visitedStates?.[stateId] || [];
+        const wantDetails = settings.wantToVisitStates?.[stateId] || [];
         const locationLogs = settings.locationVisits?.[stateId] || [];
+        const isVisited = visitDetails.length > 0 || locationLogs.length > 0;
+        const isWant = !isVisited && wantDetails.length > 0;
+
         const visitors: LocationPopupMemberVisit[] = [];
         for (const v of visitDetails) {
           const mem = settings.familyMembers?.find((m) => m.id === v.memberId);
@@ -136,6 +156,8 @@ export class MapShadingService {
             name: stateName,
             isPark: false,
             originalId: stateId,
+            visited: isVisited,
+            wantToVisit: isWant,
             visitedByMembers: visitors,
             visitLogs: locationLogs,
           },

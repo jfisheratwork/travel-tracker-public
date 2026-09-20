@@ -49,6 +49,10 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     this.updateAvailableStates();
     this.sub = this.stateService.settings$.subscribe((settings) => {
       this.viewModel = JSON.parse(JSON.stringify(settings));
+      if (!this.viewModel!.visitedParks) this.viewModel!.visitedParks = {};
+      if (!this.viewModel!.visitedStates) this.viewModel!.visitedStates = {};
+      if (!this.viewModel!.wantToVisitParks) this.viewModel!.wantToVisitParks = {};
+      if (!this.viewModel!.wantToVisitStates) this.viewModel!.wantToVisitStates = {};
     });
   }
 
@@ -108,8 +112,10 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     if (this.visibilityFilter !== 'all') {
       result = result.filter((l) => {
         const visitCount = this.getVisitCount(l.id);
+        const wantCount = this.getWantCount(l.id);
         if (this.visibilityFilter === 'visited') return visitCount > 0;
-        if (this.visibilityFilter === 'unvisited') return visitCount === 0;
+        if (this.visibilityFilter === 'want') return wantCount > 0 && visitCount === 0;
+        if (this.visibilityFilter === 'unvisited') return visitCount === 0 && wantCount === 0;
         return true;
       });
     }
@@ -156,26 +162,57 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     return loc.country === 'Canada' ? 'Canada' : 'USA';
   }
 
-  toggleVisit(locationId: string, memberId: string): void {
-    if (!this.viewModel) return;
-
+  getMemberStatus(locationId: string, memberId: string): 'visited' | 'want' | 'unvisited' {
+    if (!this.viewModel) return 'unvisited';
     const visits =
       this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
-    if (!visits[locationId]) visits[locationId] = [];
+    const wants =
+      this.mode === 'parks' ? this.viewModel.wantToVisitParks! : this.viewModel.wantToVisitStates!;
 
-    const idx = visits[locationId].findIndex((v) => v.memberId === memberId);
-    if (idx >= 0) {
-      visits[locationId].splice(idx, 1);
-    } else {
+    if (visits[locationId]?.some((v) => v.memberId === memberId)) return 'visited';
+    if (wants[locationId]?.some((w) => w.memberId === memberId)) return 'want';
+    return 'unvisited';
+  }
+
+  setMemberStatus(
+    locationId: string,
+    memberId: string,
+    status: 'visited' | 'want' | 'unvisited',
+  ): void {
+    if (!this.viewModel) return;
+    const visits =
+      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const wants =
+      this.mode === 'parks' ? this.viewModel.wantToVisitParks! : this.viewModel.wantToVisitStates!;
+
+    if (!visits[locationId]) visits[locationId] = [];
+    if (!wants[locationId]) wants[locationId] = [];
+
+    // Remove existing
+    visits[locationId] = visits[locationId].filter((v) => v.memberId !== memberId);
+    wants[locationId] = wants[locationId].filter((w) => w.memberId !== memberId);
+
+    if (status === 'visited') {
       visits[locationId].push({ memberId });
+    } else if (status === 'want') {
+      wants[locationId].push({ memberId });
     }
   }
 
+  cycleMemberStatus(locationId: string, memberId: string): void {
+    const current = this.getMemberStatus(locationId, memberId);
+    const next: 'visited' | 'want' | 'unvisited' =
+      current === 'unvisited' ? 'visited' : current === 'visited' ? 'want' : 'unvisited';
+    this.setMemberStatus(locationId, memberId, next);
+  }
+
+  toggleVisit(locationId: string, memberId: string): void {
+    const isVis = this.isVisited(locationId, memberId);
+    this.setMemberStatus(locationId, memberId, isVis ? 'unvisited' : 'visited');
+  }
+
   isVisited(locationId: string, memberId: string): boolean {
-    if (!this.viewModel) return false;
-    const visits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
-    return visits[locationId]?.some((v) => v.memberId === memberId) || false;
+    return this.getMemberStatus(locationId, memberId) === 'visited';
   }
 
   getVisitCount(locationId: string): number {
@@ -194,49 +231,59 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     return visitors.filter((v) => activeIds.includes(v.memberId)).length;
   }
 
-  isAllVisited(locationId: string): boolean {
-    if (!this.viewModel || this.viewModel.familyMembers.length === 0) return false;
+  getWantCount(locationId: string): number {
+    if (!this.viewModel) return 0;
+    const wants =
+      this.mode === 'parks' ? this.viewModel.wantToVisitParks! : this.viewModel.wantToVisitStates!;
+    const wishers = wants[locationId] || [];
 
     if (this.memberFilter !== 'all') {
-      return this.isVisited(locationId, this.memberFilter);
+      return wishers.some((w) => w.memberId === this.memberFilter) ? 1 : 0;
     }
 
-    const count = this.getVisitCount(locationId);
-    return count === this.viewModel.familyMembers.length;
+    const activeIds = this.viewModel.familyMembers.map((m) => m.id);
+    return wishers.filter((w) => activeIds.includes(w.memberId)).length;
+  }
+
+  hasAnyVisitOrWant(locationId: string): boolean {
+    return this.getVisitCount(locationId) > 0 || this.getWantCount(locationId) > 0;
+  }
+
+  setAllStatus(locationId: string, status: 'visited' | 'want' | 'unvisited'): void {
+    if (!this.viewModel || this.viewModel.familyMembers.length === 0) return;
+    const members =
+      this.memberFilter !== 'all'
+        ? this.viewModel.familyMembers.filter((m) => m.id === this.memberFilter)
+        : this.viewModel.familyMembers;
+
+    for (const member of members) {
+      this.setMemberStatus(locationId, member.id, status);
+    }
+  }
+
+  isAllVisited(locationId: string): boolean {
+    if (!this.viewModel || this.viewModel.familyMembers.length === 0) return false;
+    const members =
+      this.memberFilter !== 'all'
+        ? this.viewModel.familyMembers.filter((m) => m.id === this.memberFilter)
+        : this.viewModel.familyMembers;
+
+    return members.every((m) => this.getMemberStatus(locationId, m.id) === 'visited');
+  }
+
+  isAllWant(locationId: string): boolean {
+    if (!this.viewModel || this.viewModel.familyMembers.length === 0) return false;
+    const members =
+      this.memberFilter !== 'all'
+        ? this.viewModel.familyMembers.filter((m) => m.id === this.memberFilter)
+        : this.viewModel.familyMembers;
+
+    return members.every((m) => this.getMemberStatus(locationId, m.id) === 'want');
   }
 
   toggleAllVisits(locationId: string): void {
-    if (!this.viewModel || this.viewModel.familyMembers.length === 0) return;
-
-    const visits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
-    if (!visits[locationId]) visits[locationId] = [];
-
     const allVisited = this.isAllVisited(locationId);
-
-    if (allVisited) {
-      // Uncheck all active members (or specific member if filtered)
-      if (this.memberFilter !== 'all') {
-        const idx = visits[locationId].findIndex((v) => v.memberId === this.memberFilter);
-        if (idx >= 0) visits[locationId].splice(idx, 1);
-      } else {
-        const activeIds = this.viewModel.familyMembers.map((m) => m.id);
-        visits[locationId] = visits[locationId].filter((v) => !activeIds.includes(v.memberId));
-      }
-    } else {
-      // Check all active members (or specific member if filtered)
-      if (this.memberFilter !== 'all') {
-        if (!visits[locationId].some((v) => v.memberId === this.memberFilter)) {
-          visits[locationId].push({ memberId: this.memberFilter });
-        }
-      } else {
-        for (const member of this.viewModel.familyMembers) {
-          if (!visits[locationId].some((v) => v.memberId === member.id)) {
-            visits[locationId].push({ memberId: member.id });
-          }
-        }
-      }
-    }
+    this.setAllStatus(locationId, allVisited ? 'unvisited' : 'visited');
   }
 
   hasLocationDetails(locationId: string): boolean {

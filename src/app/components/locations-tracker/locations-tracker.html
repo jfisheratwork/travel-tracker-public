@@ -5,7 +5,13 @@
   <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
     <div class="flex items-center gap-2">
       <h3 class="text-xs font-bold uppercase tracking-wider text-stone-500">
-        {{ mode === 'parks' ? 'Visited Parks' : 'Visited States & Provinces' }}
+        {{
+          mode === 'parks'
+            ? 'Visited Parks'
+            : mode === 'states'
+              ? 'Visited Regions'
+              : 'All Visited Places'
+        }}
       </h3>
       <span
         *ngIf="visitedLocations.length > 0"
@@ -20,16 +26,31 @@
       <button
         *ngIf="visitedLocations.length > 0"
         (click)="toggleAllDisclose()"
-        class="px-2.5 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition shadow-xs flex items-center gap-1"
+        class="px-2.5 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-medium text-stone-600 hover:bg-stone-100 hover:text-stone-900 transition shadow-xs flex items-center gap-1 cursor-pointer"
         [title]="allExpanded ? 'Collapse all location details' : 'Expand all location details'"
       >
         <span>{{ allExpanded ? '⊟ Collapse All' : '⊞ Expand All' }}</span>
       </button>
 
       <!-- Add / Edit Modal Button -->
+      <div *ngIf="mode === 'places'" class="flex items-center gap-1.5">
+        <button
+          (click)="openEditModal('parks')"
+          class="px-2.5 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center gap-1 cursor-pointer"
+        >
+          <span>⛰️ Add Parks</span>
+        </button>
+        <button
+          (click)="openEditModal('states')"
+          class="px-2.5 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center gap-1 cursor-pointer"
+        >
+          <span>🏛️ Add Regions</span>
+        </button>
+      </div>
       <button
+        *ngIf="mode !== 'places'"
         (click)="openEditModal()"
-        class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center gap-1.5"
+        class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-100 transition shadow-xs flex items-center gap-1.5 cursor-pointer"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -45,7 +66,7 @@
             d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
           />
         </svg>
-        <span>Add / Edit {{ mode === 'parks' ? 'Parks' : 'States' }}</span>
+        <span>Add / Edit {{ mode === 'parks' ? 'Parks' : 'Regions' }}</span>
       </button>
     </div>
   </div>
@@ -73,8 +94,8 @@
       [value]="searchTerm"
       (input)="onSearchInput($event)"
       [placeholder]="
-        'Search visited ' +
-        (mode === 'parks' ? 'parks' : 'states') +
+        'Search ' +
+        (mode === 'parks' ? 'parks' : mode === 'states' ? 'regions' : 'places') +
         ' by name, state, or notes...'
       "
       class="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded-lg text-xs text-stone-800 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs transition"
@@ -100,8 +121,21 @@
     </button>
   </div>
 
-  <!-- Filter Selectors Row: Country, State/Province, Member -->
-  <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+  <!-- Filter Selectors Row: Status, Country, State/Province, Member -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 mb-2.5">
+    <!-- Status Filter -->
+    <div>
+      <select
+        [(ngModel)]="statusFilter"
+        class="w-full py-1.5 px-2 bg-white border border-stone-200 rounded-lg text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs cursor-pointer truncate font-medium"
+        title="Filter by Status"
+      >
+        <option value="all">All Statuses</option>
+        <option value="visited">🌲 Visited</option>
+        <option value="want">💜 Want to Visit</option>
+      </select>
+    </div>
+
     <!-- Country Filter -->
     <div>
       <select
@@ -123,9 +157,7 @@
         class="w-full py-1.5 px-2 bg-white border border-stone-200 rounded-lg text-xs text-stone-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 shadow-xs cursor-pointer truncate"
         title="Filter by State or Province"
       >
-        <option value="all">
-          {{ mode === 'parks' ? 'All States/Prov' : 'All States/Prov' }}
-        </option>
+        <option value="all">All States/Prov</option>
         <option *ngFor="let s of availableStates; trackBy: trackByCode" [value]="s.code">
           {{ s.label }}
         </option>
@@ -154,6 +186,9 @@
   >
     <div class="flex items-center gap-1.5 truncate">
       <span class="font-bold text-stone-500">Filtered:</span>
+      <span *ngIf="statusFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">
+        {{ statusFilter === 'visited' ? 'Visited' : 'Want to Visit' }}
+      </span>
       <span *ngIf="countryFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">{{ countryFilter }}</span>
       <span *ngIf="stateFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">{{ stateFilter }}</span>
       <span *ngIf="memberFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">Member</span>
@@ -175,12 +210,14 @@
     >
       {{
         hasActiveFilters
-          ? 'No visited ' + (mode === 'parks' ? 'parks' : 'states') + ' match the selected filters.'
+          ? 'No ' +
+            (mode === 'parks' ? 'parks' : mode === 'states' ? 'regions' : 'places') +
+            ' match the selected filters.'
           : 'No ' +
-            (mode === 'parks' ? 'parks' : 'states') +
-            ' visited yet. Use "Add ' +
-            (mode === 'parks' ? 'Parks' : 'States') +
-            '" to log visits.'
+            (mode === 'parks' ? 'parks' : mode === 'states' ? 'regions' : 'places') +
+            ' tracked yet. Use "Add ' +
+            (mode === 'parks' ? 'Parks' : mode === 'states' ? 'Regions' : 'Places') +
+            '" to log visits or wishlist destinations.'
       }}
     </div>
 
@@ -222,12 +259,23 @@
               class="flex items-center gap-2 flex-wrap cursor-pointer"
               (click)="toggleDisclose(item.location.id)"
             >
+              <span
+                *ngIf="mode === 'places'"
+                class="px-1.5 py-0.5 rounded text-[10px] font-bold border"
+                [ngClass]="
+                  item.isPark
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-800 border-amber-200'
+                "
+              >
+                {{ item.isPark ? '⛰️ Park' : '🏛️ Region' }}
+              </span>
               <strong
                 class="text-stone-800 text-sm font-semibold hover:text-emerald-700 transition"
               >
                 {{ item.location.name
                 }}{{
-                  mode === 'parks' && !item.location.name.includes('Park') ? ' National Park' : ''
+                  item.isPark && !item.location.name.includes('Park') ? ' National Park' : ''
                 }}
               </strong>
               <span class="text-xs text-stone-400">{{ getSubtitle(item.location) }}</span>
@@ -237,14 +285,14 @@
                 >✓ All</span
               >
               <span
-                *ngIf="item.members.length < totalFamilyMembersCount"
+                *ngIf="item.members.length > 0 && item.members.length < totalFamilyMembersCount"
                 class="text-stone-400 text-xs"
                 >{{ item.members.length }}/{{ totalFamilyMembersCount }}</span
               >
             </div>
 
-            <!-- Member Badges -->
-            <div class="flex flex-wrap gap-1 items-center">
+            <!-- Member Visited Badges -->
+            <div *ngIf="item.members.length > 0" class="flex flex-wrap gap-1 items-center">
               <span
                 *ngFor="let member of item.members"
                 class="px-2 py-0.5 bg-green-50 border border-green-200 rounded-full text-xs text-green-700 font-medium"
@@ -253,12 +301,23 @@
               </span>
             </div>
 
+            <!-- Member Wishlist Badges -->
+            <div *ngIf="item.wantMembers.length > 0" class="flex flex-wrap gap-1 items-center">
+              <span
+                *ngFor="let member of item.wantMembers"
+                class="px-2 py-0.5 bg-purple-50 border border-purple-200 rounded-full text-xs text-purple-700 font-medium flex items-center gap-1"
+              >
+                <span>⭐</span>
+                <span>{{ member.name }}</span>
+              </span>
+            </div>
+
             <!-- Summary counter tags -->
             <div class="flex items-center gap-3 text-[11px] text-stone-500">
               <button
                 type="button"
                 (click)="toggleDisclose(item.location.id)"
-                class="hover:underline flex items-center gap-1 text-stone-500 hover:text-stone-800"
+                class="hover:underline flex items-center gap-1 text-stone-500 hover:text-stone-800 cursor-pointer"
               >
                 <span
                   >📅 {{ item.visitLogsCount }} visit log{{
@@ -274,27 +333,57 @@
           </div>
         </div>
 
-        <!-- Edit modal button -->
-        <button
-          (click)="openLocationDetails(item.location.id)"
-          class="text-stone-400 hover:text-stone-600 p-1.5 rounded hover:bg-stone-100 transition flex-shrink-0"
-          title="Edit location details in modal"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <!-- Variation 1A Inline Segmented Toggle Pill -->
+          <div class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200 text-[11px] font-semibold">
+            <button
+              type="button"
+              (click)="setStatus(item, 'visited')"
+              [class]="item.status === 'visited' ? 'bg-emerald-600 text-white font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer' : 'text-stone-600 hover:text-stone-900 px-2 py-1 rounded-md transition cursor-pointer'"
+              title="Mark as Visited"
+            >
+              🌲 Visited
+            </button>
+            <button
+              type="button"
+              (click)="setStatus(item, 'want')"
+              [class]="item.status === 'want' ? 'bg-purple-600 text-white font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer' : 'text-stone-600 hover:text-stone-900 px-2 py-1 rounded-md transition cursor-pointer'"
+              title="Mark as Want to Visit"
+            >
+              💜 Want
+            </button>
+            <button
+              type="button"
+              (click)="setStatus(item, 'unvisited')"
+              [class]="item.status === 'unvisited' ? 'bg-stone-300 text-stone-800 font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer' : 'text-stone-500 hover:text-stone-800 px-2 py-1 rounded-md transition cursor-pointer'"
+              title="Clear / Not Visited"
+            >
+              ⚪ Not Yet
+            </button>
+          </div>
+
+          <!-- Edit modal button -->
+          <button
+            (click)="openLocationDetails(item.location.id, item.isPark)"
+            class="text-stone-400 hover:text-stone-600 p-1.5 rounded hover:bg-stone-100 transition flex-shrink-0 cursor-pointer"
+            title="Edit location details in modal"
           >
-            <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-            <path d="m15 5 4 4" />
-          </svg>
-        </button>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="15"
+              height="15"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              <path d="m15 5 4 4" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Tree / Menu Disclose Panel -->
@@ -379,8 +468,8 @@
         <div class="pt-1 flex justify-end">
           <button
             type="button"
-            (click)="openLocationDetails(item.location.id)"
-            class="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1"
+            (click)="openLocationDetails(item.location.id, item.isPark)"
+            class="text-[11px] font-semibold text-emerald-700 hover:text-emerald-900 hover:underline flex items-center gap-1 cursor-pointer"
           >
             <span>✏️ Edit visits, dates & comments for {{ item.location.name }}</span>
           </button>
@@ -392,6 +481,6 @@
 
 <app-parks-states-modal
   *ngIf="showModal"
-  [mode]="mode"
+  [mode]="editModalMode"
   (close)="showModal = false"
 ></app-parks-states-modal>

@@ -950,7 +950,7 @@ const CANADIAN_POSTAL_CODES = new Set([
  */
 export function getAvailableStateOptions(
   country: string,
-  mode: 'parks' | 'states',
+  mode: 'parks' | 'states' | 'places',
 ): StateFilterOption[] {
   if (mode === 'parks') {
     const parkCodes = new Set<string>();

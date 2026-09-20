@@ -40,6 +40,8 @@ export interface AppSettings {
   savedRoutes: RouteObject[];
   visitedStates?: Record<string, VisitDetail[]>;
   visitedParks?: Record<string, VisitDetail[]>;
+  wantToVisitStates?: Record<string, VisitDetail[]>;
+  wantToVisitParks?: Record<string, VisitDetail[]>;
   locationVisits?: Record<string, VisitLogEntry[]>;
   colorTheme?: ColorThemeId;
 }
@@ -52,5 +54,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   savedRoutes: [],
   visitedStates: {},
   visitedParks: {},
+  wantToVisitStates: {},
+  wantToVisitParks: {},
   colorTheme: DEFAULT_THEME_ID,
 };
