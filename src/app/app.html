@@ -21,7 +21,7 @@
       </h1>
 
       <!-- Right Controls: Utility Tools, Setup Wizard & Profile Widget -->
-      <div class="flex items-center gap-1 sm:gap-2 sm:order-3 xl:w-[450px] justify-end flex-shrink-0">
+      <div class="flex items-center gap-1 sm:gap-2 sm:order-3 justify-end flex-shrink-0">
         <!-- Stats Modal Trigger -->
         <button
           type="button"
@@ -374,12 +374,12 @@
 
     <!-- Search Bar on mobile when toggled (< sm) -->
     <div *ngIf="showMobileSearch" class="sm:hidden w-full order-3 pt-2 animate-fadeIn">
-      <app-global-search class="w-full"></app-global-search>
+      <app-global-search [forceExpanded]="true" class="w-full"></app-global-search>
     </div>
 
-    <!-- Search Bar on desktop (always visible on >= sm) -->
-    <div class="hidden sm:block sm:w-60 md:w-72 xl:w-[450px] sm:order-1 flex-shrink-0">
-      <app-global-search class="w-full"></app-global-search>
+    <!-- Search Bar on desktop (icon by default, expands when clicked) -->
+    <div class="hidden sm:flex items-center sm:order-1 flex-shrink-0">
+      <app-global-search></app-global-search>
     </div>
   </div>
 
@@ -391,13 +391,13 @@
       [style.backgroundColor]="currentTheme.cardBg"
       [style.borderColor]="currentTheme.cardBorder"
     >
-      <!-- Left: Mode Dropdown Selector + Smart Add -->
+      <!-- Left: Mode Dropdown Selector + Dynamic Filters + Smart Add -->
       <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <ng-container *ngIf="stateService.mapMode$ | async as mode">
-          <!-- Mode Dropdown -->
+          <!-- Mode Dropdown: Only 'View Places Visited' OR 'View Trips' -->
           <div class="relative flex items-center flex-shrink-0">
             <select
-              [value]="mode"
+              [value]="mode === 'roads' ? 'roads' : 'places'"
               (change)="onModeSelectChange($event)"
               class="h-8 sm:h-9 pl-2.5 sm:pl-3 pr-7 sm:pr-8 rounded-xl text-xs sm:text-sm font-bold border transition cursor-pointer appearance-none shadow-xs active:scale-95 focus:outline-none"
               [style.backgroundColor]="currentTheme.buttonBg"
@@ -405,10 +405,8 @@
               [style.color]="currentTheme.buttonText"
               aria-label="Select Map Mode"
             >
-              <option value="places">📍 Places</option>
-              <option value="parks">⛰️ National Parks</option>
-              <option value="states">🏛️ States & Regions</option>
-              <option value="roads">🚗 Trips</option>
+              <option value="places">📍 View Places Visited</option>
+              <option value="roads">🚗 View Trips</option>
             </select>
             <span
               class="pointer-events-none absolute right-2 text-[9px] opacity-70"
@@ -416,6 +414,178 @@
             >
               ▼
             </span>
+          </div>
+
+          <!-- Places Filter Multi-Select Dropdown (when in View Places Visited) -->
+          <div *ngIf="mode !== 'roads'" class="relative flex-shrink-0" #placesFilterMenuRef>
+            <button
+              type="button"
+              (click)="togglePlacesFilterMenu()"
+              class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-bold border transition flex items-center gap-1 sm:gap-1.5 shadow-xs active:scale-95 cursor-pointer flex-shrink-0"
+              [style.backgroundColor]="currentTheme.buttonBg"
+              [style.borderColor]="showPlacesFilterMenu ? currentTheme.accent : currentTheme.buttonBorder"
+              [style.color]="currentTheme.buttonText"
+              title="Filter which places are displayed on the map"
+            >
+              <span>🏷️</span>
+              <span class="max-w-[100px] sm:max-w-[150px] truncate">{{ getPlacesFilterButtonLabel() }}</span>
+              <span class="text-[9px] opacity-70">▼</span>
+            </button>
+
+            <!-- Places Filter Dropdown Popover -->
+            <div
+              *ngIf="showPlacesFilterMenu"
+              class="absolute left-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-[1250] animate-fadeIn border text-stone-800"
+              [style.backgroundColor]="currentTheme.cardBg"
+              [style.borderColor]="currentTheme.cardBorder"
+            >
+              <div
+                class="px-3.5 py-2 border-b flex items-center justify-between"
+                [style.borderBottomColor]="currentTheme.cardBorder"
+              >
+                <span
+                  class="text-xs font-bold uppercase tracking-wider"
+                  [style.color]="currentTheme.subtextColor"
+                >
+                  Filter Places Visited
+                </span>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    (click)="selectAllPlacesFilters()"
+                    class="text-[10px] font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wider cursor-pointer"
+                  >
+                    All
+                  </button>
+                  <span class="text-stone-300">|</span>
+                  <button
+                    type="button"
+                    (click)="clearAllPlacesFilters()"
+                    class="text-[10px] font-bold text-red-500 hover:text-red-700 uppercase tracking-wider cursor-pointer"
+                  >
+                    None
+                  </button>
+                </div>
+              </div>
+
+              <!-- Category Checkboxes -->
+              <div class="py-1 max-h-72 overflow-y-auto">
+                <label
+                  *ngFor="let item of placeFilterOptions"
+                  class="px-3.5 py-2 flex items-center gap-2.5 hover:bg-black/5 cursor-pointer text-xs font-medium transition select-none"
+                  [style.color]="currentTheme.textColor"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isPlacesFilterActive(item.key)"
+                    (change)="togglePlacesFilter(item.key)"
+                    class="rounded text-green-600 focus:ring-green-500 h-4 w-4 border-stone-300 cursor-pointer"
+                  />
+                  <span class="text-sm">{{ item.icon }}</span>
+                  <span class="flex-1">{{ item.label }}</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Trips Search & Filter Dropdown (when in View Trips) -->
+          <div *ngIf="mode === 'roads'" class="relative flex-shrink-0" #tripsFilterMenuRef>
+            <button
+              type="button"
+              (click)="toggleTripsFilterMenu()"
+              class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-bold border transition flex items-center gap-1 sm:gap-1.5 shadow-xs active:scale-95 cursor-pointer flex-shrink-0"
+              [style.backgroundColor]="currentTheme.buttonBg"
+              [style.borderColor]="showTripsFilterMenu ? currentTheme.accent : currentTheme.buttonBorder"
+              [style.color]="currentTheme.buttonText"
+              title="Filter or search trips to display on the map"
+            >
+              <span>🚗</span>
+              <span class="max-w-[110px] sm:max-w-[160px] truncate">{{ getTripsFilterButtonLabel() }}</span>
+              <span class="text-[9px] opacity-70">▼</span>
+            </button>
+
+            <!-- Trips Dropdown Popover -->
+            <div
+              *ngIf="showTripsFilterMenu"
+              class="absolute left-0 mt-2 w-80 rounded-2xl shadow-2xl py-2 z-[1250] animate-fadeIn border text-stone-800"
+              [style.backgroundColor]="currentTheme.cardBg"
+              [style.borderColor]="currentTheme.cardBorder"
+            >
+              <div class="px-3 pb-2 border-b" [style.borderBottomColor]="currentTheme.cardBorder">
+                <div class="relative flex items-center">
+                  <span class="absolute left-2.5 text-xs text-stone-400">🔍</span>
+                  <input
+                    type="text"
+                    [(ngModel)]="tripSearchQuery"
+                    placeholder="Search trips by name or stop..."
+                    class="w-full pl-7 pr-3 py-1.5 text-xs border border-stone-300 rounded-lg bg-white text-stone-800 focus:outline-none focus:border-green-600"
+                  />
+                </div>
+              </div>
+
+              <!-- Quick Action: Draw All Trips -->
+              <div class="p-1 border-b" [style.borderBottomColor]="currentTheme.cardBorder">
+                <button
+                  type="button"
+                  (click)="drawAllTrips()"
+                  class="w-full px-3 py-2 rounded-lg flex items-center justify-between text-xs font-bold transition hover:bg-black/5 cursor-pointer text-left"
+                  [class.bg-green-50]="isAllTripsDrawn()"
+                  [class.text-green-700]="isAllTripsDrawn()"
+                  [style.color]="!isAllTripsDrawn() ? currentTheme.textColor : undefined"
+                >
+                  <span class="flex items-center gap-2">
+                    <span>✨</span>
+                    <span>Draw All Trips ({{ savedRoutes.length }})</span>
+                  </span>
+                  <span *ngIf="isAllTripsDrawn()" class="text-xs">✓</span>
+                </button>
+              </div>
+
+              <!-- Scrollable Trip List -->
+              <div class="max-h-64 overflow-y-auto py-1">
+                <div
+                  *ngIf="filteredSavedRoutes.length === 0"
+                  class="px-3.5 py-4 text-center text-xs text-stone-400 italic"
+                >
+                  {{ tripSearchQuery ? 'No matching trips found' : 'No trips added yet' }}
+                </div>
+
+                <div
+                  *ngFor="let route of filteredSavedRoutes"
+                  (click)="selectTrip(route)"
+                  class="px-3 py-2 flex items-center justify-between hover:bg-black/5 cursor-pointer text-xs transition border-b border-stone-100 last:border-b-0"
+                  [class.bg-blue-50]="isTripSelected(route)"
+                >
+                  <div class="flex items-center gap-2 min-w-0 flex-1 mr-2">
+                    <input
+                      type="checkbox"
+                      [checked]="isTripSelected(route)"
+                      (click)="$event.stopPropagation(); toggleTripSelection(route)"
+                      class="rounded text-blue-600 focus:ring-blue-500 h-3.5 w-3.5 border-stone-300 cursor-pointer flex-shrink-0"
+                    />
+                    <div class="flex flex-col min-w-0">
+                      <span class="font-bold truncate" [style.color]="currentTheme.textColor">
+                        {{ route.name }}
+                      </span>
+                      <div class="flex items-center gap-1.5 text-[10px] text-stone-500 truncate">
+                        <span *ngIf="route.startDate">{{ route.startDate | date: 'mediumDate' }}</span>
+                        <span *ngIf="route.distance">• {{ (route.distance / 1609.34).toFixed(0) }} mi</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <span
+                    class="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                    [class.bg-emerald-100]="route.status === 'completed'"
+                    [class.text-emerald-800]="route.status === 'completed'"
+                    [class.bg-amber-100]="route.status === 'planned'"
+                    [class.text-amber-800]="route.status === 'planned'"
+                  >
+                    {{ route.status || 'planned' }}
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Add Trip Button (to the left of Log Places Visited) -->
@@ -427,8 +597,29 @@
             [style.borderColor]="currentTheme.buttonBorder"
             [style.color]="currentTheme.buttonText"
             title="Create and route a new trip"
+            aria-label="Add Trip"
           >
-            <span class="text-sm sm:text-base font-extrabold leading-none">+</span>
+            <svg
+              class="w-4 h-4 sm:w-4.5 sm:h-4.5 flex-shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <!-- Road boundaries -->
+              <path d="M4 21L8 3" />
+              <path d="M15 21l-2-7.5" />
+              <!-- Center dashed lane markings -->
+              <path d="M9.5 21v-3" />
+              <path d="M9.5 15v-3" />
+              <path d="M9.5 9v-2.5" />
+              <!-- Add plus symbol -->
+              <path d="M18 3.5v6" stroke-width="2.5" />
+              <path d="M15 6.5h6" stroke-width="2.5" />
+            </svg>
             <span class="hidden xs:inline sm:inline">Add Trip</span>
           </button>
 
@@ -441,8 +632,24 @@
             [style.borderColor]="currentTheme.buttonBorder"
             [style.color]="currentTheme.buttonText"
             title="Log places, parks, and regions visited"
+            aria-label="Log Places Visited"
           >
-            <span class="text-sm sm:text-base font-extrabold leading-none">+</span>
+            <svg
+              class="w-4 h-4 sm:w-4.5 sm:h-4.5 flex-shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <!-- Location pin -->
+              <path d="M12 21.5C12 21.5 5 14.5 5 9.5a7 7 0 0 1 14 0c0 5-7 12-7 12z" />
+              <!-- Add plus symbol in pin center -->
+              <path d="M12 6.5v6" stroke-width="2.5" />
+              <path d="M9 9.5h6" stroke-width="2.5" />
+            </svg>
             <span class="hidden xs:inline sm:inline">Log Places Visited</span>
           </button>
         </ng-container>

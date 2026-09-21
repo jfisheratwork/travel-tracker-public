@@ -85,6 +85,7 @@ describe('RouteBuilderComponent', () => {
 
     component.openModal();
     component.name = 'Sierra Tour';
+    component.status = 'completed';
     component.startDate = '2026-08-01';
     component.endDate = '2026-08-05';
     component.selectedMembers = ['Alice', 'Bob'];
@@ -152,5 +153,66 @@ describe('RouteBuilderComponent', () => {
     // 4. Saved routes updated
     expect(updatedSettings.savedRoutes.length).toBe(1);
     expect(updatedSettings.savedRoutes[0].name).toBe('Sierra Tour');
+  });
+
+  it('should initialize with blank status and default dates when status is chosen', () => {
+    component.openModal();
+    expect(component.status).toBe('');
+    expect(component.startDate).toBe('');
+    expect(component.endDate).toBe('');
+
+    // Selecting Completed defaults to ~1 month ago
+    component.status = 'completed';
+    component.onStatusChange();
+    expect(component.startDate).toBeTruthy();
+    expect(component.endDate).toBeTruthy();
+
+    const pastDate = new Date(component.startDate + 'T00:00:00');
+    const now = new Date();
+    expect(pastDate.getTime()).toBeLessThan(now.getTime());
+
+    // Selecting Planned defaults to ~1 month in the future
+    component.hasUserManuallySelectedDates = false;
+    component.startDate = '';
+    component.endDate = '';
+    component.status = 'planned';
+    component.onStatusChange();
+    const futureDate = new Date(component.startDate + 'T00:00:00');
+    expect(futureDate.getTime()).toBeGreaterThan(now.getTime());
+  });
+
+  it('should default status to completed if dates chosen are before today', () => {
+    component.openModal();
+    component.startDate = '2020-05-10';
+    component.onStartDateChange();
+    expect(component.status).toBe('completed');
+
+    // Future date defaults to planned
+    component.startDate = '2099-01-01';
+    component.onStartDateChange();
+    expect(component.status).toBe('planned');
+  });
+
+  it('should dynamically update trip name based on dates and locations until user edits name', () => {
+    component.openModal();
+    component.onStartQueryChange('Novi, MI, USA');
+    component.onEndQueryChange('Traverse City, MI');
+    expect(component.name).toBe('Novi to Traverse City');
+
+    component.startDate = '2026-09-10';
+    component.onStartDateChange();
+    expect(component.name).toBe('September: Novi to Traverse City');
+
+    // User manual edit locks the name
+    component.name = 'Up North Getaway';
+    component.onNameInput();
+
+    component.onEndQueryChange('Mackinaw City, MI');
+    expect(component.name).toBe('Up North Getaway');
+
+    // Clearing the name resumes auto-naming
+    component.name = '';
+    component.onNameInput();
+    expect(component.name).toBe('September: Novi to Mackinaw City');
   });
 });

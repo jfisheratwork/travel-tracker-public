@@ -49,7 +49,9 @@ export class RouteBuilderComponent implements OnInit {
   description = '';
   startDate = '';
   endDate = '';
-  status: 'planned' | 'completed' = 'planned';
+  status: 'planned' | 'completed' | '' = '';
+  hasUserManuallyEditedName = false;
+  hasUserManuallySelectedDates = false;
 
   startQuery = '';
   collapsedYears: { [year: string]: boolean } = {};
@@ -136,34 +138,13 @@ export class RouteBuilderComponent implements OnInit {
     this.isFormExpanded = true;
     if (!this.isEditing) {
       this.isCreating = true;
-      // Prefill Start Date
-      const d = new Date();
-      d.setDate(1);
-      this.startDate = d.toISOString().split('T')[0];
-
-      // Default Name
-      const monthNames = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
-      const baseName = `${monthNames[d.getMonth()]} ${d.getFullYear()} - Trip`;
-      let finalName = baseName;
-      let counter = 1;
-      while (this.savedRoutes.some((r) => r.name === finalName)) {
-        finalName = `${baseName} (${counter})`;
-        counter++;
-      }
-      this.name = finalName;
+      this.hasUserManuallyEditedName = false;
+      this.hasUserManuallySelectedDates = false;
+      this.status = '';
+      this.startDate = '';
+      this.endDate = '';
+      this.name = '';
+      this.updateAutoTripName();
     }
 
     // Smooth scroll to top so the map is always visible
@@ -180,13 +161,152 @@ export class RouteBuilderComponent implements OnInit {
     this.stateService.setSelectedRoute(null);
   }
 
-  onStartDateChange() {
-    if (this.startDate && !this.endDate) {
-      const nextDay = new Date(this.startDate);
-      nextDay.setUTCHours(0, 0, 0, 0);
-      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
-      this.endDate = nextDay.toISOString().split('T')[0];
+  private formatDate(d: Date): string {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private getCleanDestinationName(query: string): string {
+    if (!query) return '';
+    const firstPart = query.split(',')[0].trim();
+    if (!firstPart) return '';
+    if (firstPart === firstPart.toLowerCase()) {
+      return firstPart.replace(/\b\w/g, (c) => c.toUpperCase());
     }
+    return firstPart;
+  }
+
+  private getMonthLabel(dateStr: string): string {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length >= 2) {
+      const monthIndex = parseInt(parts[1], 10) - 1;
+      const monthNames = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
+      if (monthIndex >= 0 && monthIndex < monthNames.length) {
+        return monthNames[monthIndex];
+      }
+    }
+    return '';
+  }
+
+  updateAutoTripName() {
+    if (this.hasUserManuallyEditedName) {
+      return;
+    }
+
+    const startName = this.getCleanDestinationName(this.startQuery);
+    const endName = this.getCleanDestinationName(this.endQuery);
+    const monthName = this.getMonthLabel(this.startDate || this.endDate);
+
+    if (monthName && startName && endName) {
+      this.name = `${monthName}: ${startName} to ${endName}`;
+    } else if (startName && endName) {
+      this.name = `${startName} to ${endName}`;
+    } else if (monthName && endName) {
+      this.name = `${monthName}: Trip to ${endName}`;
+    } else if (monthName && startName) {
+      this.name = `${monthName}: ${startName} Trip`;
+    } else if (monthName) {
+      this.name = `${monthName} Trip`;
+    } else if (endName) {
+      this.name = `Trip to ${endName}`;
+    } else if (startName) {
+      this.name = `${startName} Trip`;
+    } else {
+      this.name = '';
+    }
+  }
+
+  onNameInput() {
+    if (this.name.trim().length > 0) {
+      this.hasUserManuallyEditedName = true;
+    } else {
+      this.hasUserManuallyEditedName = false;
+      this.updateAutoTripName();
+    }
+  }
+
+  onStatusChange() {
+    const DEFAULT_TRIP_DURATION_DAYS = 3;
+    const MONTH_OFFSET = 1;
+
+    if (this.status === 'completed') {
+      if (!this.hasUserManuallySelectedDates || (!this.startDate && !this.endDate)) {
+        const past = new Date();
+        past.setMonth(past.getMonth() - MONTH_OFFSET);
+        this.startDate = this.formatDate(past);
+        const pastEnd = new Date(past);
+        pastEnd.setDate(pastEnd.getDate() + DEFAULT_TRIP_DURATION_DAYS);
+        this.endDate = this.formatDate(pastEnd);
+      }
+    } else if (this.status === 'planned') {
+      if (!this.hasUserManuallySelectedDates || (!this.startDate && !this.endDate)) {
+        const future = new Date();
+        future.setMonth(future.getMonth() + MONTH_OFFSET);
+        this.startDate = this.formatDate(future);
+        const futureEnd = new Date(future);
+        futureEnd.setDate(futureEnd.getDate() + DEFAULT_TRIP_DURATION_DAYS);
+        this.endDate = this.formatDate(futureEnd);
+      }
+    }
+    this.updateAutoTripName();
+  }
+
+  onStartDateChange() {
+    this.hasUserManuallySelectedDates = true;
+    const DEFAULT_TRIP_DURATION_DAYS = 3;
+    if (this.startDate && !this.endDate) {
+      const start = new Date(this.startDate + 'T00:00:00');
+      start.setDate(start.getDate() + DEFAULT_TRIP_DURATION_DAYS);
+      this.endDate = this.formatDate(start);
+    }
+    const todayStr = this.formatDate(new Date());
+    if (this.startDate) {
+      if (this.startDate < todayStr) {
+        this.status = 'completed';
+      } else {
+        this.status = 'planned';
+      }
+    }
+    this.updateAutoTripName();
+  }
+
+  onEndDateChange() {
+    this.hasUserManuallySelectedDates = true;
+    const todayStr = this.formatDate(new Date());
+    if (this.endDate && !this.startDate) {
+      if (this.endDate < todayStr) {
+        this.status = 'completed';
+      } else {
+        this.status = 'planned';
+      }
+    }
+    this.updateAutoTripName();
+  }
+
+  onStartQueryChange(val: string) {
+    this.startQuery = val;
+    this.updateAutoTripName();
+  }
+
+  onEndQueryChange(val: string) {
+    this.endQuery = val;
+    this.updateAutoTripName();
   }
 
   loadAllRoutes() {
@@ -280,8 +400,12 @@ export class RouteBuilderComponent implements OnInit {
     this.errorMessage = '';
     this.routeOptions = [];
 
-    if (!this.name) {
+    if (!this.name || !this.name.trim()) {
       this.errorMessage = 'Trip Name is required.';
+      return;
+    }
+    if (!this.status) {
+      this.errorMessage = 'Please choose whether the trip is Planned or Completed.';
       return;
     }
     if (!this.startQuery || !this.endQuery) {
@@ -354,7 +478,7 @@ export class RouteBuilderComponent implements OnInit {
         name: 'Preview',
         description: '',
         members: this.selectedMembers,
-        status: 'planned',
+        status: (this.status || 'planned') as 'planned' | 'completed',
         engine: this.routingEngine,
         distance: option.distance,
         duration: option.duration,
@@ -371,6 +495,15 @@ export class RouteBuilderComponent implements OnInit {
   }
 
   saveRoute() {
+    if (!this.name || !this.name.trim()) {
+      this.errorMessage = 'Trip Name is required.';
+      return;
+    }
+    if (!this.status) {
+      this.errorMessage = 'Please choose whether the trip is Planned or Completed.';
+      return;
+    }
+
     let distance = 0;
     let duration = 0;
     let waypoints = this.calculatedWaypoints;
@@ -410,7 +543,7 @@ export class RouteBuilderComponent implements OnInit {
       startDate: this.startDate,
       endDate: this.endDate,
       members: [...this.selectedMembers],
-      status: this.status,
+      status: (this.status || 'planned') as 'planned' | 'completed',
       engine: this.routingEngine || (this.originalRouteForEdit?.engine ?? 'osrm'),
       distance: distance,
       duration: duration,
@@ -544,6 +677,8 @@ export class RouteBuilderComponent implements OnInit {
     this.startDate = route.startDate || (route as unknown as Record<string, string>)['date'] || '';
     this.endDate = route.endDate || '';
     this.status = route.status || 'planned';
+    this.hasUserManuallyEditedName = true;
+    this.hasUserManuallySelectedDates = true;
     this.selectedMembers = route.members ? [...route.members] : [];
 
     // Auto-infer start and end queries if missing from legacy name "A to B"
@@ -665,10 +800,12 @@ export class RouteBuilderComponent implements OnInit {
     this.editingId = null;
     this.originalRouteForEdit = null;
     this.name = '';
+    this.hasUserManuallyEditedName = false;
+    this.hasUserManuallySelectedDates = false;
     this.description = '';
     this.startDate = '';
     this.endDate = '';
-    this.status = 'planned';
+    this.status = '';
     this.selectedMembers = [];
     this.showNotes = false;
 

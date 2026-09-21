@@ -13,6 +13,7 @@ export interface RenderRoutesOptions {
   map: L.Map;
   savedRoutes?: RouteObject[];
   selectedRoute?: RouteObject | null;
+  selectedRouteIds?: string[] | null;
   mapMode: MapMode;
   hasHometown?: boolean;
 }
@@ -34,7 +35,14 @@ export class MapRouteService {
    * Clears existing polylines and renders routes onto the Leaflet map.
    */
   public async renderRoutes(options: RenderRoutesOptions): Promise<L.Polyline[]> {
-    const { map, savedRoutes = [], selectedRoute = null, mapMode, hasHometown = false } = options;
+    const {
+      map,
+      savedRoutes = [],
+      selectedRoute = null,
+      selectedRouteIds = null,
+      mapMode,
+      hasHometown = false,
+    } = options;
 
     this.clear();
 
@@ -42,22 +50,44 @@ export class MapRouteService {
       return this.currentPolylines;
     }
 
-    if (selectedRoute) {
-      let coords =
-        selectedRoute.coordinates && selectedRoute.coordinates.length > 0
-          ? selectedRoute.coordinates
-          : selectedRoute.route && selectedRoute.route.length > 0
-            ? selectedRoute.route
-            : this.routeCoordinatesCache[selectedRoute.timestamp];
+    // Determine target routes to render based on selectedRouteIds or selectedRoute
+    let targetSingleRoute: RouteObject | null = selectedRoute;
+    let targetRoutesToDraw: RouteObject[] = [];
 
-      if (!coords && selectedRoute.waypoints && selectedRoute.waypoints.length > 0) {
+    if (selectedRouteIds && selectedRouteIds.length > 0) {
+      const matched = savedRoutes.filter((r) =>
+        selectedRouteIds.includes(r.id || String(r.timestamp) || r.name),
+      );
+      if (matched.length === 1) {
+        targetSingleRoute = matched[0];
+      } else {
+        targetSingleRoute = null;
+        targetRoutesToDraw = matched;
+      }
+    } else if (selectedRoute) {
+      targetSingleRoute = selectedRoute;
+    } else {
+      // Draw all saved routes
+      targetSingleRoute = null;
+      targetRoutesToDraw = savedRoutes;
+    }
+
+    if (targetSingleRoute) {
+      let coords =
+        targetSingleRoute.coordinates && targetSingleRoute.coordinates.length > 0
+          ? targetSingleRoute.coordinates
+          : targetSingleRoute.route && targetSingleRoute.route.length > 0
+            ? targetSingleRoute.route
+            : this.routeCoordinatesCache[targetSingleRoute.timestamp];
+
+      if (!coords && targetSingleRoute.waypoints && targetSingleRoute.waypoints.length > 0) {
         try {
           const routeOptions = await firstValueFrom(
-            this.routingService.getRoutes(selectedRoute.engine, selectedRoute.waypoints),
+            this.routingService.getRoutes(targetSingleRoute.engine, targetSingleRoute.waypoints),
           );
           if (routeOptions && routeOptions.length > 0) {
             coords = routeOptions[0].route;
-            this.routeCoordinatesCache[selectedRoute.timestamp] = coords;
+            this.routeCoordinatesCache[targetSingleRoute.timestamp] = coords;
           }
         } catch (e) {
           this.logger.error('Failed to calculate route for rendering', e);
@@ -72,8 +102,8 @@ export class MapRouteService {
           opacity: MAP_THEME.ROUTE_POLYLINE_OPACITY,
         }).addTo(map);
 
-        if (selectedRoute.name) {
-          polyline.bindTooltip(selectedRoute.name, { sticky: true });
+        if (targetSingleRoute.name) {
+          polyline.bindTooltip(targetSingleRoute.name, { sticky: true });
         }
 
         this.currentPolylines.push(polyline);
@@ -84,10 +114,10 @@ export class MapRouteService {
       }
 
       // Render badged stop markers for trip waypoints
-      if (selectedRoute.waypoints && selectedRoute.waypoints.length > 0) {
-        selectedRoute.waypoints.forEach((wp, idx) => {
+      if (targetSingleRoute.waypoints && targetSingleRoute.waypoints.length > 0) {
+        targetSingleRoute.waypoints.forEach((wp, idx) => {
           const isStart = idx === 0;
-          const isEnd = idx === selectedRoute.waypoints.length - 1;
+          const isEnd = idx === targetSingleRoute!.waypoints.length - 1;
           const badgeText = isStart ? '🏁' : isEnd ? '🏆' : `${idx}`;
           const bgColor = isStart ? '#10b981' : isEnd ? '#ef4444' : '#2563eb';
 
@@ -109,10 +139,10 @@ export class MapRouteService {
           this.currentMarkers.push(marker);
         });
       }
-    } else if (savedRoutes && savedRoutes.length > 0) {
+    } else if (targetRoutesToDraw && targetRoutesToDraw.length > 0) {
       const allBounds: L.LatLngBounds[] = [];
 
-      for (const route of savedRoutes) {
+      for (const route of targetRoutesToDraw) {
         let coords =
           route.coordinates && route.coordinates.length > 0
             ? route.coordinates

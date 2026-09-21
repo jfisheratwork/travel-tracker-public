@@ -18,6 +18,7 @@ export type PlaceCategory =
   | 'provincial_park'
   | 'city'
   | 'landmark'
+  | 'theme_park'
   | 'custom';
 
 export interface Place {
@@ -63,6 +64,7 @@ export interface LocationPoint {
   country?: string;
   sub?: string;
   isCountryCapital?: boolean;
+  category?: PlaceCategory | 'state' | 'hometown';
 }
 
 export type MapMode = 'parks' | 'states' | 'roads' | 'places';

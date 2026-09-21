@@ -17,6 +17,9 @@ import { GlobalSearchComponent } from './components/global-search/global-search.
 import { MapMode } from './models/location.model';
 import { ToastService } from './core/services/toast.service';
 import { AppErrorType } from './core/models/app-error.model';
+import { FormsModule } from '@angular/forms';
+import { RouteObject } from './models/route.model';
+import { PlaceFilterCategory } from './services/state.service';
 import {
   COLOR_THEMES,
   DEFAULT_THEME_ID,
@@ -30,6 +33,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     MapViewComponent,
     GlobalSearchComponent,
     SettingsModal,
@@ -55,12 +59,181 @@ export class App implements OnInit {
   showThemeMenu = false;
   showDetailsDrawer = false;
   showProfileMenu = false;
+  showPlacesFilterMenu = false;
+  showTripsFilterMenu = false;
+  tripSearchQuery = '';
+
   availableThemes = AVAILABLE_THEMES_LIST;
   currentThemeId: ColorThemeId = DEFAULT_THEME_ID;
   @ViewChild('profileMenuRef') profileMenuRef?: ElementRef;
   @ViewChild('themeMenuRef') themeMenuRef?: ElementRef;
+  @ViewChild('placesFilterMenuRef') placesFilterMenuRef?: ElementRef;
+  @ViewChild('tripsFilterMenuRef') tripsFilterMenuRef?: ElementRef;
   @ViewChild('mapView') mapView?: MapViewComponent;
   currentTheme: ColorThemeDefinition = COLOR_THEMES[DEFAULT_THEME_ID];
+
+  placeFilterOptions: { key: PlaceFilterCategory; label: string; icon: string }[] = [
+    { key: 'states', label: 'States & Regions', icon: '🏛️' },
+    { key: 'national_parks', label: 'National Parks', icon: '⛰️' },
+    { key: 'state_parks', label: 'State Parks', icon: '🌲' },
+    { key: 'landmarks', label: 'Landmarks & Historic', icon: '🗽' },
+    { key: 'theme_parks', label: 'Theme Parks', icon: '🎢' },
+    { key: 'cities', label: 'Cities & Capitals', icon: '🏙️' },
+    { key: 'custom', label: 'Custom Places', icon: '📍' },
+  ];
+
+  savedRoutes: RouteObject[] = [];
+  selectedRoute: RouteObject | null = null;
+  selectedRouteIds: string[] | null = null;
+
+  togglePlacesFilterMenu(): void {
+    this.showPlacesFilterMenu = !this.showPlacesFilterMenu;
+    if (this.showPlacesFilterMenu) {
+      this.showTripsFilterMenu = false;
+      this.showProfileMenu = false;
+      this.showThemeMenu = false;
+    }
+  }
+
+  toggleTripsFilterMenu(): void {
+    this.showTripsFilterMenu = !this.showTripsFilterMenu;
+    if (this.showTripsFilterMenu) {
+      this.showPlacesFilterMenu = false;
+      this.showProfileMenu = false;
+      this.showThemeMenu = false;
+    }
+  }
+
+  isPlacesFilterActive(category: PlaceFilterCategory): boolean {
+    return this.stateService.isPlacesFilterActive(category);
+  }
+
+  togglePlacesFilter(category: PlaceFilterCategory): void {
+    this.stateService.togglePlacesFilter(category);
+  }
+
+  selectAllPlacesFilters(): void {
+    this.stateService.selectAllPlacesFilters();
+  }
+
+  clearAllPlacesFilters(): void {
+    this.stateService.clearAllPlacesFilters();
+  }
+
+  getPlacesFilterButtonLabel(): string {
+    const active = this.stateService.getPlacesFilters();
+    if (active.length === this.placeFilterOptions.length) {
+      return 'All Places';
+    }
+    if (active.length === 0) {
+      return 'None';
+    }
+    if (active.length === 1) {
+      const match = this.placeFilterOptions.find((o) => o.key === active[0]);
+      return match ? match.label : '1 Category';
+    }
+    return `${active.length} Categories`;
+  }
+
+  get filteredSavedRoutes(): RouteObject[] {
+    const query = this.tripSearchQuery.trim().toLowerCase();
+    if (!query) {
+      return this.savedRoutes;
+    }
+    return this.savedRoutes.filter((r) => {
+      const matchName = r.name.toLowerCase().includes(query);
+      const matchStart = r.startQuery?.toLowerCase().includes(query);
+      const matchEnd = r.endQuery?.toLowerCase().includes(query);
+      const matchStops = r.stopsQueries?.some((s) => s.toLowerCase().includes(query));
+      return matchName || matchStart || matchEnd || matchStops;
+    });
+  }
+
+  isAllTripsDrawn(): boolean {
+    return !this.selectedRouteIds || this.selectedRouteIds.length === 0;
+  }
+
+  isTripSelected(route: RouteObject): boolean {
+    const routeId = route.id || String(route.timestamp) || route.name;
+    if (this.selectedRouteIds && this.selectedRouteIds.includes(routeId)) {
+      return true;
+    }
+    if (!this.selectedRouteIds && this.selectedRoute) {
+      return (
+        (this.selectedRoute.id ||
+          String(this.selectedRoute.timestamp) ||
+          this.selectedRoute.name) === routeId
+      );
+    }
+    return false;
+  }
+
+  drawAllTrips(): void {
+    this.selectedRouteIds = null;
+    this.selectedRoute = null;
+    this.stateService.setSelectedRouteIds(null);
+    this.stateService.setSelectedRoute(null);
+    this.showTripsFilterMenu = false;
+  }
+
+  selectTrip(route: RouteObject): void {
+    const routeId = route.id || String(route.timestamp) || route.name;
+    this.selectedRouteIds = [routeId];
+    this.selectedRoute = route;
+    this.stateService.setSelectedRouteIds([routeId]);
+    this.stateService.setSelectedRoute(route);
+    this.showTripsFilterMenu = false;
+  }
+
+  toggleTripSelection(route: RouteObject): void {
+    const routeId = route.id || String(route.timestamp) || route.name;
+    let current = this.stateService.getSelectedRouteIds();
+    if (!current) {
+      this.stateService.setSelectedRouteIds([routeId]);
+      this.stateService.setSelectedRoute(route);
+    } else if (current.includes(routeId)) {
+      current = current.filter((id) => id !== routeId);
+      if (current.length === 0) {
+        this.stateService.setSelectedRouteIds(null);
+        this.stateService.setSelectedRoute(null);
+      } else {
+        this.stateService.setSelectedRouteIds(current);
+        if (current.length === 1) {
+          const singleId = current[0];
+          const match = this.savedRoutes.find(
+            (r) => (r.id || String(r.timestamp) || r.name) === singleId,
+          );
+          this.stateService.setSelectedRoute(match || null);
+        } else {
+          this.stateService.setSelectedRoute(null);
+        }
+      }
+    } else {
+      current = [...current, routeId];
+      this.stateService.setSelectedRouteIds(current);
+      if (current.length === 1) {
+        this.stateService.setSelectedRoute(route);
+      } else {
+        this.stateService.setSelectedRoute(null);
+      }
+    }
+  }
+
+  getTripsFilterButtonLabel(): string {
+    if (this.isAllTripsDrawn()) {
+      return `All Trips (${this.savedRoutes.length})`;
+    }
+    if (this.selectedRouteIds && this.selectedRouteIds.length === 1) {
+      const match = this.savedRoutes.find(
+        (r) => (r.id || String(r.timestamp) || r.name) === this.selectedRouteIds![0],
+      );
+      return match ? match.name : '1 Trip';
+    }
+    if (this.selectedRouteIds) {
+      return `${this.selectedRouteIds.length} Trips`;
+    }
+    return `All Trips (${this.savedRoutes.length})`;
+  }
 
   toggleProfileMenu(): void {
     this.showProfileMenu = !this.showProfileMenu;
@@ -161,6 +334,16 @@ export class App implements OnInit {
         this.showThemeMenu = false;
       }
     }
+    if (this.showPlacesFilterMenu && this.placesFilterMenuRef?.nativeElement) {
+      if (!this.placesFilterMenuRef.nativeElement.contains(event.target as Node)) {
+        this.showPlacesFilterMenu = false;
+      }
+    }
+    if (this.showTripsFilterMenu && this.tripsFilterMenuRef?.nativeElement) {
+      if (!this.tripsFilterMenuRef.nativeElement.contains(event.target as Node)) {
+        this.showTripsFilterMenu = false;
+      }
+    }
   }
 
   @HostListener('document:keydown.escape')
@@ -170,6 +353,12 @@ export class App implements OnInit {
     }
     if (this.showThemeMenu) {
       this.showThemeMenu = false;
+    }
+    if (this.showPlacesFilterMenu) {
+      this.showPlacesFilterMenu = false;
+    }
+    if (this.showTripsFilterMenu) {
+      this.showTripsFilterMenu = false;
     }
   }
 
@@ -210,6 +399,18 @@ export class App implements OnInit {
 
   ngOnInit() {
     this.showWelcomeModal = this.localStorageService.isFirstVisitOrNoData();
+
+    this.stateService.settings$.subscribe((settings) => {
+      this.savedRoutes = settings.savedRoutes || [];
+    });
+
+    this.stateService.selectedRoute$.subscribe((route) => {
+      this.selectedRoute = route;
+    });
+
+    this.stateService.selectedRouteIds$.subscribe((ids) => {
+      this.selectedRouteIds = ids;
+    });
 
     this.stateService.detailsDrawerOpen$.subscribe((isOpen) => {
       this.showDetailsDrawer = isOpen;

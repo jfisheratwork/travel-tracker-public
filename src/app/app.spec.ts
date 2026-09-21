@@ -137,4 +137,84 @@ describe('App', () => {
     expect(modeSpy).toHaveBeenCalledWith('roads');
     expect(triggerSpy).toHaveBeenCalled();
   });
+
+  it('should toggle places filter menu and manage categories', () => {
+    fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+
+    expect(app.showPlacesFilterMenu).toBe(false);
+    app.togglePlacesFilterMenu();
+    expect(app.showPlacesFilterMenu).toBe(true);
+
+    expect(app.isPlacesFilterActive('national_parks')).toBe(true);
+    app.togglePlacesFilter('national_parks');
+    expect(app.isPlacesFilterActive('national_parks')).toBe(false);
+
+    app.selectAllPlacesFilters();
+    expect(app.isPlacesFilterActive('national_parks')).toBe(true);
+    expect(app.getPlacesFilterButtonLabel()).toBe('All Places');
+
+    app.clearAllPlacesFilters();
+    expect(app.isPlacesFilterActive('national_parks')).toBe(false);
+    expect(app.getPlacesFilterButtonLabel()).toBe('None');
+  });
+
+  it('should search and filter trips or draw all trips', () => {
+    fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    fixture.detectChanges();
+
+    app.savedRoutes = [
+      {
+        id: 'r-1',
+        name: 'Pacific Coast Highway',
+        description: '',
+        members: ['Alice'],
+        status: 'completed',
+        engine: 'osrm',
+        distance: 1000,
+        duration: 300,
+        timestamp: 100,
+        startQuery: 'Seattle',
+        endQuery: 'San Diego',
+        stopsQueries: [],
+        waypoints: [],
+        route: [],
+      },
+      {
+        id: 'r-2',
+        name: 'Great Lakes Loop',
+        description: '',
+        members: ['Bob'],
+        status: 'planned',
+        engine: 'osrm',
+        distance: 800,
+        duration: 200,
+        timestamp: 200,
+        startQuery: 'Chicago',
+        endQuery: 'Traverse City',
+        stopsQueries: [],
+        waypoints: [],
+        route: [],
+      },
+    ];
+
+    expect(app.isAllTripsDrawn()).toBe(true);
+    expect(app.getTripsFilterButtonLabel()).toContain('All Trips (2)');
+
+    // Search
+    app.tripSearchQuery = 'Pacific';
+    expect(app.filteredSavedRoutes.length).toBe(1);
+    expect(app.filteredSavedRoutes[0].name).toBe('Pacific Coast Highway');
+
+    // Select single trip
+    app.selectTrip(app.savedRoutes[0]);
+    expect(app.isTripSelected(app.savedRoutes[0])).toBe(true);
+    expect(app.isAllTripsDrawn()).toBe(false);
+    expect(app.getTripsFilterButtonLabel()).toBe('Pacific Coast Highway');
+
+    // Draw all trips
+    app.drawAllTrips();
+    expect(app.isAllTripsDrawn()).toBe(true);
+  });
 });

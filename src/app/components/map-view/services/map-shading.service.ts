@@ -16,6 +16,7 @@ export interface RenderStateShadingOptions {
   currentTheme: ColorThemeDefinition;
   currentSearchTerm: string;
   familyMembers: FamilyMember[];
+  showStatesShading?: boolean;
 }
 
 @Injectable({
@@ -36,12 +37,14 @@ export class MapShadingService {
       currentTheme,
       currentSearchTerm,
       familyMembers,
+      showStatesShading = true,
     } = options;
 
     this.clear();
 
     if (
       !map ||
+      !showStatesShading ||
       (mapMode !== 'states' && mapMode !== 'parks' && mapMode !== 'places') ||
       !statesGeoJson
     ) {

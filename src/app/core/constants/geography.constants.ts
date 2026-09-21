@@ -1009,4 +1009,3 @@ export function getAvailableStateOptions(
 // Re-export V4 Geographic and Place Constants
 export * from './countries.constants';
 export * from './regions.constants';
-export * from './curated-places.constants';

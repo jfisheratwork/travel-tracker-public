@@ -40,6 +40,8 @@ import { MapVisitedLegendComponent } from './components/map-visited-legend/map-v
 import { MapShadingService } from './services/map-shading.service';
 import { MapMarkerService } from './services/map-marker.service';
 import { MapRouteService } from './services/map-route.service';
+import { STATIC_PLACES_CATALOG } from '../../core/constants/curated-places.constants';
+import { PlaceFilterCategory } from '../../services/state.service';
 
 const METERS_PER_MILE = 1609.34;
 const ROADS_HOMETOWN_RADIUS_MILES = 300;
@@ -154,6 +156,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private previousSelectedRoute?: RouteObject | null;
   private initialZoomApplied = false;
   private selectedRoute: RouteObject | null = null;
+  placesFilters: PlaceFilterCategory[] = [];
+  selectedRouteIds: string[] | null = null;
 
   constructor(
     private stateService: StateService,
@@ -175,6 +179,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
       this.stateService.searchTerm$,
       this.stateService.mapMode$,
       this.stateService.selectedRoute$,
+      this.stateService.placesFilters$,
+      this.stateService.selectedRouteIds$,
       this.locationDataService.parks$,
       this.locationDataService.states$,
       this.locationDataService.statesGeoJson$,
@@ -182,13 +188,26 @@ export class MapViewComponent implements OnInit, OnDestroy {
     ])
       .pipe(takeUntil(this.destroy$))
       .subscribe(
-        ([settings, searchTerm, mapMode, selectedRoute, parks, states, statesGeoJson, themeId]) => {
+        ([
+          settings,
+          searchTerm,
+          mapMode,
+          selectedRoute,
+          placesFilters,
+          selectedRouteIds,
+          parks,
+          states,
+          statesGeoJson,
+          themeId,
+        ]) => {
           this.currentThemeId = themeId;
           this.currentTheme = COLOR_THEMES[themeId] || COLOR_THEMES[DEFAULT_THEME_ID];
           this.currentSettings = settings;
           this.currentSearchTerm = searchTerm.toLowerCase();
           this.mapMode = mapMode;
           this.familyMembers = settings.familyMembers;
+          this.placesFilters = placesFilters;
+          this.selectedRouteIds = selectedRouteIds;
 
           const hometowns: LocationPoint[] = settings.hometowns.map(
             (h, idx) =>
@@ -200,8 +219,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
                 region: '',
                 visited: true,
                 visitedBy: [],
+                category: 'hometown',
                 isLast: idx === settings.hometowns.length - 1,
-              }) as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+              }) as LocationPoint,
           );
 
           const mergedParks = parks.map((p) => {
@@ -239,6 +259,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
               isPartiallyVisited,
               visitedByMembers: visitors,
               visitLogs: locationLogs,
+              category: 'national_park' as const,
             };
           });
 
@@ -276,10 +297,93 @@ export class MapViewComponent implements OnInit, OnDestroy {
               isPartiallyVisited,
               visitedByMembers: visitors,
               visitLogs: locationLogs,
+              category: 'state' as const,
             };
           });
 
-          this.allLocations = [...mergedParks, ...mergedStates, ...hometowns];
+          // Curated places (State parks, landmarks, theme parks, cities)
+          const curatedLocations: LocationPoint[] = STATIC_PLACES_CATALOG.filter(
+            (p) => p.category !== 'national_park',
+          ).map((p) => {
+            const visits = settings.placeVisits?.[p.id] || [];
+            const wantVisits = visits.filter((v) => v.status === 'want_to_visit');
+            const visitedEntries = visits.filter((v) => v.status === 'visited');
+            const locationLogs = settings.locationVisits?.[p.id] || [];
+            const isVisited = visitedEntries.length > 0 || locationLogs.length > 0;
+            const isWant = !isVisited && wantVisits.length > 0;
+            const visitors = visitedEntries
+              .map((v) => {
+                const mem = settings.familyMembers?.find((m) => m.id === v.memberId);
+                if (!mem) return null;
+                return { ...mem, date: v.dateVisited, notes: v.notes };
+              })
+              .filter((v): v is NonNullable<typeof v> => !!v);
+
+            const totalFamily = settings.familyMembers?.length || 0;
+            return {
+              id: p.id,
+              name: p.name,
+              lat: p.lat,
+              lng: p.lng,
+              region: p.regionId || '',
+              country: p.countryId === 'CA' ? 'Canada' : 'USA',
+              sub: p.regionId ? p.regionId.split('-')[1] : '',
+              visited: isVisited,
+              visitedBy: visitors.map((v) => v.name),
+              wantToVisit: isWant,
+              isAllVisited: totalFamily > 0 ? visitors.length === totalFamily : isVisited,
+              isPartiallyVisited:
+                totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily,
+              visitedByMembers: visitors,
+              visitLogs: locationLogs,
+              category: p.category,
+            } as LocationPoint;
+          });
+
+          // Custom places
+          const customLocations: LocationPoint[] = (settings.customPlaces || []).map((p) => {
+            const visits = settings.placeVisits?.[p.id] || [];
+            const wantVisits = visits.filter((v) => v.status === 'want_to_visit');
+            const visitedEntries = visits.filter((v) => v.status === 'visited');
+            const locationLogs = settings.locationVisits?.[p.id] || [];
+            const isVisited = visitedEntries.length > 0 || locationLogs.length > 0;
+            const isWant = !isVisited && wantVisits.length > 0;
+            const visitors = visitedEntries
+              .map((v) => {
+                const mem = settings.familyMembers?.find((m) => m.id === v.memberId);
+                if (!mem) return null;
+                return { ...mem, date: v.dateVisited, notes: v.notes };
+              })
+              .filter((v): v is NonNullable<typeof v> => !!v);
+
+            const totalFamily = settings.familyMembers?.length || 0;
+            return {
+              id: p.id,
+              name: p.name,
+              lat: p.lat,
+              lng: p.lng,
+              region: p.regionId || '',
+              country: p.countryId === 'CA' ? 'Canada' : 'USA',
+              sub: p.regionId ? p.regionId.split('-')[1] : '',
+              visited: isVisited,
+              visitedBy: visitors.map((v) => v.name),
+              wantToVisit: isWant,
+              isAllVisited: totalFamily > 0 ? visitors.length === totalFamily : isVisited,
+              isPartiallyVisited:
+                totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily,
+              visitedByMembers: visitors,
+              visitLogs: locationLogs,
+              category: 'custom',
+            } as LocationPoint;
+          });
+
+          this.allLocations = [
+            ...mergedParks,
+            ...mergedStates,
+            ...curatedLocations,
+            ...customLocations,
+            ...hometowns,
+          ];
 
           this.refreshMarkers();
 
@@ -291,6 +395,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
             currentTheme: this.currentTheme,
             currentSearchTerm: this.currentSearchTerm,
             familyMembers: this.familyMembers,
+            showStatesShading: this.placesFilters.includes('states'),
           });
 
           const hasHometown = settings.hometowns && settings.hometowns.length > 0;
@@ -327,6 +432,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
             map: this.map,
             savedRoutes: settings.savedRoutes,
             selectedRoute,
+            selectedRouteIds: this.selectedRouteIds,
             mapMode: this.mapMode,
             hasHometown,
           });

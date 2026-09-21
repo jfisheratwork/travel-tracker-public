@@ -13,6 +13,8 @@ import { FamilyMember } from '../../../models/settings.model';
 import { buildLocationPopupHtml, buildClusterPopupHtml } from '../utils/map-popup.util';
 import { groupMarkersIntoClusters } from '../utils/map-cluster.util';
 
+import { PlaceFilterCategory } from '../../../services/state.service';
+
 export interface RenderMarkersOptions {
   layerGroup: L.LayerGroup;
   locations: LocationPoint[];
@@ -20,6 +22,7 @@ export interface RenderMarkersOptions {
   mapMode: MapMode;
   currentTheme: ColorThemeDefinition;
   familyMembers: FamilyMember[];
+  placesFilters?: PlaceFilterCategory[];
   map?: L.Map;
 }
 
@@ -31,7 +34,15 @@ export class MapMarkerService {
    * Clears and renders filtered markers onto the map layer group.
    */
   public renderMarkers(options: RenderMarkersOptions): void {
-    const { layerGroup, locations, searchTerm, mapMode, currentTheme, familyMembers } = options;
+    const {
+      layerGroup,
+      locations,
+      searchTerm,
+      mapMode,
+      currentTheme,
+      familyMembers,
+      placesFilters,
+    } = options;
 
     if (!layerGroup) return;
 
@@ -48,6 +59,34 @@ export class MapMarkerService {
       if (mapMode === 'roads') return false;
       if (mapMode === 'parks' && !m.id.includes('park')) return false;
       if (mapMode === 'states' && !m.id.includes('state')) return false;
+
+      // Filter by placesFilters if provided
+      if (placesFilters && placesFilters.length >= 0) {
+        let cat: PlaceFilterCategory;
+        if (m.category === 'state' || m.id.startsWith('state-')) {
+          cat = 'states';
+        } else if (
+          m.category === 'national_park' ||
+          m.id.startsWith('park-') ||
+          m.id.startsWith('np-')
+        ) {
+          cat = 'national_parks';
+        } else if (m.category === 'state_park' || m.id.startsWith('sp-')) {
+          cat = 'state_parks';
+        } else if (m.category === 'landmark' || m.id.startsWith('lm-')) {
+          cat = 'landmarks';
+        } else if (m.category === 'theme_park' || m.id.startsWith('tp-')) {
+          cat = 'theme_parks';
+        } else if (m.category === 'city' || m.id.startsWith('city-')) {
+          cat = 'cities';
+        } else {
+          cat = 'custom';
+        }
+
+        if (!placesFilters.includes(cat)) {
+          return false;
+        }
+      }
 
       return m.name.toLowerCase().includes(lowerTerm);
     });
@@ -226,7 +265,17 @@ export class MapMarkerService {
       } else {
         const isCanada = m.country === 'Canada' || m.sub === 'Canada';
         let iconChar: string;
-        if (isPark) {
+        if (m.category === 'state_park') {
+          iconChar = '🌲';
+        } else if (m.category === 'landmark') {
+          iconChar = '🗽';
+        } else if (m.category === 'theme_park') {
+          iconChar = '🎢';
+        } else if (m.category === 'city') {
+          iconChar = '🏙️';
+        } else if (m.category === 'custom') {
+          iconChar = '📍';
+        } else if (isPark) {
           iconChar = isCanada
             ? MAP_MARKER_THEME.PARK.ICON_CHAR_CA
             : MAP_MARKER_THEME.PARK.ICON_CHAR_US;

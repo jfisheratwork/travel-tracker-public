@@ -54,4 +54,28 @@ describe('GlobalSearchComponent', () => {
     expect(component.searchControl.value).toBe('');
     expect(stateServiceSpy.setSearchTerm).toHaveBeenCalledWith('');
   });
+
+  it('should toggle expansion and show text input', () => {
+    expect(component.isExpanded).toBe(false);
+    expect(component.showInput).toBe(false);
+
+    component.expand();
+    expect(component.isExpanded).toBe(true);
+    expect(component.showInput).toBe(true);
+
+    component.collapse();
+    expect(component.isExpanded).toBe(false);
+    expect(component.showInput).toBe(false);
+  });
+
+  it('should show input if forceExpanded is true or has query', () => {
+    component.forceExpanded = true;
+    expect(component.showInput).toBe(true);
+
+    component.forceExpanded = false;
+    expect(component.showInput).toBe(false);
+
+    component.searchControl.setValue('Michigan');
+    expect(component.showInput).toBe(true);
+  });
 });

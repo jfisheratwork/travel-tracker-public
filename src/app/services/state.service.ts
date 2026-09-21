@@ -5,6 +5,25 @@ import { RouteObject } from '../models/route.model';
 import { ColorThemeId, DEFAULT_THEME_ID } from '../core/constants/theme.constants';
 import { MapMode } from '../models/location.model';
 
+export type PlaceFilterCategory =
+  | 'states'
+  | 'national_parks'
+  | 'state_parks'
+  | 'landmarks'
+  | 'theme_parks'
+  | 'cities'
+  | 'custom';
+
+export const ALL_PLACE_FILTER_CATEGORIES: PlaceFilterCategory[] = [
+  'states',
+  'national_parks',
+  'state_parks',
+  'landmarks',
+  'theme_parks',
+  'cities',
+  'custom',
+];
+
 @Injectable({
   providedIn: 'root',
 })
@@ -14,6 +33,14 @@ export class StateService {
 
   private mapModeSubject = new BehaviorSubject<MapMode>('places');
   public mapMode$ = this.mapModeSubject.asObservable();
+
+  private placesFiltersSubject = new BehaviorSubject<PlaceFilterCategory[]>([
+    ...ALL_PLACE_FILTER_CATEGORIES,
+  ]);
+  public placesFilters$ = this.placesFiltersSubject.asObservable();
+
+  private selectedRouteIdsSubject = new BehaviorSubject<string[] | null>(null);
+  public selectedRouteIds$ = this.selectedRouteIdsSubject.asObservable();
 
   private settingsSubject = new BehaviorSubject<AppSettings>(DEFAULT_SETTINGS);
   public settings$ = this.settingsSubject.asObservable();
@@ -40,6 +67,43 @@ export class StateService {
 
   setMapMode(mode: MapMode): void {
     this.mapModeSubject.next(mode);
+  }
+
+  getPlacesFilters(): PlaceFilterCategory[] {
+    return this.placesFiltersSubject.getValue();
+  }
+
+  setPlacesFilters(filters: PlaceFilterCategory[]): void {
+    this.placesFiltersSubject.next([...filters]);
+  }
+
+  togglePlacesFilter(filter: PlaceFilterCategory): void {
+    const current = this.getPlacesFilters();
+    if (current.includes(filter)) {
+      this.setPlacesFilters(current.filter((f) => f !== filter));
+    } else {
+      this.setPlacesFilters([...current, filter]);
+    }
+  }
+
+  isPlacesFilterActive(filter: PlaceFilterCategory): boolean {
+    return this.getPlacesFilters().includes(filter);
+  }
+
+  selectAllPlacesFilters(): void {
+    this.setPlacesFilters([...ALL_PLACE_FILTER_CATEGORIES]);
+  }
+
+  clearAllPlacesFilters(): void {
+    this.setPlacesFilters([]);
+  }
+
+  getSelectedRouteIds(): string[] | null {
+    return this.selectedRouteIdsSubject.getValue();
+  }
+
+  setSelectedRouteIds(ids: string[] | null): void {
+    this.selectedRouteIdsSubject.next(ids ? [...ids] : null);
   }
 
   getSettings(): AppSettings {
