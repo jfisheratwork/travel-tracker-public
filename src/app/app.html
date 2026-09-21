@@ -512,11 +512,11 @@
         <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
       </div>
 
-      <!-- Right Side Details Pane: Docked cleanly on the right taking fixed 500px on desktop -->
+      <!-- Right Side Details Pane: Docked cleanly on the right taking 45% width on desktop -->
       <div
         id="detailsDrawer"
         *ngIf="showDetailsDrawer && (stateService.mapMode$ | async) as mode"
-        class="w-full lg:w-[500px] lg:flex-none h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
+        class="w-full lg:w-[45%] lg:flex-none h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
       >
