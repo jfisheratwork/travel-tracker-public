@@ -7,7 +7,10 @@ import { AppSettings, FamilyMember, VisitDetail, VisitLogEntry } from '../models
 import { RouteObject } from '../models/route.model';
 import { Trip, TripStop } from '../models/trip.model';
 import { TripService } from './trip.service';
-import { getStaticPlace } from '../core/constants/curated-places.constants';
+import {
+  getStaticPlace,
+  CROWN_JEWELS_STATE_PARKS,
+} from '../core/constants/curated-places.constants';
 import { AppErrorType } from '../core/models/app-error.model';
 import {
   NATIONAL_PARKS,
@@ -103,7 +106,7 @@ Whenever a trip involves a longer route or road trip (more than just "I visited 
 3. "destinations": Array of primary destinations or overnight stays (e.g. ["Bend, OR", "Crater Lake National Park, OR", "Redwood National and State Parks, CA"]).
 4. "corridorStops": Array of secondary parks, landmarks, or scenic detours visited along the way (e.g. ["Smith Rock State Park, OR"]).
 5. "highlights": Array of key memorable moments or activities (e.g. ["Hiked the Rim Trail at sunset", "Stargazing at caldera"]).
-6. "parks": Extract all US and Canadian National Parks visited. Can be simple string array (e.g. ["Grand Teton", "Yellowstone"]) or structured objects with individual dates and notes if known (e.g. [{"name": "Grand Teton", "date": "2019-07-03", "notes": "Jenny Lake hike"}]).
+6. "parks": Extract all US and Canadian National Parks, State Parks, and Provincial Parks visited. Can be simple string array (e.g. ["Crater Lake", "Redwood National and State Parks", "Smith Rock State Park"]) or structured objects with individual dates and notes if known (e.g. [{"name": "Crater Lake", "date": "2022-04-02", "notes": "Rim drive"}]).
 7. "states": Extract all US States and Canadian Provinces visited OR traversed along logical highway corridors (e.g. ["Virginia", "Maryland", "Pennsylvania", "Ohio", "Michigan"]). Can also be structured objects with dates/notes.
 8. "members": Array of member names who took part, or ["all"] if everyone attended.
 9. "name": A concise, descriptive trip title (e.g., "Pacific Northwest to Monterey Road Trip").
@@ -535,7 +538,7 @@ For multiple trips / travel history:
           });
         }
       } else {
-        warnings.push(`${prefix} National Park "${rawName}" could not be recognized.`);
+        warnings.push(`${prefix} Park "${rawName}" could not be recognized.`);
       }
     }
 
@@ -594,7 +597,11 @@ For multiple trips / travel history:
       const resolved = this.resolveCustomOrStaticPlace(item);
       if (resolved && !resolvedDestinations.some((d) => d.id === resolved.id)) {
         resolvedDestinations.push(resolved);
-        if (resolved.id.startsWith('np-') || this.matchPark(resolved.name)) {
+        if (
+          resolved.id.startsWith('np-') ||
+          resolved.id.startsWith('sp-') ||
+          this.matchPark(resolved.name)
+        ) {
           if (!resolvedParks.some((p) => p.name.toLowerCase() === resolved.name.toLowerCase())) {
             resolvedParks.push(resolved);
           }
@@ -616,6 +623,16 @@ For multiple trips / travel history:
       const resolved = this.resolveCustomOrStaticPlace(item);
       if (resolved && !resolvedCorridorStops.some((c) => c.id === resolved.id)) {
         resolvedCorridorStops.push({ ...resolved, isWaypointOnly: isWaypoint });
+        if (
+          !isWaypoint &&
+          (resolved.id.startsWith('np-') ||
+            resolved.id.startsWith('sp-') ||
+            this.matchPark(resolved.name))
+        ) {
+          if (!resolvedParks.some((p) => p.name.toLowerCase() === resolved.name.toLowerCase())) {
+            resolvedParks.push(resolved);
+          }
+        }
       }
     }
 
@@ -912,7 +929,7 @@ For multiple trips / travel history:
       for (let i = 0; i < approvedTrips.length; i++) {
         const trip = approvedTrips[i];
         if (trip.includeRoute && trip.route && trip.route.length > 0) {
-          const routeName = trip.routeTitle?.trim() || trip.name || 'Road Trip Route';
+          const routeName = trip.routeTitle?.trim() || trip.name || 'Trip';
           const defaultNotes = trip.route
             .map(
               (s) =>
@@ -936,7 +953,7 @@ For multiple trips / travel history:
             name: routeName,
             description: routeDesc,
             startDate: trip.date,
-            endDate: trip.date,
+            endDate: trip.endDate || trip.date,
             members: trip.members.map((m) => m.id),
             status: 'completed',
             engine: current.routingEngine || 'osrm',
@@ -971,12 +988,14 @@ For multiple trips / travel history:
         // Destinations from parks
         for (const park of trip.parks) {
           const staticPlace = getStaticPlace(park.id) || getStaticPlace(park.name);
-          const rawPark = NATIONAL_PARKS.find((p) => p.id === park.id);
+          const rawPark = this.getAllParks().find((p) => p.id === park.id);
           const lat = staticPlace?.lat ?? rawPark?.lat ?? 0;
           const lng = staticPlace?.lng ?? rawPark?.lng ?? 0;
           const placeId =
             staticPlace?.id ??
-            (park.id.startsWith('np-') ? park.id : `np-${park.id.toLowerCase()}`);
+            (park.id.startsWith('np-') || park.id.startsWith('sp-')
+              ? park.id
+              : `np-${park.id.toLowerCase()}`);
           tripDestinations.push({
             placeId,
             name: park.name,
@@ -1197,10 +1216,18 @@ For multiple trips / travel history:
   }
 
   /**
-   * Returns all canonical National Parks for selection/autocomplete.
+   * Returns all canonical National and State/Provincial Parks for selection/autocomplete.
    */
   public getAllParks(): GeoLocation[] {
-    return NATIONAL_PARKS;
+    const stateParksAsGeo: GeoLocation[] = CROWN_JEWELS_STATE_PARKS.map((sp) => ({
+      id: sp.id,
+      name: sp.name,
+      lat: sp.lat,
+      lng: sp.lng,
+      country: sp.countryId === 'CA' ? 'Canada' : 'United States',
+      sub: sp.regionId?.replace(/^(US|CA)-/, ''),
+    }));
+    return [...NATIONAL_PARKS, ...stateParksAsGeo];
   }
 
   /**
@@ -1215,22 +1242,40 @@ For multiple trips / travel history:
   private matchPark(rawName: string): GeoLocation | null {
     const cleaned = this.normalizeString(rawName)
       .replace(/\bnational\s+park(?:\s+and\s+preserve)?\b/g, '')
+      .replace(/\bstate\s+park(?:\s+and\s+preserve)?\b/g, '')
+      .replace(/\bprovincial\s+park\b/g, '')
       .replace(/\bnp\b/g, '')
+      .replace(/\bsp\b/g, '')
       .replace(/\bpark\b/g, '')
       .trim();
 
     if (!cleaned) return null;
 
+    const allParks = this.getAllParks();
+
     // Direct exact or normalized match
-    for (const park of NATIONAL_PARKS) {
-      const parkNorm = this.normalizeString(park.name);
-      if (parkNorm === cleaned) return park;
+    for (const park of allParks) {
+      const parkNorm = this.normalizeString(park.name)
+        .replace(/\bnational\s+park(?:\s+and\s+preserve)?\b/g, '')
+        .replace(/\bstate\s+park(?:\s+and\s+preserve)?\b/g, '')
+        .replace(/\bprovincial\s+park\b/g, '')
+        .replace(/\bpark\b/g, '')
+        .trim();
+      if (parkNorm === cleaned || this.normalizeString(park.name) === cleaned) return park;
     }
 
     // Substring contains check
-    for (const park of NATIONAL_PARKS) {
-      const parkNorm = this.normalizeString(park.name);
-      if (parkNorm.includes(cleaned) || cleaned.includes(parkNorm)) {
+    for (const park of allParks) {
+      const parkNorm = this.normalizeString(park.name)
+        .replace(/\bnational\s+park(?:\s+and\s+preserve)?\b/g, '')
+        .replace(/\bstate\s+park(?:\s+and\s+preserve)?\b/g, '')
+        .replace(/\bprovincial\s+park\b/g, '')
+        .replace(/\bpark\b/g, '')
+        .trim();
+      if (
+        (parkNorm.length >= 4 && cleaned.includes(parkNorm)) ||
+        (cleaned.length >= 4 && parkNorm.includes(cleaned))
+      ) {
         return park;
       }
     }
@@ -1247,13 +1292,42 @@ For multiple trips / travel history:
       joshua: 'Joshua Tree',
       'zion canyon': 'Zion',
       redwoods: 'Redwood',
+      'redwood national and state': 'Redwood',
+      'redwood national': 'Redwood',
       'haleakala crater': 'Haleakala',
       'death vally': 'Death Valley',
+      'smith rock': 'Smith Rock State Park',
+      'prairie creek': 'Prairie Creek Redwoods State Park',
+      'prairie creek redwoods': 'Prairie Creek Redwoods State Park',
+      'jedediah smith': 'Jedediah Smith Redwoods State Park',
+      'jedediah smith redwoods': 'Jedediah Smith Redwoods State Park',
+      'humboldt redwoods': 'Humboldt Redwoods State Park',
+      custer: 'Custer State Park',
+      adirondacks: 'Adirondack Park',
+      adirondack: 'Adirondack Park',
+      'niagara falls': 'Niagara Falls State Park',
+      'watkins glen': 'Watkins Glen State Park',
     };
 
     if (aliases[cleaned]) {
       const target = aliases[cleaned];
-      return NATIONAL_PARKS.find((p) => p.name === target) || null;
+      return allParks.find((p) => p.name === target) || null;
+    }
+
+    // Check curated static places
+    const staticPlace = getStaticPlace(rawName);
+    if (
+      staticPlace &&
+      (staticPlace.category === 'state_park' || staticPlace.category === 'national_park')
+    ) {
+      return {
+        id: staticPlace.id,
+        name: staticPlace.name,
+        lat: staticPlace.lat,
+        lng: staticPlace.lng,
+        country: staticPlace.countryId === 'CA' ? 'Canada' : 'United States',
+        sub: staticPlace.regionId?.replace(/^(US|CA)-/, ''),
+      };
     }
 
     return null;

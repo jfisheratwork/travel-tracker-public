@@ -5,8 +5,10 @@ import { firstValueFrom } from 'rxjs';
 import * as L from 'leaflet';
 import { MapMode } from '../../../models/location.model';
 import { MAP_THEME } from '../../../core/constants/map.constants';
-import { RouteObject } from '../../../models/route.model';
+import { RouteObject, Waypoint } from '../../../models/route.model';
 import { RoutingService } from '../../../services/routing/routing.service';
+import { GeocodingService } from '../../../services/routing/geocoding.service';
+import { StateService } from '../../../services/state.service';
 import { LoggerService } from '../../../core/services/logger.service';
 
 export interface RenderRoutesOptions {
@@ -18,6 +20,8 @@ export interface RenderRoutesOptions {
   hasHometown?: boolean;
 }
 
+const METERS_PER_MILE = 1609.34;
+
 @Injectable({
   providedIn: 'root',
 })
@@ -28,6 +32,8 @@ export class MapRouteService {
 
   constructor(
     private routingService: RoutingService,
+    private geocodingService: GeocodingService,
+    private stateService: StateService,
     private logger: LoggerService,
   ) {}
 
@@ -41,7 +47,6 @@ export class MapRouteService {
       selectedRoute = null,
       selectedRouteIds = null,
       mapMode,
-      hasHometown = false,
     } = options;
 
     this.clear();
@@ -73,26 +78,7 @@ export class MapRouteService {
     }
 
     if (targetSingleRoute) {
-      let coords =
-        targetSingleRoute.coordinates && targetSingleRoute.coordinates.length > 0
-          ? targetSingleRoute.coordinates
-          : targetSingleRoute.route && targetSingleRoute.route.length > 0
-            ? targetSingleRoute.route
-            : this.routeCoordinatesCache[targetSingleRoute.timestamp];
-
-      if (!coords && targetSingleRoute.waypoints && targetSingleRoute.waypoints.length > 0) {
-        try {
-          const routeOptions = await firstValueFrom(
-            this.routingService.getRoutes(targetSingleRoute.engine, targetSingleRoute.waypoints),
-          );
-          if (routeOptions && routeOptions.length > 0) {
-            coords = routeOptions[0].route;
-            this.routeCoordinatesCache[targetSingleRoute.timestamp] = coords;
-          }
-        } catch (e) {
-          this.logger.error('Failed to calculate route for rendering', e);
-        }
-      }
+      const coords = await this.ensureRouteCoordinates(targetSingleRoute);
 
       if (coords && coords.length > 0) {
         // DOCS: https://leafletjs.com/reference.html#polyline
@@ -143,26 +129,7 @@ export class MapRouteService {
       const allBounds: L.LatLngBounds[] = [];
 
       for (const route of targetRoutesToDraw) {
-        let coords =
-          route.coordinates && route.coordinates.length > 0
-            ? route.coordinates
-            : route.route && route.route.length > 0
-              ? route.route
-              : this.routeCoordinatesCache[route.timestamp];
-
-        if (!coords && route.waypoints && route.waypoints.length > 0) {
-          try {
-            const routeOptions = await firstValueFrom(
-              this.routingService.getRoutes(route.engine, route.waypoints),
-            );
-            if (routeOptions && routeOptions.length > 0) {
-              coords = routeOptions[0].route;
-              this.routeCoordinatesCache[route.timestamp] = coords;
-            }
-          } catch (e) {
-            this.logger.error(`Failed to calculate route ${route.name}`, e);
-          }
-        }
+        const coords = await this.ensureRouteCoordinates(route);
 
         if (coords && coords.length > 0) {
           const polyline = L.polyline(coords, {
@@ -183,7 +150,7 @@ export class MapRouteService {
         }
       }
 
-      if (allBounds.length > 0 && !hasHometown) {
+      if (allBounds.length > 0) {
         let groupBounds = allBounds[0];
         for (let i = 1; i < allBounds.length; i++) {
           groupBounds = groupBounds.extend(allBounds[i]);
@@ -195,6 +162,112 @@ export class MapRouteService {
     }
 
     return this.currentPolylines;
+  }
+
+  /**
+   * Ensures a route has driving coordinates. If waypoints or coordinates are missing,
+   * it automatically geocodes the stop queries, calls the routing service, and updates state.
+   */
+  private async ensureRouteCoordinates(route: RouteObject): Promise<[number, number][] | null> {
+    let coords =
+      route.coordinates && route.coordinates.length > 0
+        ? route.coordinates
+        : route.route && route.route.length > 0
+          ? route.route
+          : this.routeCoordinatesCache[route.timestamp];
+
+    if (coords && coords.length > 0) {
+      return coords;
+    }
+
+    // 1. Geocode waypoints if missing but queries are present
+    if (
+      (!route.waypoints || route.waypoints.length === 0) &&
+      (route.startQuery || route.endQuery)
+    ) {
+      const queries = [route.startQuery, ...(route.stopsQueries || []), route.endQuery].filter(
+        (q): q is string => Boolean(q && q.trim().length > 0),
+      );
+
+      if (queries.length >= 2) {
+        const resolvedWaypoints: Waypoint[] = [];
+        for (const query of queries) {
+          try {
+            const wp = await firstValueFrom(this.geocodingService.geocode(query));
+            if (wp) {
+              resolvedWaypoints.push(wp);
+            }
+          } catch (err) {
+            this.logger.warn(`Failed to geocode "${query}" for route "${route.name}"`, err);
+          }
+        }
+
+        if (resolvedWaypoints.length >= 2) {
+          route.waypoints = resolvedWaypoints;
+          this.updateRouteInSettings(route);
+        }
+      }
+    }
+
+    // 2. Fetch routing engine coordinates
+    if (route.waypoints && route.waypoints.length >= 2) {
+      try {
+        const engine = route.engine || 'osrm';
+        const routeOptions = await firstValueFrom(
+          this.routingService.getRoutes(engine, route.waypoints),
+        );
+        if (routeOptions && routeOptions.length > 0 && routeOptions[0].route) {
+          coords = routeOptions[0].route;
+          this.routeCoordinatesCache[route.timestamp] = coords;
+          route.route = coords;
+          route.coordinates = coords;
+          route.distance = routeOptions[0].distance;
+          route.duration = routeOptions[0].duration;
+          this.updateRouteInSettings(route);
+          return coords;
+        }
+      } catch (e) {
+        this.logger.error(`Failed to calculate route coordinates for "${route.name}"`, e);
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Persists newly computed waypoints and polyline coordinates to application settings.
+   */
+  private updateRouteInSettings(route: RouteObject): void {
+    const current = this.stateService.getSettings();
+    if (!current.savedRoutes) return;
+
+    const idx = current.savedRoutes.findIndex(
+      (r) => (r.id || String(r.timestamp)) === (route.id || String(route.timestamp)),
+    );
+
+    if (idx !== -1) {
+      const updatedSavedRoutes = [...current.savedRoutes];
+      updatedSavedRoutes[idx] = { ...route };
+
+      const updatedTrips = (current.trips || []).map((t) => {
+        if (t.name === route.name || t.startDate === route.startDate) {
+          return {
+            ...t,
+            coordinates: route.route || route.coordinates,
+            distanceMiles: route.distance
+              ? Math.round(route.distance / METERS_PER_MILE)
+              : t.distanceMiles,
+          };
+        }
+        return t;
+      });
+
+      this.stateService.updateSettings({
+        ...current,
+        savedRoutes: updatedSavedRoutes,
+        trips: updatedTrips,
+      });
+    }
   }
 
   /**

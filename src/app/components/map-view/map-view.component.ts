@@ -600,6 +600,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
       if (selectedRoute) {
         return;
       }
+      if (settings.savedRoutes && settings.savedRoutes.length > 0) {
+        return;
+      }
       const currentHome = this.stateService.getActiveHometown();
 
       if (currentHome) {

@@ -310,7 +310,13 @@
                   *ngIf="viewModel.routingEngine === 'mapbox' && isMapboxActive"
                   class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium flex items-center gap-1"
                 >
-                  <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <svg
+                    class="w-3 h-3 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   Mapbox Active
@@ -338,7 +344,13 @@
                     *ngIf="isMapboxActive"
                     class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium flex items-center gap-1"
                   >
-                    <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <svg
+                      class="w-3 h-3 text-emerald-600"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      stroke-width="2.5"
+                    >
                       <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                     Mapbox Active
@@ -354,7 +366,9 @@
               <input
                 type="text"
                 [(ngModel)]="viewModel.mapboxKey"
-                [placeholder]="hasEnvMapboxKey ? 'Configured via .env (or override here)' : 'pk.ey...'"
+                [placeholder]="
+                  hasEnvMapboxKey ? 'Configured via .env (or override here)' : 'pk.ey...'
+                "
                 class="w-full border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-green-600"
               />
               <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
@@ -374,7 +388,13 @@
                   *ngIf="isCartoActive"
                   class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium flex items-center gap-1"
                 >
-                  <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <svg
+                    class="w-3 h-3 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   CARTO Voyager Active
@@ -388,7 +408,9 @@
               <input
                 type="text"
                 [(ngModel)]="viewModel.cartoKey"
-                [placeholder]="hasEnvCartoKey ? 'Configured via .env (or override here)' : 'cb1_...'"
+                [placeholder]="
+                  hasEnvCartoKey ? 'Configured via .env (or override here)' : 'cb1_...'
+                "
                 class="w-full border border-stone-200 rounded-lg p-2 text-sm focus:outline-none focus:border-green-600"
               />
               <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
@@ -405,7 +427,9 @@
                   target="_blank"
                   class="text-blue-600 underline"
                   >CARTO Basemaps FAQ</a
-                >). Can also be set in <code class="text-xs bg-stone-100 px-1 py-0.5 rounded">.env</code> as <code class="text-xs bg-stone-100 px-1 py-0.5 rounded">CARTO_API_KEY</code>.
+                >). Can also be set in
+                <code class="text-xs bg-stone-100 px-1 py-0.5 rounded">.env</code> as
+                <code class="text-xs bg-stone-100 px-1 py-0.5 rounded">CARTO_API_KEY</code>.
               </p>
             </div>
 
@@ -423,7 +447,8 @@
                 <option [ngValue]="0.1">High (Compact storage - 10% Points)</option>
               </select>
               <p class="text-xs text-stone-500 mt-1">
-                Higher reduction lowers storage usage but smooths out tight curves. Default is Exact Path.
+                Higher reduction lowers storage usage but smooths out tight curves. Default is Exact
+                Path.
               </p>
             </div>
           </div>

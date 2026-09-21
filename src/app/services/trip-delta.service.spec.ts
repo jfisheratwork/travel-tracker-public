@@ -455,9 +455,15 @@ describe('TripDeltaService', () => {
   });
 
   describe('entity resolution helpers', () => {
-    it('resolves single park by name and alias', () => {
+    it('resolves single park by name and alias including state parks', () => {
       expect(service.resolveSinglePark('Yellowstone')?.id).toBe('Yellowstone');
       expect(service.resolveSinglePark('Grand Tentons')?.id).toBe('Grand Teton');
+      expect(service.resolveSinglePark('Smith Rock State Park')?.name).toBe(
+        'Smith Rock State Park',
+      );
+      expect(service.resolveSinglePark('Prairie Creek Redwoods State Park')?.id).toBe(
+        'sp-prairie-creek-redwoods',
+      );
       expect(service.resolveSinglePark('Nonexistent Park')).toBeNull();
     });
 
@@ -590,6 +596,7 @@ describe('TripDeltaService', () => {
         id: 'trip-1',
         name: 'Pacific Northwest Road Trip',
         date: '2023-08-10',
+        endDate: '2023-08-15',
         members: [{ id: 'm-1', name: 'Jacob' }],
         parks: [{ id: 'crater-lake', name: 'Crater Lake' }],
         states: [{ id: 'or', name: 'Oregon' }],
@@ -616,6 +623,8 @@ describe('TripDeltaService', () => {
       const updatedSettings: AppSettings = mockStateService.updateSettings.mock.calls[0][0];
       expect(updatedSettings.savedRoutes.length).toBe(1);
       expect(updatedSettings.savedRoutes[0].name).toBe('Custom PNW Route Title');
+      expect(updatedSettings.savedRoutes[0].startDate).toBe('2023-08-10');
+      expect(updatedSettings.savedRoutes[0].endDate).toBe('2023-08-15');
       expect(updatedSettings.savedRoutes[0].description).toBe(
         'Custom comments on the highway route',
       );

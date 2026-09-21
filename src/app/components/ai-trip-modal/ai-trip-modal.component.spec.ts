@@ -347,4 +347,35 @@ describe('AiTripModalComponent', () => {
     expect(trip.route?.length).toBe(1);
     expect(trip.route?.[0].segment).toBe(1);
   });
+
+  it('supports editing trip endDate in review mode', async () => {
+    const trip: ValidatedTripDelta = {
+      id: 't-1',
+      name: 'Spokane to Monterey',
+      date: '2022-04-01',
+      endDate: '2022-04-08',
+      members: [{ id: 'mem-1', name: 'Jacob' }],
+      parks: [],
+      states: [],
+      warnings: [],
+      status: 'pending',
+    };
+
+    component.reviewTrips = [trip];
+    component.currentTripIndex = 0;
+    component.currentStep = 'review';
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const endDateInput = fixture.nativeElement.querySelector(
+      '#editTripEndDate',
+    ) as HTMLInputElement;
+    expect(endDateInput).toBeTruthy();
+    expect(endDateInput.value).toBe('2022-04-08');
+
+    trip.endDate = '2022-04-10';
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(endDateInput.value).toBe('2022-04-10');
+  });
 });

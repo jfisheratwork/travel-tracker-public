@@ -53,6 +53,16 @@ export class AiTripModalComponent implements OnInit {
   public importReceipt: ImportReceipt | null = null;
   public showLocationDates = false;
 
+  get totalReceiptLocations(): number {
+    if (!this.importReceipt) return 0;
+    return (
+      this.importReceipt.newParks.length +
+      this.importReceipt.alreadyVisitedParks.length +
+      this.importReceipt.newStates.length +
+      this.importReceipt.alreadyVisitedStates.length
+    );
+  }
+
   // Autocomplete / Selector registries
   public allParks: GeoLocation[] = [];
   public allStates: GeoLocation[] = [];

@@ -252,7 +252,13 @@
                   *ngIf="isMapboxActive"
                   class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-medium flex items-center gap-0.5"
                 >
-                  <svg class="w-2.5 h-2.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <svg
+                    class="w-2.5 h-2.5 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   Active
@@ -276,7 +282,9 @@
             <input
               type="text"
               [(ngModel)]="mapboxKeyInput"
-              [placeholder]="hasEnvMapboxKey ? 'Configured via .env (or override here)' : 'pk.eyJ1I...'"
+              [placeholder]="
+                hasEnvMapboxKey ? 'Configured via .env (or override here)' : 'pk.eyJ1I...'
+              "
               class="w-full border border-stone-300 rounded-lg px-2.5 py-1.5 text-xs font-mono bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-xs"
             />
           </div>
@@ -290,7 +298,13 @@
                   *ngIf="isCartoActive"
                   class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-medium flex items-center gap-0.5"
                 >
-                  <svg class="w-2.5 h-2.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                  <svg
+                    class="w-2.5 h-2.5 text-emerald-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
                     <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                   Active
@@ -308,7 +322,8 @@
               </a>
             </div>
             <p class="text-[11px] text-stone-500">
-              Powers clean, crisp Voyager basemap tiles with labels. Can also be set in <code class="text-[10px] bg-stone-100 px-1 py-0.5 rounded">.env</code>.
+              Powers clean, crisp Voyager basemap tiles with labels. Can also be set in
+              <code class="text-[10px] bg-stone-100 px-1 py-0.5 rounded">.env</code>.
             </p>
             <input
               type="text"

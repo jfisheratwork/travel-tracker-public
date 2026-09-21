@@ -58,11 +58,7 @@
               stroke="currentColor"
               stroke-width="4"
             ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            ></path>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
           <span class="hidden sm:inline">{{ isLoadingSample ? 'Loading...' : 'Try It Out' }}</span>
         </button>
@@ -76,8 +72,12 @@
           [style.color]="currentTheme.headerText"
           [style.backgroundColor]="
             showMobileSearch
-              ? (currentTheme.isDark ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.35)')
-              : (currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)')
+              ? currentTheme.isDark
+                ? 'rgba(255,255,255,0.25)'
+                : 'rgba(255,255,255,0.35)'
+              : currentTheme.isDark
+                ? 'rgba(255,255,255,0.1)'
+                : 'rgba(255,255,255,0.18)'
           "
           title="Search places, parks, and locations"
           aria-label="Toggle Search"
@@ -224,7 +224,9 @@
               (click)="togglePlacesFilterMenu()"
               class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-bold border transition flex items-center gap-1 sm:gap-1.5 shadow-xs active:scale-95 cursor-pointer flex-shrink-0"
               [style.backgroundColor]="currentTheme.buttonBg"
-              [style.borderColor]="showPlacesFilterMenu ? currentTheme.accent : currentTheme.buttonBorder"
+              [style.borderColor]="
+                showPlacesFilterMenu ? currentTheme.accent : currentTheme.buttonBorder
+              "
               [style.color]="currentTheme.buttonText"
               title="Filter which places are displayed on the map"
             >
@@ -242,7 +244,9 @@
                   d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
                 />
               </svg>
-              <span class="max-w-[100px] sm:max-w-[150px] truncate">{{ getPlacesFilterButtonLabel() }}</span>
+              <span class="max-w-[100px] sm:max-w-[150px] truncate">{{
+                getPlacesFilterButtonLabel()
+              }}</span>
               <span class="text-[9px] opacity-70">▼</span>
             </button>
 
@@ -309,12 +313,16 @@
               (click)="toggleTripsFilterMenu()"
               class="h-8 sm:h-9 px-2.5 sm:px-3 rounded-xl text-xs sm:text-sm font-bold border transition flex items-center gap-1 sm:gap-1.5 shadow-xs active:scale-95 cursor-pointer flex-shrink-0"
               [style.backgroundColor]="currentTheme.buttonBg"
-              [style.borderColor]="showTripsFilterMenu ? currentTheme.accent : currentTheme.buttonBorder"
+              [style.borderColor]="
+                showTripsFilterMenu ? currentTheme.accent : currentTheme.buttonBorder
+              "
               [style.color]="currentTheme.buttonText"
               title="Filter or search trips to display on the map"
             >
               <span>🚗</span>
-              <span class="max-w-[125px] sm:max-w-[170px] truncate">{{ getTripsFilterButtonLabel() }}</span>
+              <span class="max-w-[125px] sm:max-w-[170px] truncate">{{
+                getTripsFilterButtonLabel()
+              }}</span>
               <span class="text-[9px] opacity-70">▼</span>
             </button>
 
@@ -382,8 +390,12 @@
                         {{ route.name }}
                       </span>
                       <div class="flex items-center gap-1.5 text-[10px] text-stone-500 truncate">
-                        <span *ngIf="route.startDate">{{ route.startDate | date: 'mediumDate' }}</span>
-                        <span *ngIf="route.distance">• {{ (route.distance / 1609.34).toFixed(0) }} mi</span>
+                        <span *ngIf="route.startDate">{{
+                          route.startDate | date: 'mediumDate'
+                        }}</span>
+                        <span *ngIf="route.distance"
+                          >• {{ (route.distance / 1609.34).toFixed(0) }} mi</span
+                        >
                       </div>
                     </div>
                   </div>
@@ -578,7 +590,9 @@
                     <span
                       class="text-sm font-semibold truncate"
                       [style.color]="
-                        currentThemeId === t.id ? currentTheme.buttonActiveBg : currentTheme.textColor
+                        currentThemeId === t.id
+                          ? currentTheme.buttonActiveBg
+                          : currentTheme.textColor
                       "
                       [style.fontFamily]="t.fontFamily"
                     >
@@ -700,7 +714,9 @@
           "
         >
           <span>{{ showDetailsDrawer ? '✕' : '📋' }}</span>
-          <span class="hidden xs:inline sm:inline">{{ showDetailsDrawer ? 'Hide Details' : 'Details' }}</span>
+          <span class="hidden xs:inline sm:inline">{{
+            showDetailsDrawer ? 'Hide Details' : 'Details'
+          }}</span>
         </button>
       </div>
     </div>

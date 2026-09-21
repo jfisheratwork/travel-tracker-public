@@ -186,13 +186,32 @@
   >
     <div class="flex items-center gap-1.5 truncate">
       <span class="font-bold text-stone-500">Filtered:</span>
-      <span *ngIf="statusFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">
+      <span
+        *ngIf="statusFilter !== 'all'"
+        class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold"
+      >
         {{ statusFilter === 'visited' ? 'Visited' : 'Want to Visit' }}
       </span>
-      <span *ngIf="countryFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">{{ countryFilter }}</span>
-      <span *ngIf="stateFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">{{ stateFilter }}</span>
-      <span *ngIf="memberFilter !== 'all'" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold">Member</span>
-      <span *ngIf="searchTerm" class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 italic">"{{ searchTerm }}"</span>
+      <span
+        *ngIf="countryFilter !== 'all'"
+        class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold"
+        >{{ countryFilter }}</span
+      >
+      <span
+        *ngIf="stateFilter !== 'all'"
+        class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold"
+        >{{ stateFilter }}</span
+      >
+      <span
+        *ngIf="memberFilter !== 'all'"
+        class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 font-semibold"
+        >Member</span
+      >
+      <span
+        *ngIf="searchTerm"
+        class="px-1.5 py-0.5 bg-white rounded border border-stone-200 text-stone-700 italic"
+        >"{{ searchTerm }}"</span
+      >
     </div>
     <button
       (click)="resetFilters()"
@@ -274,9 +293,7 @@
                 class="text-stone-800 text-sm font-semibold hover:text-emerald-700 transition"
               >
                 {{ item.location.name
-                }}{{
-                  item.isPark && !item.location.name.includes('Park') ? ' National Park' : ''
-                }}
+                }}{{ item.isPark && !item.location.name.includes('Park') ? ' National Park' : '' }}
               </strong>
               <span class="text-xs text-stone-400">{{ getSubtitle(item.location) }}</span>
               <span
@@ -335,11 +352,17 @@
 
         <div class="flex items-center gap-1.5 flex-shrink-0">
           <!-- Variation 1A Inline Segmented Toggle Pill -->
-          <div class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200 text-[11px] font-semibold">
+          <div
+            class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200 text-[11px] font-semibold"
+          >
             <button
               type="button"
               (click)="setStatus(item, 'visited')"
-              [class]="item.status === 'visited' ? 'bg-emerald-600 text-white font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer' : 'text-stone-600 hover:text-stone-900 px-2 py-1 rounded-md transition cursor-pointer'"
+              [class]="
+                item.status === 'visited'
+                  ? 'bg-emerald-600 text-white font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer'
+                  : 'text-stone-600 hover:text-stone-900 px-2 py-1 rounded-md transition cursor-pointer'
+              "
               title="Mark as Visited"
             >
               🌲 Visited
@@ -347,7 +370,11 @@
             <button
               type="button"
               (click)="setStatus(item, 'want')"
-              [class]="item.status === 'want' ? 'bg-purple-600 text-white font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer' : 'text-stone-600 hover:text-stone-900 px-2 py-1 rounded-md transition cursor-pointer'"
+              [class]="
+                item.status === 'want'
+                  ? 'bg-purple-600 text-white font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer'
+                  : 'text-stone-600 hover:text-stone-900 px-2 py-1 rounded-md transition cursor-pointer'
+              "
               title="Mark as Want to Visit"
             >
               💜 Want
@@ -355,7 +382,11 @@
             <button
               type="button"
               (click)="setStatus(item, 'unvisited')"
-              [class]="item.status === 'unvisited' ? 'bg-stone-300 text-stone-800 font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer' : 'text-stone-500 hover:text-stone-800 px-2 py-1 rounded-md transition cursor-pointer'"
+              [class]="
+                item.status === 'unvisited'
+                  ? 'bg-stone-300 text-stone-800 font-bold px-2 py-1 rounded-md shadow-xs transition cursor-pointer'
+                  : 'text-stone-500 hover:text-stone-800 px-2 py-1 rounded-md transition cursor-pointer'
+              "
               title="Clear / Not Visited"
             >
               ⚪ Not Yet
