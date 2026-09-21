@@ -6,12 +6,25 @@ import { StateService } from '../../services/state.service';
 import { GeocodingService } from '../../services/routing/geocoding.service';
 import { RoutingService, RouteOption } from '../../services/routing/routing.service';
 import { LocalStorageService } from '../../services/local-storage.service';
+import { TripService } from '../../services/trip.service';
+import { Trip, TripStop } from '../../models/trip.model';
+import { Place } from '../../models/location.model';
+import { CorridorPlaceMatch } from '../../core/utils/geo.utils';
 import { RouteObject, Waypoint } from '../../models/route.model';
 import { FamilyMember } from '../../models/settings.model';
 import { firstValueFrom } from 'rxjs';
 import { LoggerService } from '../../core/services/logger.service';
 
 import { LocationAutocompleteComponent } from '../location-autocomplete/location-autocomplete.component';
+
+export interface RouteBuilderStop {
+  query: string;
+  isWaypointOnly: boolean;
+  stopType: 'destination' | 'corridor_stop';
+  placeId?: string;
+  lat?: number;
+  lng?: number;
+}
 
 @Component({
   selector: 'app-route-builder',
@@ -41,7 +54,9 @@ export class RouteBuilderComponent implements OnInit {
   startQuery = '';
   collapsedYears: { [year: string]: boolean } = {};
   endQuery = '';
+  stops: RouteBuilderStop[] = [];
   stopsQueries: string[] = [];
+  suggestedCorridorPlaces: CorridorPlaceMatch<Place>[] = [];
 
   familyMembers: FamilyMember[] = [];
   selectedMembers: string[] = [];
@@ -61,6 +76,7 @@ export class RouteBuilderComponent implements OnInit {
     private geocodingService: GeocodingService,
     private routingService: RoutingService,
     private localStorageService: LocalStorageService,
+    private tripService: TripService,
     private logger: LoggerService,
   ) {}
 
@@ -178,11 +194,65 @@ export class RouteBuilderComponent implements OnInit {
   }
 
   addStop() {
-    this.stopsQueries.push('');
+    this.stops.push({
+      query: '',
+      isWaypointOnly: false,
+      stopType: 'corridor_stop',
+    });
+    this.syncStopsQueries();
   }
 
   removeStop(index: number) {
-    this.stopsQueries.splice(index, 1);
+    this.stops.splice(index, 1);
+    this.syncStopsQueries();
+  }
+
+  syncStopsQueries() {
+    this.stopsQueries = this.stops.map((s) => s.query);
+  }
+
+  syncStopsFromQueries() {
+    while (this.stops.length < this.stopsQueries.length) {
+      const idx = this.stops.length;
+      this.stops.push({
+        query: this.stopsQueries[idx] || '',
+        isWaypointOnly: false,
+        stopType: 'corridor_stop',
+      });
+    }
+    while (this.stops.length > this.stopsQueries.length) {
+      this.stops.pop();
+    }
+    for (let i = 0; i < this.stopsQueries.length; i++) {
+      if (this.stops[i].query !== this.stopsQueries[i]) {
+        this.stops[i].query = this.stopsQueries[i];
+      }
+    }
+  }
+
+  onStopQueryChange(index: number, query: string) {
+    if (this.stops[index]) {
+      this.stops[index].query = query;
+      this.syncStopsQueries();
+    }
+  }
+
+  addCorridorSuggestionToStops(place: Place) {
+    this.stops.push({
+      query: place.name,
+      isWaypointOnly: false,
+      stopType: 'corridor_stop',
+      placeId: place.id,
+      lat: place.lat,
+      lng: place.lng,
+    });
+    this.syncStopsQueries();
+    this.suggestedCorridorPlaces = this.suggestedCorridorPlaces.filter(
+      (s) => s.place.id !== place.id,
+    );
+    if (this.startQuery && this.endQuery) {
+      this.calculateRoute();
+    }
   }
 
   formatDistance(meters: number): string {
@@ -196,7 +266,9 @@ export class RouteBuilderComponent implements OnInit {
   }
 
   drop(event: CdkDragDrop<string[]>) {
-    moveItemInArray(this.stopsQueries, event.previousIndex, event.currentIndex);
+    this.syncStopsFromQueries();
+    moveItemInArray(this.stops, event.previousIndex, event.currentIndex);
+    this.syncStopsQueries();
   }
 
   trackByIndex(index: number): number {
@@ -216,6 +288,7 @@ export class RouteBuilderComponent implements OnInit {
       return;
     }
 
+    this.syncStopsFromQueries();
     this.isCalculating = true;
 
     try {
@@ -241,6 +314,14 @@ export class RouteBuilderComponent implements OnInit {
       this.routeOptions = options;
       this.selectedOptionIndex = 0;
 
+      // Extract corridor suggestions from first route option
+      if (options.length > 0 && options[0].route) {
+        this.suggestedCorridorPlaces = this.tripService.getSuggestedCorridorPlaces(
+          options[0].route,
+          50,
+        );
+      }
+
       // Preview the first route on the map
       this.previewSelectedOption();
     } catch (err: unknown) {
@@ -254,6 +335,12 @@ export class RouteBuilderComponent implements OnInit {
   previewSelectedOption() {
     if (this.routeOptions.length > 0) {
       const option = this.routeOptions[this.selectedOptionIndex];
+      if (option?.route) {
+        this.suggestedCorridorPlaces = this.tripService.getSuggestedCorridorPlaces(
+          option.route,
+          50,
+        );
+      }
       const previewRoute: RouteObject = {
         id: 'preview',
         name: 'Preview',
@@ -306,6 +393,8 @@ export class RouteBuilderComponent implements OnInit {
             ? String(this.originalRouteForEdit.timestamp)
             : crypto.randomUUID());
 
+    this.syncStopsFromQueries();
+
     const newRoute: RouteObject = {
       id: routeId,
       name: this.name,
@@ -329,26 +418,112 @@ export class RouteBuilderComponent implements OnInit {
       coordinates: optionRoute.length > 0 ? optionRoute : undefined,
     };
 
-    const updatedRoutes = [...this.savedRoutes];
-    if (this.isEditing) {
-      const idx = updatedRoutes.findIndex(
-        (r) =>
-          (r.id && r.id === routeId) ||
-          (r.timestamp &&
-            this.originalRouteForEdit?.timestamp &&
-            r.timestamp === this.originalRouteForEdit.timestamp) ||
-          (r.name && this.originalRouteForEdit?.name && r.name === this.originalRouteForEdit.name),
+    const currentSettings = this.stateService.getSettings();
+
+    // Map member names to traveler IDs
+    const travelerIds = this.selectedMembers
+      .map((name) => currentSettings.familyMembers.find((m) => m.name === name)?.id)
+      .filter((id): id is string => !!id);
+
+    const finalTravelerIds =
+      travelerIds.length > 0 ? travelerIds : currentSettings.familyMembers.map((m) => m.id);
+
+    // Build destinations and corridor stops for Trip model
+    const destinations: TripStop[] = [];
+    const corridorStops: TripStop[] = [];
+
+    if (waypoints && waypoints.length > 0) {
+      // Start destination
+      const startWp = waypoints[0];
+      const startPlace = this.tripService.resolvePlaceForStop(
+        this.startQuery || startWp.name || 'Start',
+        startWp.lat,
+        startWp.lng,
       );
-      if (idx !== -1) {
-        updatedRoutes[idx] = newRoute;
-      } else {
-        updatedRoutes.push(newRoute);
+      destinations.push({
+        placeId: startPlace.id,
+        name: startPlace.name,
+        lat: startWp.lat,
+        lng: startWp.lng,
+        stopType: 'destination',
+        arrivalDate: this.startDate,
+      });
+
+      // Intermediate corridor stops
+      for (let i = 0; i < this.stops.length; i++) {
+        const wpIdx = i + 1;
+        if (wpIdx < waypoints.length - 1) {
+          const wp = waypoints[wpIdx];
+          const stopDef = this.stops[i];
+          const stopPlace = this.tripService.resolvePlaceForStop(
+            stopDef.query || wp.name || `Stop ${i + 1}`,
+            wp.lat,
+            wp.lng,
+          );
+          corridorStops.push({
+            placeId: stopPlace.id,
+            name: stopPlace.name,
+            lat: wp.lat,
+            lng: wp.lng,
+            stopType: stopDef.stopType || 'corridor_stop',
+            isWaypointOnly: stopDef.isWaypointOnly,
+            arrivalDate: this.startDate,
+          });
+        }
       }
+
+      // End destination
+      if (waypoints.length > 1) {
+        const endWp = waypoints[waypoints.length - 1];
+        const endPlace = this.tripService.resolvePlaceForStop(
+          this.endQuery || endWp.name || 'Destination',
+          endWp.lat,
+          endWp.lng,
+        );
+        destinations.push({
+          placeId: endPlace.id,
+          name: endPlace.name,
+          lat: endWp.lat,
+          lng: endWp.lng,
+          stopType: 'destination',
+          arrivalDate: this.endDate || this.startDate,
+        });
+      }
+    }
+
+    const trip: Trip = {
+      id: routeId,
+      name: this.name,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      travelerIds: finalTravelerIds,
+      destinations,
+      corridorStops,
+      notes: this.description,
+      coordinates: optionRoute.length > 0 ? optionRoute : undefined,
+      distanceMiles: distance,
+    };
+
+    const syncedSettings = this.tripService.syncTripToSettings(trip, currentSettings);
+
+    const updatedRoutes = [...syncedSettings.savedRoutes];
+    const idx = updatedRoutes.findIndex(
+      (r) =>
+        (r.id && r.id === routeId) ||
+        (r.timestamp &&
+          this.originalRouteForEdit?.timestamp &&
+          r.timestamp === this.originalRouteForEdit.timestamp) ||
+        (r.name && this.originalRouteForEdit?.name && r.name === this.originalRouteForEdit.name),
+    );
+    if (idx !== -1) {
+      updatedRoutes[idx] = newRoute;
     } else {
       updatedRoutes.push(newRoute);
     }
+    syncedSettings.savedRoutes = updatedRoutes;
 
-    this.updateSettingsAndReset(updatedRoutes);
+    this.stateService.updateSettings(syncedSettings);
+    this.resetForm();
     this.closeModal();
   }
 
@@ -373,7 +548,17 @@ export class RouteBuilderComponent implements OnInit {
       this.endQuery = route.endQuery || '';
     }
 
-    this.stopsQueries = route.stopsQueries ? [...route.stopsQueries] : [];
+    const trip = this.stateService.getSettings().trips?.find((t) => t.id === route.id);
+    const queries = route.stopsQueries ? [...route.stopsQueries] : [];
+    this.stops = queries.map((q, i) => {
+      const matchingCorridorStop = trip?.corridorStops?.[i];
+      return {
+        query: q,
+        isWaypointOnly: matchingCorridorStop?.isWaypointOnly ?? false,
+        stopType: matchingCorridorStop?.stopType ?? 'corridor_stop',
+      };
+    });
+    this.syncStopsQueries();
 
     this.routeOptions = [];
     this.showNotes = !!route.description; // Auto-show notes if they exist
@@ -382,12 +567,19 @@ export class RouteBuilderComponent implements OnInit {
   }
 
   deleteRoute(routeId: string) {
+    const currentSettings = this.stateService.getSettings();
     const updatedRoutes = this.savedRoutes.filter(
       (r) =>
         (r.id || (r.timestamp ? String(r.timestamp) : '')) !== routeId &&
         String(r.timestamp) !== routeId,
     );
-    this.updateSettingsAndReset(updatedRoutes);
+    const updatedTrips = (currentSettings.trips || []).filter((t) => t.id !== routeId);
+    this.stateService.updateSettings({
+      ...currentSettings,
+      savedRoutes: updatedRoutes,
+      trips: updatedTrips,
+    });
+    this.resetForm();
     this.stateService.setSelectedRoute(null);
   }
 
@@ -478,7 +670,9 @@ export class RouteBuilderComponent implements OnInit {
     this.startQuery = activeHometown ? activeHometown.name : '';
 
     this.endQuery = '';
+    this.stops = [];
     this.stopsQueries = [];
+    this.suggestedCorridorPlaces = [];
     this.routeOptions = [];
     this.errorMessage = '';
   }

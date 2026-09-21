@@ -192,45 +192,62 @@
           >
           <div cdkDropList class="stops-list mb-2" (cdkDropListDropped)="drop($event)">
             <div
-              class="flex items-center gap-2 mb-2"
+              class="flex flex-col mb-2 p-2 rounded-lg bg-stone-50/60 border border-stone-200/80"
               *ngFor="let stop of stopsQueries; let i = index; trackBy: trackByIndex"
               cdkDrag
             >
-              <div
-                class="text-stone-300 hover:text-stone-500 cursor-grab px-1 transition"
-                cdkDragHandle
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+              <div class="flex items-center gap-2">
+                <div
+                  class="text-stone-300 hover:text-stone-500 cursor-grab px-1 transition"
+                  cdkDragHandle
                 >
-                  <circle cx="9" cy="12" r="1" />
-                  <circle cx="9" cy="5" r="1" />
-                  <circle cx="9" cy="19" r="1" />
-                  <circle cx="15" cy="12" r="1" />
-                  <circle cx="15" cy="5" r="1" />
-                  <circle cx="15" cy="19" r="1" />
-                </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <circle cx="9" cy="12" r="1" />
+                    <circle cx="9" cy="5" r="1" />
+                    <circle cx="9" cy="19" r="1" />
+                    <circle cx="15" cy="12" r="1" />
+                    <circle cx="15" cy="5" r="1" />
+                    <circle cx="15" cy="19" r="1" />
+                  </svg>
+                </div>
+                <div class="flex-1">
+                  <app-location-autocomplete
+                    [(query)]="stopsQueries[i]"
+                    (queryChange)="onStopQueryChange(i, $event)"
+                    placeholder="Stop Location"
+                  ></app-location-autocomplete>
+                </div>
+                <button
+                  class="text-stone-400 hover:text-red-500 p-1.5 transition"
+                  (click)="removeStop(i)"
+                >
+                  ✕
+                </button>
               </div>
-              <div class="flex-1">
-                <app-location-autocomplete
-                  [(query)]="stopsQueries[i]"
-                  placeholder="Stop Location"
-                ></app-location-autocomplete>
+
+              <!-- Option A: Waypoint Only classification toggle -->
+              <div class="flex items-center gap-2 pl-7 pt-1.5" *ngIf="stops[i]">
+                <label
+                  class="inline-flex items-center gap-1.5 text-[11px] text-stone-600 cursor-pointer select-none"
+                >
+                  <input
+                    type="checkbox"
+                    [(ngModel)]="stops[i].isWaypointOnly"
+                    class="rounded text-emerald-700 focus:ring-emerald-600 h-3.5 w-3.5 border-stone-300 cursor-pointer"
+                  />
+                  <span>🛣️ Waypoint only (routing guide, don't record passport visit)</span>
+                </label>
               </div>
-              <button
-                class="text-stone-400 hover:text-red-500 p-1.5 transition"
-                (click)="removeStop(i)"
-              >
-                ✕
-              </button>
             </div>
             <div *ngIf="stopsQueries.length === 0" class="text-xs text-stone-400 italic mb-2">
               No stops added yet.
@@ -310,6 +327,48 @@
             <div class="font-bold text-sm mb-0.5 text-stone-800">Option {{ i + 1 }}</div>
             <div class="text-xs text-stone-600 font-medium">
               {{ formatDistance(opt.distance) }} miles &bull; {{ formatDuration(opt.duration) }} hrs
+            </div>
+          </div>
+        </div>
+
+        <!-- Route Corridor Suggestions (Curated places within 50 miles) -->
+        <div
+          *ngIf="suggestedCorridorPlaces.length > 0"
+          class="mb-4 p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-xl"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
+              <span>🌲 Highlights Along Your Route</span>
+              <span
+                class="px-1.5 py-0.5 bg-emerald-200 text-emerald-800 rounded-full text-[10px] font-semibold"
+              >
+                {{ suggestedCorridorPlaces.length }} nearby
+              </span>
+            </div>
+            <span class="text-[11px] text-emerald-700 font-medium">&le; 50 miles off route</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
+            <div
+              *ngFor="let suggestion of suggestedCorridorPlaces"
+              class="p-2 bg-white rounded-lg border border-emerald-100 shadow-xs flex items-center justify-between gap-2 text-xs"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-stone-800 truncate" [title]="suggestion.place.name">
+                  {{ suggestion.place.name }}
+                </p>
+                <p class="text-[10px] text-emerald-700 font-medium">
+                  {{ suggestion.distanceMiles }} mi away &bull;
+                  {{ suggestion.place.category.replace('_', ' ') }}
+                </p>
+              </div>
+              <button
+                type="button"
+                (click)="addCorridorSuggestionToStops(suggestion.place)"
+                class="px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 text-[11px] font-bold rounded transition cursor-pointer flex-shrink-0"
+              >
+                + Add Stop
+              </button>
             </div>
           </div>
         </div>

@@ -22,6 +22,7 @@ export interface RenderRoutesOptions {
 })
 export class MapRouteService {
   private currentPolylines: L.Polyline[] = [];
+  private currentMarkers: L.Marker[] = [];
   private routeCoordinatesCache: { [timestamp: number]: [number, number][] } = {};
 
   constructor(
@@ -80,6 +81,33 @@ export class MapRouteService {
         if (bounds.isValid()) {
           map.fitBounds(bounds, { padding: [50, 50] });
         }
+      }
+
+      // Render badged stop markers for trip waypoints
+      if (selectedRoute.waypoints && selectedRoute.waypoints.length > 0) {
+        selectedRoute.waypoints.forEach((wp, idx) => {
+          const isStart = idx === 0;
+          const isEnd = idx === selectedRoute.waypoints.length - 1;
+          const badgeText = isStart ? '🏁' : isEnd ? '🏆' : `${idx}`;
+          const bgColor = isStart ? '#10b981' : isEnd ? '#ef4444' : '#2563eb';
+
+          // DOCS: https://leafletjs.com/reference.html#divicon
+          const icon = L.divIcon({
+            className: 'trip-stop-marker-icon',
+            html: `<div style="background: ${bgColor}; color: white; border-radius: 9999px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); cursor: pointer;">${badgeText}</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+          });
+
+          const marker = L.marker([wp.lat, wp.lng], { icon }).addTo(map);
+          const label = isStart
+            ? `Start: ${wp.name}`
+            : isEnd
+              ? `Destination: ${wp.name}`
+              : `Stop ${idx}: ${wp.name}`;
+          marker.bindTooltip(label, { direction: 'top', offset: [0, -12] });
+          this.currentMarkers.push(marker);
+        });
       }
     } else if (savedRoutes && savedRoutes.length > 0) {
       const allBounds: L.LatLngBounds[] = [];
@@ -140,10 +168,12 @@ export class MapRouteService {
   }
 
   /**
-   * Cleans up any currently drawn polylines on the map.
+   * Cleans up any currently drawn polylines and stop markers on the map.
    */
   public clear(): void {
     this.currentPolylines.forEach((p) => p.remove());
     this.currentPolylines = [];
+    this.currentMarkers.forEach((m) => m.remove());
+    this.currentMarkers = [];
   }
 }
