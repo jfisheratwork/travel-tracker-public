@@ -152,7 +152,7 @@ describe('App', () => {
 
     app.selectAllPlacesFilters();
     expect(app.isPlacesFilterActive('national_parks')).toBe(true);
-    expect(app.getPlacesFilterButtonLabel()).toBe('All Places');
+    expect(app.getPlacesFilterButtonLabel()).toBe('Filter');
 
     app.clearAllPlacesFilters();
     expect(app.isPlacesFilterActive('national_parks')).toBe(false);
@@ -200,7 +200,7 @@ describe('App', () => {
     ];
 
     expect(app.isAllTripsDrawn()).toBe(true);
-    expect(app.getTripsFilterButtonLabel()).toContain('All Trips (2)');
+    expect(app.getTripsFilterButtonLabel()).toContain('Filter Trips (2)');
 
     // Search
     app.tripSearchQuery = 'Pacific';

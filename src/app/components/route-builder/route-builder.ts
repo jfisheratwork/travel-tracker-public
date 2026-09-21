@@ -93,7 +93,7 @@ export class RouteBuilderComponent implements OnInit {
       this.familyMembers = settings.familyMembers || [];
 
       // Auto-populate active hometown as start query if empty
-      const activeHometown = settings.hometowns.find((h) => !h.endDate);
+      const activeHometown = this.stateService.getActiveHometown();
       if (activeHometown && !this.startQuery && !this.isEditing) {
         this.startQuery = activeHometown.name;
       }
@@ -144,6 +144,8 @@ export class RouteBuilderComponent implements OnInit {
       this.startDate = '';
       this.endDate = '';
       this.name = '';
+      const activeHometown = this.stateService.getActiveHometown();
+      this.startQuery = activeHometown ? activeHometown.name : '';
       this.updateAutoTripName();
     }
 
@@ -810,8 +812,7 @@ export class RouteBuilderComponent implements OnInit {
     this.showNotes = false;
 
     // reset startQuery to active hometown if applicable
-    const settings = this.stateService.getSettings();
-    const activeHometown = settings.hometowns.find((h) => !h.endDate);
+    const activeHometown = this.stateService.getActiveHometown();
     this.startQuery = activeHometown ? activeHometown.name : '';
 
     this.endQuery = '';

@@ -56,4 +56,34 @@ describe('StateService', () => {
     expect(service.getLocationStatus('banff', 'parks', 'member-2')).toBe('want');
     expect(service.getLocationStatus('banff', 'parks', 'member-3')).toBe('unvisited');
   });
+
+  it('should return the active hometown (last in list or one without endDate)', () => {
+    // Empty hometowns
+    expect(service.getActiveHometown()).toBeNull();
+
+    // Multiple hometowns without endDate (ordered chronologically)
+    const baseSettings = service.getSettings();
+    service.updateSettings({
+      ...baseSettings,
+      hometowns: [
+        { id: '1', name: 'Chicago, IL', lat: 41.8781, lng: -87.6298 },
+        { id: '2', name: 'Austin, TX', lat: 30.2672, lng: -97.7431 },
+        { id: '3', name: 'Seattle, WA', lat: 47.6062, lng: -122.3321 },
+      ],
+    });
+
+    // Should assume the active home is the last one in the list (Seattle), not the first (Chicago)
+    expect(service.getActiveHometown()?.name).toBe('Seattle, WA');
+
+    // When previous hometowns have an explicit endDate
+    service.updateSettings({
+      ...baseSettings,
+      hometowns: [
+        { id: '1', name: 'Chicago, IL', lat: 41.8781, lng: -87.6298, endDate: '2020-01' },
+        { id: '2', name: 'Austin, TX', lat: 30.2672, lng: -97.7431 },
+        { id: '3', name: 'Seattle, WA', lat: 47.6062, lng: -122.3321, endDate: '2023-01' },
+      ],
+    });
+    expect(service.getActiveHometown()?.name).toBe('Austin, TX');
+  });
 });

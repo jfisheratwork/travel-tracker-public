@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { AppSettings, DEFAULT_SETTINGS } from '../models/settings.model';
+import { AppSettings, DEFAULT_SETTINGS, Hometown } from '../models/settings.model';
 import { RouteObject } from '../models/route.model';
 import { ColorThemeId, DEFAULT_THEME_ID } from '../core/constants/theme.constants';
 import { MapMode } from '../models/location.model';
@@ -108,6 +108,17 @@ export class StateService {
 
   getSettings(): AppSettings {
     return this.settingsSubject.getValue();
+  }
+
+  getActiveHometown(): Hometown | null {
+    const settings = this.getSettings();
+    if (!settings.hometowns || settings.hometowns.length === 0) {
+      return null;
+    }
+    return (
+      [...settings.hometowns].reverse().find((h) => !h.endDate) ||
+      settings.hometowns[settings.hometowns.length - 1]
+    );
   }
 
   updateSettings(settings: AppSettings): void {

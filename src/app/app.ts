@@ -123,7 +123,7 @@ export class App implements OnInit {
   getPlacesFilterButtonLabel(): string {
     const active = this.stateService.getPlacesFilters();
     if (active.length === this.placeFilterOptions.length) {
-      return 'All Places';
+      return 'Filter';
     }
     if (active.length === 0) {
       return 'None';
@@ -221,7 +221,7 @@ export class App implements OnInit {
 
   getTripsFilterButtonLabel(): string {
     if (this.isAllTripsDrawn()) {
-      return `All Trips (${this.savedRoutes.length})`;
+      return `Filter Trips (${this.savedRoutes.length})`;
     }
     if (this.selectedRouteIds && this.selectedRouteIds.length === 1) {
       const match = this.savedRoutes.find(
@@ -232,7 +232,7 @@ export class App implements OnInit {
     if (this.selectedRouteIds) {
       return `${this.selectedRouteIds.length} Trips`;
     }
-    return `All Trips (${this.savedRoutes.length})`;
+    return `Filter Trips (${this.savedRoutes.length})`;
   }
 
   toggleProfileMenu(): void {

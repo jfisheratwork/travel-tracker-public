@@ -215,4 +215,18 @@ describe('RouteBuilderComponent', () => {
     component.onNameInput();
     expect(component.name).toBe('September: Novi to Mackinaw City');
   });
+
+  it('should assume active home location as startQuery when creating a new trip, not the first in the list', () => {
+    const stateService = TestBed.inject(StateService);
+    stateService.updateSettings({
+      ...stateService.getSettings(),
+      hometowns: [
+        { id: '1', name: 'Chicago, IL', lat: 41.8781, lng: -87.6298 },
+        { id: '2', name: 'Denver, CO', lat: 39.7392, lng: -104.9903 },
+      ],
+    });
+
+    component.openModal();
+    expect(component.startQuery).toBe('Denver, CO');
+  });
 });

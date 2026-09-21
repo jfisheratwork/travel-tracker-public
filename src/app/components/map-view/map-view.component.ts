@@ -600,11 +600,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
       if (selectedRoute) {
         return;
       }
-      const currentHome =
-        settings.hometowns.find((h) => !h.endDate) ||
-        (settings.hometowns.length > 0
-          ? settings.hometowns[settings.hometowns.length - 1]
-          : undefined);
+      const currentHome = this.stateService.getActiveHometown();
 
       if (currentHome) {
         const hometownRadiusMeters = ROADS_HOMETOWN_RADIUS_MILES * METERS_PER_MILE;
