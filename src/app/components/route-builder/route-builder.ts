@@ -101,6 +101,7 @@ export class RouteBuilderComponent implements OnInit {
       if (timestamp > 0) {
         this.isEditing = false;
         this.openModal();
+        this.stateService.clearNewRoadTripTrigger();
         window.setTimeout(() => {
           document.querySelector('app-route-builder')?.scrollIntoView({ behavior: 'smooth' });
         }, 100);

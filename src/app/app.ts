@@ -133,7 +133,8 @@ export class App implements OnInit {
   }
 
   openRoads(): void {
-    this.mapView?.openRoads();
+    this.setMapMode('roads');
+    this.stateService.triggerNewRoadTrip();
   }
 
   openParksModal(): void {

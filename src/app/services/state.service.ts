@@ -97,8 +97,13 @@ export class StateService {
   }
 
   triggerNewRoadTrip(): void {
+    this.setMapMode('roads');
     this.setDetailsDrawerOpen(true);
     this.newRoadTripTriggerSubject.next(Date.now());
+  }
+
+  clearNewRoadTripTrigger(): void {
+    this.newRoadTripTriggerSubject.next(0);
   }
 
   getLocationStatus(

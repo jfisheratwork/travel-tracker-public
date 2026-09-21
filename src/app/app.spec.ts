@@ -126,4 +126,15 @@ describe('App', () => {
     app.handleSmartAdd('roads');
     expect(roadsSpy).toHaveBeenCalled();
   });
+
+  it('should switch map mode to roads and trigger trip builder when openRoads is called', () => {
+    fixture = TestBed.createComponent(App);
+    const app = fixture.componentInstance;
+    const triggerSpy = vi.spyOn(app.stateService, 'triggerNewRoadTrip');
+    const modeSpy = vi.spyOn(app.stateService, 'setMapMode');
+
+    app.openRoads();
+    expect(modeSpy).toHaveBeenCalledWith('roads');
+    expect(triggerSpy).toHaveBeenCalled();
+  });
 });
