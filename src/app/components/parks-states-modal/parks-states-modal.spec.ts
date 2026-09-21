@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ParksStatesModal } from './parks-states-modal';
 import { StateService } from '../../services/state.service';
 import { BehaviorSubject } from 'rxjs';
-import { AppSettings } from '../../models/settings.model';
+import { AppSettings, DEFAULT_SETTINGS } from '../../models/settings.model';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 
 describe('ParksStatesModal', () => {
@@ -13,6 +13,7 @@ describe('ParksStatesModal', () => {
   let stateServiceMock: any;
 
   const mockSettings: AppSettings = {
+    ...DEFAULT_SETTINGS,
     familyMembers: [
       { id: 'm-1', name: 'Traveler 1', color: '#10b981' },
       { id: 'm-2', name: 'Traveler 2', color: '#3b82f6' },

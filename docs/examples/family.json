@@ -4,7 +4,22 @@
     "version": "v4-angular"
   },
   "settings": {
+    "schemaVersion": 4,
+    "trips": [],
+    "customPlaces": [],
+    "placeVisits": {},
+    "tags": [
+      "camping",
+      "hiking",
+      "scenic",
+      "historic",
+      "beach",
+      "national_park",
+      "state_park",
+      "city"
+    ],
     "familyMembers": [
+
       {
         "id": "116fd596-e1fb-490b-9a1b-e10973036c68",
         "name": "Bob",

@@ -15,6 +15,8 @@ Welcome to the central architectural documentation for **Traveled Roads Tracker*
 | **[05. External APIs & Networking](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/05-external-apis-and-network.md)** | Map tiles (CARTO/OSM), Nominatim geocoding, OSRM/Mapbox routing, and the global HTTP network interceptor. | `src/app/core/interceptors/` |
 | **[06. Testing & Quality Assurance](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/06-testing-and-quality.md)** | Vitest unit test suite, Playwright browser tests, ESLint flat config, Prettier, and Makefile commands. | `Makefile`, `vitest` |
 | **[07. AI Agent Fast-Navigation Playbook](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/07-ai-agent-playbook.md)** | Benchmarked LSP and AST-grep navigation protocols, token-efficient file exploration, and decorator trap prevention. | `AGENTS.md` |
+| **[08. V4 Places & Trips Design](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/08-v4-places-and-trips-design.md)** | Trip-first unified places architecture, curated static catalogs with O(1) lookup, Option A stop classification, and Schema V4 specifications. | `src/app/models/trip.model.ts`, `src/app/models/location.model.ts` |
+
 
 ---
 

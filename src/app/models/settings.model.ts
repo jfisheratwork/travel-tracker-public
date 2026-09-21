@@ -1,4 +1,6 @@
 import { RouteObject } from './route.model';
+import { Trip } from './trip.model';
+import { Place, PlaceVisit } from './location.model';
 import { ColorThemeId, DEFAULT_THEME_ID } from '../core/constants/theme.constants';
 
 export interface FamilyMember {
@@ -30,9 +32,26 @@ export interface Hometown {
   endDate?: string; // e.g. "2020-08", omitted if current
 }
 
+export const DEFAULT_TAGS: string[] = [
+  'camping',
+  'hiking',
+  'scenic',
+  'historic',
+  'beach',
+  'national_park',
+  'state_park',
+  'city',
+];
+
 export interface AppSettings {
+  schemaVersion: number;
   familyMembers: FamilyMember[];
   hometowns: Hometown[];
+  trips: Trip[];
+  customPlaces: Place[];
+  placeVisits: Record<string, PlaceVisit[]>;
+  tags: string[];
+
   routingEngine: 'osrm' | 'mapbox';
   mapboxKey?: string; // Stored only locally, excluded from any future backend syncs
   cartoKey?: string; // CARTO basemap API Key
@@ -47,8 +66,13 @@ export interface AppSettings {
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
+  schemaVersion: 4,
   familyMembers: [],
   hometowns: [],
+  trips: [],
+  customPlaces: [],
+  placeVisits: {},
+  tags: DEFAULT_TAGS,
   routingEngine: 'osrm',
   routeReduction: 0.01,
   savedRoutes: [],

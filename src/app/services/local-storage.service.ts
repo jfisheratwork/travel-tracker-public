@@ -3,9 +3,18 @@ import { Injectable, inject } from '@angular/core';
 // DOCS: https://rxjs.dev/api/index/class/BehaviorSubject
 import { BehaviorSubject, firstValueFrom } from 'rxjs';
 import { StateService } from './state.service';
-import { AppSettings, DEFAULT_SETTINGS, FamilyMember, VisitDetail } from '../models/settings.model';
+import {
+  AppSettings,
+  DEFAULT_SETTINGS,
+  DEFAULT_TAGS,
+  FamilyMember,
+  VisitDetail,
+} from '../models/settings.model';
+import { Trip } from '../models/trip.model';
+import { Place, PlaceVisit } from '../models/location.model';
 import { RouteObject } from '../models/route.model';
 import { LoggerService } from '../core/services/logger.service';
+import { ToastService } from '../core/services/toast.service';
 import { HttpClient } from '@angular/common/http';
 import { NATIONAL_PARKS, STATES } from '../core/constants/geography.constants';
 
@@ -16,6 +25,7 @@ export class LocalStorageService {
   private activeTabSubject = new BehaviorSubject<string>('parks');
   public activeTab$ = this.activeTabSubject.asObservable();
   private logger = inject(LoggerService);
+  private toastService = inject(ToastService);
   private http = inject(HttpClient);
 
   constructor(private stateService: StateService) {
@@ -35,7 +45,15 @@ export class LocalStorageService {
     const savedSettings = localStorage.getItem('np_travel_settings');
     if (savedSettings) {
       try {
-        const parsed = JSON.parse(savedSettings);
+        const parsed = JSON.parse(savedSettings) as Record<string, unknown>;
+        const root = (parsed['settings'] || parsed) as Record<string, unknown>;
+        if (root['schemaVersion'] !== 4 && parsed['schemaVersion'] !== 4) {
+          this.toastService.showInfo(
+            'Welcome to Travel Tracker V4! We have upgraded our data architecture to a unified Trip and Places model. Your local preview settings have been refreshed.',
+          );
+          this.stateService.updateSettings(DEFAULT_SETTINGS);
+          return;
+        }
         this.applyParsedData(parsed);
       } catch (e) {
         this.logger.error('Failed to parse saved settings', e);
@@ -175,6 +193,44 @@ export class LocalStorageService {
         );
       }
 
+      // 3. Normalize trips
+      const rawTrips = Array.isArray(rootSettings['trips'])
+        ? (rootSettings['trips'] as Trip[])
+        : [];
+      const trips: Trip[] = rawTrips.map((t, idx) => ({
+        id: t.id || `trip-${idx}-${Date.now()}`,
+        name: t.name || 'Untitled Trip',
+        startDate: t.startDate || '',
+        endDate: t.endDate || '',
+        travelerIds: Array.isArray(t.travelerIds) ? t.travelerIds : [],
+        destinations: Array.isArray(t.destinations) ? t.destinations : [],
+        corridorStops: Array.isArray(t.corridorStops) ? t.corridorStops : [],
+        transitRegionIds: Array.isArray(t.transitRegionIds) ? t.transitRegionIds : [],
+        highlights: Array.isArray(t.highlights) ? t.highlights : [],
+        notes: t.notes || '',
+        coordinates: t.coordinates,
+        distanceMiles: t.distanceMiles,
+        color: t.color,
+      }));
+
+      // 4. Normalize customPlaces
+      const customPlaces: Place[] = Array.isArray(rootSettings['customPlaces'])
+        ? (rootSettings['customPlaces'] as Place[])
+        : [];
+
+      // 5. Normalize placeVisits
+      const placeVisits: Record<string, PlaceVisit[]> = (
+        rootSettings['placeVisits'] && typeof rootSettings['placeVisits'] === 'object'
+          ? (rootSettings['placeVisits'] as Record<string, PlaceVisit[]>)
+          : {}
+      ) as Record<string, PlaceVisit[]>;
+
+      // 6. Normalize tags
+      const tags: string[] =
+        Array.isArray(rootSettings['tags']) && rootSettings['tags'].length > 0
+          ? (rootSettings['tags'] as string[])
+          : [...DEFAULT_TAGS];
+
       const rawSavedRoutes = (rootSettings['savedRoutes'] || []) as RouteObject[];
       const savedRoutes = rawSavedRoutes.map((r, i) => ({
         ...r,
@@ -190,8 +246,13 @@ export class LocalStorageService {
 
       const migratedSettings: AppSettings = {
         ...DEFAULT_SETTINGS,
+        schemaVersion: 4,
         ...(rootSettings as Partial<AppSettings>),
         familyMembers,
+        trips,
+        customPlaces,
+        placeVisits,
+        tags,
         visitedStates,
         visitedParks,
         savedRoutes,
@@ -219,6 +280,7 @@ export class LocalStorageService {
       meta: {
         exportedAt: new Date().toISOString(),
         version: 'v4-angular',
+        schemaVersion: 4,
       },
       settings: cleanSettings,
     };
@@ -239,6 +301,14 @@ export class LocalStorageService {
   public importBackup(jsonContent: string): { success: boolean; message: string } {
     try {
       const parsed = JSON.parse(jsonContent) as Record<string, unknown>;
+      const rootSettings = (parsed['settings'] || parsed) as Record<string, unknown>;
+      if (rootSettings['schemaVersion'] !== 4 && parsed['schemaVersion'] !== 4) {
+        return {
+          success: false,
+          message:
+            'The uploaded file is from an older schema version (< 4). Please use a V4 backup file.',
+        };
+      }
       const success = this.applyParsedData(parsed);
       if (success) {
         return { success: true, message: 'Backup successfully imported!' };
@@ -302,7 +372,9 @@ export class LocalStorageService {
       const hasHometown = Array.isArray(parsed.hometowns) && parsed.hometowns.length > 0;
       const hasStates = parsed.visitedStates && Object.keys(parsed.visitedStates).length > 0;
       const hasParks = parsed.visitedParks && Object.keys(parsed.visitedParks).length > 0;
-      return !hasFamily && !hasHometown && !hasStates && !hasParks;
+      const hasTrips = Array.isArray(parsed.trips) && parsed.trips.length > 0;
+      const hasVisits = parsed.placeVisits && Object.keys(parsed.placeVisits).length > 0;
+      return !hasFamily && !hasHometown && !hasStates && !hasParks && !hasTrips && !hasVisits;
     } catch {
       return true;
     }

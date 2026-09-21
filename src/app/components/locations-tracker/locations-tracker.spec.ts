@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LocationsTrackerComponent } from './locations-tracker';
 import { StateService } from '../../services/state.service';
 import { BehaviorSubject } from 'rxjs';
-import { AppSettings } from '../../models/settings.model';
+import { AppSettings, DEFAULT_SETTINGS } from '../../models/settings.model';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 
 describe('LocationsTrackerComponent', () => {
@@ -15,6 +15,7 @@ describe('LocationsTrackerComponent', () => {
   let stateServiceMock: any;
 
   const mockSettings: AppSettings = {
+    ...DEFAULT_SETTINGS,
     familyMembers: [
       { id: 'm-brittany', name: 'Brittany', color: '#10b981' },
       { id: 'm-bob', name: 'Bob', color: '#3b82f6' },
