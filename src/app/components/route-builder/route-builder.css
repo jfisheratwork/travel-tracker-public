@@ -1,7 +1,20 @@
-.route-builder-container {
-  padding: 20px;
-  background: white;
+:host {
+  display: flex;
+  flex-direction: column;
   height: 100%;
+  min-height: 0;
+  width: 100%;
+  flex: 1;
+  overflow: hidden;
+}
+
+.route-builder-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  flex: 1;
+  background: white;
   overflow-y: auto;
   box-sizing: border-box;
 }

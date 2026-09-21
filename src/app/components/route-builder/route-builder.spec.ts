@@ -229,4 +229,37 @@ describe('RouteBuilderComponent', () => {
     component.openModal();
     expect(component.startQuery).toBe('Denver, CO');
   });
+
+  it('should map member UUIDs to display names when editing an existing trip', () => {
+    const stateService = TestBed.inject(StateService);
+    stateService.updateSettings({
+      ...stateService.getSettings(),
+      familyMembers: [
+        { id: 'uuid-bob', name: 'Bob', color: '#eab308' },
+        { id: 'uuid-brittany', name: 'Brittany', color: '#06b6d4' },
+      ],
+    });
+
+    component.editRoute({
+      id: 'r-1',
+      name: 'Spokane Road Trip',
+      description: 'Vacation',
+      startDate: '2022-04-01',
+      endDate: '2022-04-08',
+      status: 'completed',
+      members: ['uuid-bob', 'uuid-brittany'],
+      engine: 'osrm',
+      distance: 1000,
+      duration: 10,
+      timestamp: 123456,
+      startQuery: 'Spokane, WA',
+      endQuery: 'Monterey, CA',
+      stopsQueries: [],
+      waypoints: [],
+      route: [],
+    });
+
+    expect(component.selectedMembers).toEqual(['Bob', 'Brittany']);
+    expect(component.getMemberName('uuid-bob')).toBe('Bob');
+  });
 });

@@ -111,12 +111,18 @@ export class RouteBuilderComponent implements OnInit {
     });
   }
 
-  toggleMember(name: string) {
-    const idx = this.selectedMembers.indexOf(name);
+  getMemberName(nameOrId: string): string {
+    const found = this.familyMembers.find((m) => m.id === nameOrId || m.name === nameOrId);
+    return found ? found.name : nameOrId;
+  }
+
+  toggleMember(nameOrId: string) {
+    const memberName = this.getMemberName(nameOrId);
+    const idx = this.selectedMembers.indexOf(memberName);
     if (idx > -1) {
       this.selectedMembers.splice(idx, 1);
     } else {
-      this.selectedMembers.push(name);
+      this.selectedMembers.push(memberName);
     }
     this.participantSearchQuery = '';
   }
@@ -563,9 +569,12 @@ export class RouteBuilderComponent implements OnInit {
 
     const currentSettings = this.stateService.getSettings();
 
-    // Map member names to traveler IDs
+    // Map member names or IDs to traveler IDs
     const travelerIds = this.selectedMembers
-      .map((name) => currentSettings.familyMembers.find((m) => m.name === name)?.id)
+      .map(
+        (nameOrId) =>
+          currentSettings.familyMembers.find((m) => m.name === nameOrId || m.id === nameOrId)?.id,
+      )
       .filter((id): id is string => !!id);
 
     const finalTravelerIds =
@@ -681,7 +690,7 @@ export class RouteBuilderComponent implements OnInit {
     this.status = route.status || 'planned';
     this.hasUserManuallyEditedName = true;
     this.hasUserManuallySelectedDates = true;
-    this.selectedMembers = route.members ? [...route.members] : [];
+    this.selectedMembers = (route.members || []).map((m) => this.getMemberName(m));
 
     // Auto-infer start and end queries if missing from legacy name "A to B"
     if (!route.startQuery && route.name && route.name.includes(' to ')) {
