@@ -264,6 +264,13 @@
                       t.members.length !== 1 ? 's' : ''
                     }}
                   </span>
+                  <ng-container *ngIf="t.route && t.route.length > 0">
+                    <span class="text-stone-300">•</span>
+                    <span class="flex items-center gap-1 text-indigo-700 font-semibold">
+                      <span>🚗</span>
+                      <strong>{{ t.route.length }}</strong> leg{{ t.route.length !== 1 ? 's' : '' }}
+                    </span>
+                  </ng-container>
                 </div>
 
                 <p *ngIf="t.notes" class="text-[11px] text-stone-500 italic truncate">
@@ -545,7 +552,190 @@
           </div>
         </div>
 
-        <!-- Row 5: Notes / Highlights -->
+        <!-- Row 5: Road Trip Route (Saved Routes) -->
+        <div class="flex flex-col gap-3 p-3.5 rounded-xl border border-indigo-200 bg-indigo-50/40">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🚗</span>
+              <label
+                class="text-xs font-bold text-indigo-950 uppercase tracking-wider cursor-pointer flex items-center gap-2"
+              >
+                <input
+                  type="checkbox"
+                  [checked]="currentTrip.includeRoute"
+                  (change)="toggleIncludeRoute()"
+                  class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-indigo-300 cursor-pointer"
+                />
+                <span>Save Road Trip Route to Roads Visited</span>
+              </label>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span
+                *ngIf="
+                  currentTrip.includeRoute && currentTrip.route && currentTrip.route.length > 0
+                "
+                class="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-200 text-[10px] font-bold"
+              >
+                {{ currentTrip.route.length }} leg{{ currentTrip.route.length !== 1 ? 's' : '' }}
+              </span>
+              <span
+                *ngIf="!currentTrip.includeRoute"
+                class="px-2 py-0.5 rounded-full bg-stone-100 text-stone-500 border border-stone-200 text-[10px] font-semibold"
+              >
+                Route Skipped
+              </span>
+              <button
+                *ngIf="currentTrip.includeRoute"
+                type="button"
+                (click)="addRouteSegment()"
+                class="px-2 py-1 rounded-lg text-xs font-bold bg-white text-indigo-700 border border-indigo-200 hover:bg-indigo-50 transition cursor-pointer shadow-2xs"
+              >
+                + Add Leg
+              </button>
+            </div>
+          </div>
+
+          <!-- When route is included -->
+          <div *ngIf="currentTrip.includeRoute" class="flex flex-col gap-3 animate-fadeIn">
+            <!-- Route Title & Route Comments inputs -->
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
+              <div class="sm:col-span-6 flex flex-col gap-1">
+                <label
+                  class="text-[11px] font-bold text-stone-700 uppercase tracking-wider"
+                  for="editRouteTitle"
+                >
+                  Route Title
+                </label>
+                <input
+                  id="editRouteTitle"
+                  type="text"
+                  [(ngModel)]="currentTrip.routeTitle"
+                  placeholder="e.g. Pacific Northwest to Monterey Road Trip"
+                  class="w-full p-2 rounded-lg border border-indigo-200 text-xs font-semibold text-stone-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+
+              <div class="sm:col-span-6 flex flex-col gap-1">
+                <label
+                  class="text-[11px] font-bold text-stone-700 uppercase tracking-wider"
+                  for="editRouteComments"
+                >
+                  Route Description & Comments
+                </label>
+                <input
+                  id="editRouteComments"
+                  type="text"
+                  [(ngModel)]="currentTrip.routeComments"
+                  placeholder="e.g. Drove I-90 to US-97 into central Oregon corridor..."
+                  class="w-full p-2 rounded-lg border border-indigo-200 text-xs text-stone-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            <!-- Route Segments List -->
+            <div
+              *ngIf="currentTrip.route && currentTrip.route.length > 0"
+              class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1"
+            >
+              <div
+                *ngFor="let seg of currentTrip.route; let segIdx = index"
+                class="p-2.5 rounded-lg bg-white border border-indigo-100 shadow-2xs flex flex-col gap-1.5 text-xs"
+              >
+                <div class="flex items-center justify-between gap-2">
+                  <div class="flex items-center gap-1.5 flex-1 min-w-0">
+                    <span
+                      class="w-5 h-5 rounded-full bg-indigo-600 text-white text-[10px] font-black flex items-center justify-center flex-shrink-0"
+                    >
+                      {{ segIdx + 1 }}
+                    </span>
+                    <input
+                      type="text"
+                      [(ngModel)]="seg.from"
+                      placeholder="Origin"
+                      class="flex-1 min-w-0 p-1 rounded border border-stone-300 text-xs font-semibold text-stone-800"
+                    />
+                    <span class="text-indigo-400 font-bold flex-shrink-0">→</span>
+                    <input
+                      type="text"
+                      [(ngModel)]="seg.to"
+                      placeholder="Destination"
+                      class="flex-1 min-w-0 p-1 rounded border border-stone-300 text-xs font-semibold text-stone-800"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    (click)="removeRouteSegment(segIdx)"
+                    class="w-6 h-6 rounded flex items-center justify-center text-stone-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer font-bold"
+                    title="Remove this route segment"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <!-- Highways and Leg Notes -->
+                <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  <span class="text-[10px] font-bold text-stone-400 uppercase">Highways:</span>
+                  <span
+                    *ngFor="let hw of seg.highways; let hIdx = index"
+                    class="px-2 py-0.5 rounded bg-stone-100 border border-stone-200 text-stone-700 text-[10px] font-mono font-semibold flex items-center gap-1"
+                  >
+                    {{ hw }}
+                    <button
+                      type="button"
+                      (click)="removeHighway(seg, hIdx)"
+                      class="hover:text-rose-600 font-bold cursor-pointer"
+                      title="Remove highway"
+                    >
+                      ×
+                    </button>
+                  </span>
+
+                  <!-- Add highway input -->
+                  <div class="inline-flex items-center gap-1">
+                    <input
+                      #hwInput
+                      type="text"
+                      placeholder="+ Highway"
+                      (keydown.enter)="addHighway(seg, hwInput)"
+                      class="w-20 p-0.5 text-[10px] rounded border border-stone-200 px-1 font-mono"
+                    />
+                    <button
+                      type="button"
+                      (click)="addHighway(seg, hwInput)"
+                      class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <input
+                  *ngIf="seg.notes !== undefined"
+                  type="text"
+                  [(ngModel)]="seg.notes"
+                  placeholder="Leg highlights or scenic notes..."
+                  class="w-full p-1 rounded border border-stone-200 text-[11px] text-stone-600 italic bg-stone-50/60"
+                />
+              </div>
+            </div>
+
+            <p
+              *ngIf="!currentTrip.route || currentTrip.route.length === 0"
+              class="text-xs text-stone-500 italic"
+            >
+              No route segments added yet. Click "+ Add Leg" to define your driving itinerary.
+            </p>
+          </div>
+
+          <p *ngIf="!currentTrip.includeRoute" class="text-[11px] text-stone-500 italic">
+            Route will not be saved. Visited parks and states will still be merged into your map and
+            logs.
+          </p>
+        </div>
+
+        <!-- Row 6: Notes / Highlights -->
         <div class="flex flex-col gap-1">
           <label
             class="text-xs font-bold text-stone-700 uppercase tracking-wider"
@@ -585,9 +775,13 @@
             </button>
           </div>
 
-          <div *ngIf="showLocationDates" class="flex flex-col gap-3 mt-1 max-h-56 overflow-y-auto pr-1">
+          <div
+            *ngIf="showLocationDates"
+            class="flex flex-col gap-3 mt-1 max-h-56 overflow-y-auto pr-1"
+          >
             <p class="text-[11px] text-stone-500">
-              Customize exact visit dates or location-specific notes for each stop. Defaults to trip start date and trip notes if left blank.
+              Customize exact visit dates or location-specific notes for each stop. Defaults to trip
+              start date and trip notes if left blank.
             </p>
 
             <!-- Parks List -->
@@ -769,7 +963,8 @@
           </div>
           <p class="text-xs text-emerald-800 leading-relaxed">
             All trip locations and dated logs have been saved to your tracker for:
-            <strong>{{ importReceipt.affectedMembers.join(', ') || 'Your Group' }}</strong>.
+            <strong>{{ importReceipt.affectedMembers.join(', ') || 'Your Group' }}</strong
+            >.
           </p>
         </div>
 
@@ -914,7 +1109,34 @@
           </div>
 
           <p class="text-xs text-stone-600 leading-relaxed">
-            Each location received a dated visit entry with your trip comments and member tags. You can view, search, or edit these entries anytime in the location details drawer on the map.
+            Each location received a dated visit entry with your trip comments and member tags. You
+            can view, search, or edit these entries anytime in the location details drawer on the
+            map.
+          </p>
+        </div>
+
+        <!-- Section 3: Saved Routes Added -->
+        <div
+          *ngIf="importReceipt.routesAdded && importReceipt.routesAdded > 0"
+          class="p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 flex flex-col gap-2 transition-colors"
+        >
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-base">🚗</span>
+              <span class="text-xs sm:text-sm font-bold text-indigo-950">
+                Road Trip Routes Saved ({{ importReceipt.routesAdded }})
+              </span>
+            </div>
+            <span
+              class="text-xs font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded-full border border-indigo-200"
+            >
+              Saved to Roads Visited
+            </span>
+          </div>
+
+          <p class="text-xs text-indigo-900 leading-relaxed">
+            Your road trip itinerary and driving corridors have been saved! You can view, inspect,
+            and recalculate them anytime under the <strong>🚗 Roads Visited</strong> tab.
           </p>
         </div>
       </div>
@@ -937,4 +1159,3 @@
     </ng-container>
   </div>
 </div>
-

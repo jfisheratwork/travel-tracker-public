@@ -11,6 +11,7 @@ import {
   BatchValidationResult,
   ValidationResult,
   ValidatedTripDelta,
+  ValidatedRouteSegment,
   ImportReceipt,
 } from '../../core/models/trip-delta.model';
 import { FamilyMember } from '../../models/settings.model';
@@ -140,6 +141,29 @@ export class AiTripModalComponent implements OnInit {
         members: ['all'],
         parks: ['Yellowstone', 'Grand Teton'],
         states: ['Montana', 'Wyoming', 'Idaho'],
+        route: [
+          {
+            segment: 1,
+            from: 'Bozeman, MT',
+            to: 'Yellowstone National Park, WY',
+            highways: ['US-191 S'],
+            notes: 'Gallatin Canyon scenic drive into West Entrance',
+          },
+          {
+            segment: 2,
+            from: 'Yellowstone National Park, WY',
+            to: 'Grand Teton National Park, WY',
+            highways: ['US-89 S', 'US-191 S'],
+            notes: 'Traversed John D. Rockefeller Jr. Memorial Parkway',
+          },
+          {
+            segment: 3,
+            from: 'Grand Teton National Park, WY',
+            to: 'Idaho Falls, ID',
+            highways: ['WY-22 W', 'ID-33 W', 'US-26 W'],
+            notes: 'Over Teton Pass into eastern Idaho',
+          },
+        ],
         notes: 'Flew into Bozeman, drove through both national parks, returned via Idaho Falls.',
       },
     };
@@ -162,6 +186,22 @@ export class AiTripModalComponent implements OnInit {
           members: ['all'],
           parks: ['Yellowstone', 'Grand Teton'],
           states: ['Montana', 'Wyoming', 'Idaho'],
+          route: [
+            {
+              segment: 1,
+              from: 'Bozeman, MT',
+              to: 'Yellowstone National Park, WY',
+              highways: ['US-191 S'],
+              notes: 'Scenic drive down Gallatin Canyon',
+            },
+            {
+              segment: 2,
+              from: 'Yellowstone National Park, WY',
+              to: 'Jackson, WY',
+              highways: ['US-89 S'],
+              notes: 'Through Grand Teton into Jackson Hole',
+            },
+          ],
           notes: 'Flew into Bozeman, drove through both national parks, returned via Idaho Falls.',
         },
         {
@@ -348,6 +388,79 @@ export class AiTripModalComponent implements OnInit {
       trip.members = [];
     } else {
       trip.members = this.activeMembers.map((m) => ({ id: m.id, name: m.name }));
+    }
+  }
+
+  // --- Route Handlers ---
+
+  toggleIncludeRoute(): void {
+    const trip = this.currentTrip;
+    if (!trip) return;
+    trip.includeRoute = !trip.includeRoute;
+    if (trip.includeRoute) {
+      if (!trip.route || trip.route.length === 0) {
+        trip.route = [
+          {
+            segment: 1,
+            from: '',
+            to: '',
+            highways: [],
+            notes: '',
+          },
+        ];
+      }
+      if (!trip.routeTitle) {
+        trip.routeTitle = trip.name;
+      }
+      if (trip.routeComments === undefined) {
+        trip.routeComments = trip.notes || '';
+      }
+    }
+  }
+
+  removeRouteSegment(index: number): void {
+    const trip = this.currentTrip;
+    if (trip && trip.route) {
+      trip.route.splice(index, 1);
+      trip.route.forEach((s, idx) => {
+        s.segment = idx + 1;
+      });
+      if (trip.route.length === 0) {
+        trip.includeRoute = false;
+      }
+    }
+  }
+
+  addRouteSegment(): void {
+    const trip = this.currentTrip;
+    if (!trip) return;
+    if (!trip.route) {
+      trip.route = [];
+    }
+    const nextIdx = trip.route.length + 1;
+    const prevTo = trip.route.length > 0 ? trip.route[trip.route.length - 1].to : '';
+    trip.route.push({
+      segment: nextIdx,
+      from: prevTo,
+      to: '',
+      highways: [],
+      notes: '',
+    });
+    trip.includeRoute = true;
+    if (!trip.routeTitle) {
+      trip.routeTitle = trip.name;
+    }
+  }
+
+  removeHighway(segment: ValidatedRouteSegment, hIndex: number): void {
+    segment.highways.splice(hIndex, 1);
+  }
+
+  addHighway(segment: ValidatedRouteSegment, highwayInput: HTMLInputElement): void {
+    const val = highwayInput.value.trim();
+    if (val && !segment.highways.includes(val)) {
+      segment.highways.push(val);
+      highwayInput.value = '';
     }
   }
 }

@@ -1,11 +1,20 @@
 export type RawTripLocation = string | { name: string; date?: string; notes?: string };
 
+export interface RawRouteSegment {
+  segment?: number;
+  from?: string;
+  to?: string;
+  highways?: string[];
+  notes?: string;
+}
+
 export interface RawTripPayload {
   name?: string;
   date?: string;
   members?: string[];
   parks?: RawTripLocation[];
   states?: RawTripLocation[];
+  route?: RawRouteSegment[];
   notes?: string;
 }
 
@@ -21,6 +30,14 @@ export interface ResolvedEntity {
   name: string;
   country?: string;
   dateVisited?: string;
+  notes?: string;
+}
+
+export interface ValidatedRouteSegment {
+  segment: number;
+  from: string;
+  to: string;
+  highways: string[];
   notes?: string;
 }
 
@@ -41,6 +58,7 @@ export interface ImportReceipt {
   alreadyVisitedStates: LocationImportSummary[];
   totalLogEntriesAdded: number;
   affectedMembers: string[];
+  routesAdded?: number;
 }
 
 export interface ValidatedTripDelta {
@@ -50,6 +68,10 @@ export interface ValidatedTripDelta {
   members: { id: string; name: string }[];
   parks: ResolvedEntity[];
   states: ResolvedEntity[];
+  route?: ValidatedRouteSegment[];
+  includeRoute?: boolean;
+  routeTitle?: string;
+  routeComments?: string;
   notes?: string;
   warnings: string[];
   status: 'pending' | 'approved' | 'skipped';

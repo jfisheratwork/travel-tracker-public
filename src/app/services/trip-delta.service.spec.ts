@@ -89,6 +89,14 @@ describe('TripDeltaService', () => {
       expect(prompt).toContain('Maryland');
       expect(prompt).toContain('Ohio');
     });
+
+    it('instructs LLM on road trips, itineraries, and constructing the route array with segments and highways', () => {
+      const prompt = service.generatePrompt(sampleMembers);
+      expect(prompt).toContain('Road Trips, Itineraries & Route Segments');
+      expect(prompt).toContain('"route"');
+      expect(prompt).toContain('"highways"');
+      expect(prompt).toContain('"segment"');
+    });
   });
 
   describe('extractAndParseJson', () => {
@@ -247,7 +255,7 @@ describe('TripDeltaService', () => {
       expect(result.valid).toBe(false);
       expect(
         result.errors.some((e) =>
-          e.includes('No recognized National Parks or States/Provinces found'),
+          e.includes('No recognized National Parks, States/Provinces, or route segments found'),
         ),
       ).toBe(true);
     });
@@ -545,6 +553,108 @@ describe('TripDeltaService', () => {
       expect(result.valid).toBe(true);
       // Deduplicated to 1 park
       expect(result.resolved?.parks.length).toBe(1);
+    });
+
+    it('extracts and resolves route segments, initializing includeRoute, routeTitle, and routeComments', () => {
+      const payload: TripDeltaPayload = {
+        trip: {
+          name: 'Pacific Northwest Road Trip',
+          date: '2023-08-10',
+          members: ['all'],
+          parks: ['Crater Lake'],
+          states: ['Oregon'],
+          route: [
+            {
+              segment: 1,
+              from: 'Spokane, WA',
+              to: 'Bend, OR',
+              highways: ['I-90 W', 'US-395 S', 'US-97 S'],
+              notes: 'Central Oregon leg',
+            },
+          ],
+        },
+      };
+
+      const result = service.validateAndResolve(payload, DEFAULT_SETTINGS);
+      expect(result.valid).toBe(true);
+      expect(result.resolved?.route?.length).toBe(1);
+      expect(result.resolved?.includeRoute).toBe(true);
+      expect(result.resolved?.routeTitle).toBe('Pacific Northwest Road Trip');
+      expect(result.resolved?.route?.[0].from).toBe('Spokane, WA');
+      expect(result.resolved?.route?.[0].highways).toEqual(['I-90 W', 'US-395 S', 'US-97 S']);
+    });
+
+    it('saves approved routes to settings.savedRoutes when includeRoute is true during applyBatchTripDeltas', () => {
+      mockStateService.updateSettings.mockClear();
+      const validatedTrip: ValidatedTripDelta = {
+        id: 'trip-1',
+        name: 'Pacific Northwest Road Trip',
+        date: '2023-08-10',
+        members: [{ id: 'm-1', name: 'Jacob' }],
+        parks: [{ id: 'crater-lake', name: 'Crater Lake' }],
+        states: [{ id: 'or', name: 'Oregon' }],
+        route: [
+          {
+            segment: 1,
+            from: 'Spokane, WA',
+            to: 'Bend, OR',
+            highways: ['US-97 S'],
+          },
+        ],
+        includeRoute: true,
+        routeTitle: 'Custom PNW Route Title',
+        routeComments: 'Custom comments on the highway route',
+        status: 'approved',
+        warnings: [],
+      };
+
+      const receipt = service.applyBatchTripDeltas([validatedTrip]);
+      expect(receipt).toBeTruthy();
+      expect(receipt?.routesAdded).toBe(1);
+
+      expect(mockStateService.updateSettings).toHaveBeenCalled();
+      const updatedSettings: AppSettings = mockStateService.updateSettings.mock.calls[0][0];
+      expect(updatedSettings.savedRoutes.length).toBe(1);
+      expect(updatedSettings.savedRoutes[0].name).toBe('Custom PNW Route Title');
+      expect(updatedSettings.savedRoutes[0].description).toBe(
+        'Custom comments on the highway route',
+      );
+      expect(updatedSettings.savedRoutes[0].startQuery).toBe('Spokane, WA');
+      expect(updatedSettings.savedRoutes[0].endQuery).toBe('Bend, OR');
+      expect(updatedSettings.savedRoutes[0].status).toBe('completed');
+    });
+
+    it('does not save routes to savedRoutes when includeRoute is false', () => {
+      mockStateService.updateSettings.mockClear();
+      const validatedTrip: ValidatedTripDelta = {
+        id: 'trip-2',
+        name: 'Pacific Northwest Road Trip',
+        date: '2023-08-10',
+        members: [{ id: 'm-1', name: 'Jacob' }],
+        parks: [{ id: 'crater-lake', name: 'Crater Lake' }],
+        states: [{ id: 'or', name: 'Oregon' }],
+        route: [
+          {
+            segment: 1,
+            from: 'Spokane, WA',
+            to: 'Bend, OR',
+            highways: ['US-97 S'],
+          },
+        ],
+        includeRoute: false,
+        status: 'approved',
+        warnings: [],
+      };
+
+      const receipt = service.applyBatchTripDeltas([validatedTrip]);
+      expect(receipt?.routesAdded).toBe(0);
+
+      const lastCall =
+        mockStateService.updateSettings.mock.calls[
+          mockStateService.updateSettings.mock.calls.length - 1
+        ];
+      const updatedSettings: AppSettings = lastCall[0];
+      expect(updatedSettings.savedRoutes.length).toBe(0);
     });
   });
 });

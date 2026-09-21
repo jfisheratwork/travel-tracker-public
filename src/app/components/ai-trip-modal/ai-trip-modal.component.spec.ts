@@ -294,4 +294,57 @@ describe('AiTripModalComponent', () => {
     component.toggleLocationDates();
     expect(component.showLocationDates).toBe(false);
   });
+
+  it('supports road trip route editing, toggling inclusion, and modifying legs/highways', () => {
+    const trip: ValidatedTripDelta = {
+      id: 't-route',
+      name: 'Pacific Northwest Road Trip',
+      date: '2026-09-12',
+      members: [{ id: 'mem-1', name: 'Jacob' }],
+      parks: [{ id: 'Crater Lake', name: 'Crater Lake' }],
+      states: [{ id: 'Oregon', name: 'Oregon' }],
+      route: [
+        {
+          segment: 1,
+          from: 'Spokane, WA',
+          to: 'Bend, OR',
+          highways: ['I-90 W', 'US-97 S'],
+          notes: 'Leg 1 note',
+        },
+      ],
+      includeRoute: true,
+      routeTitle: 'Pacific Northwest Road Trip',
+      routeComments: 'Trip comments',
+      warnings: [],
+      status: 'pending',
+    };
+
+    component.reviewTrips = [trip];
+    component.currentTripIndex = 0;
+    component.currentStep = 'review';
+
+    expect(trip.includeRoute).toBe(true);
+
+    // Toggle includeRoute off
+    component.toggleIncludeRoute();
+    expect(trip.includeRoute).toBe(false);
+
+    // Toggle includeRoute back on
+    component.toggleIncludeRoute();
+    expect(trip.includeRoute).toBe(true);
+
+    // Add a leg
+    component.addRouteSegment();
+    expect(trip.route?.length).toBe(2);
+    expect(trip.route?.[1].from).toBe('Bend, OR');
+
+    // Remove highway from segment 0
+    component.removeHighway(trip.route![0], 0);
+    expect(trip.route![0].highways).toEqual(['US-97 S']);
+
+    // Remove leg 0
+    component.removeRouteSegment(0);
+    expect(trip.route?.length).toBe(1);
+    expect(trip.route?.[0].segment).toBe(1);
+  });
 });

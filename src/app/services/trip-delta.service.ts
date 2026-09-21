@@ -4,6 +4,7 @@ import { StateService } from './state.service';
 import { ToastService } from '../core/services/toast.service';
 import { LoggerService } from '../core/services/logger.service';
 import { AppSettings, FamilyMember, VisitDetail, VisitLogEntry } from '../models/settings.model';
+import { RouteObject } from '../models/route.model';
 import { AppErrorType } from '../core/models/app-error.model';
 import {
   NATIONAL_PARKS,
@@ -20,6 +21,7 @@ import {
 import {
   TripDeltaPayload,
   ValidatedTripDelta,
+  ValidatedRouteSegment,
   ParseResult,
   ValidationResult,
   BatchValidationResult,
@@ -76,35 +78,61 @@ When travelers describe driving from one destination to another (e.g. road trips
    - If the user explicitly states they **flew** between cities (e.g. "Flew from Richmond to Denver"), only log the departure and destination states (Virginia, Colorado).
    - If the user drove, took a road trip, or mentions stops/cities along the highway, trace the full highway corridor and include all traversed states.
 
+### Road Trips, Itineraries & Route Segments (CRITICAL):
+Whenever a trip involves a longer route or road trip (more than just "I visited this exact single place"), you MUST construct the \`"route"\` array to capture the travel corridors for the user's Roads Visited tracker:
+1. Divide the journey into chronological segments from start to finish.
+2. For each segment, specify:
+   - \`"segment"\`: 1-based integer index (1, 2, 3...)
+   - \`"from"\`: Starting city/landmark with state/province (e.g. "Spokane, WA" or "Richmond, VA")
+   - \`"to"\`: Destination city/landmark with state/province (e.g. "Bend, OR" or "Crater Lake National Park, OR")
+   - \`"highways"\`: Array of key interstates, US highways, or scenic corridors taken (e.g. ["I-90 W", "US-395 S", "US-97 S"])
+   - \`"notes"\`: Optional 1-sentence description of that driving leg or scenic corridor
+
 ### Extraction Rules:
 1. "date": The trip start date in YYYY-MM-DD format (use the best estimate if only month/year is given).
 2. "parks": Extract all US and Canadian National Parks visited. Can be simple string array (e.g. ["Grand Teton", "Yellowstone"]) or structured objects with individual dates and notes if known (e.g. [{"name": "Grand Teton", "date": "2019-07-03", "notes": "Jenny Lake hike"}]).
 3. "states": Extract all US States and Canadian Provinces visited OR traversed along logical highway corridors (e.g. ["Virginia", "Maryland", "Pennsylvania", "Ohio", "Michigan"]). Can also be structured objects with dates/notes.
 4. "members": Array of member names who took part, or ["all"] if everyone attended.
-5. "name": A concise, descriptive trip title (e.g., "Virginia to Michigan Road Trip via Pennsylvania").
+5. "name": A concise, descriptive trip title (e.g., "Pacific Northwest to Monterey Road Trip").
 6. "notes": A brief 1-2 sentence summary of the route, highlights, and major highways/corridors traveled.
+7. "route": (For road trips & multi-stop journeys) Chronological array of driving segments with "segment", "from", "to", "highways", and "notes".
 
 ### Required Output Schema (JSON Only):
-For a single trip:
+For a single trip (with road trip route):
 \`\`\`json
 {
   "type": "trip_delta",
   "version": 1,
   "trip": {
-    "name": "Virginia to Michigan Road Trip",
+    "name": "Pacific Northwest Road Trip",
     "date": "2023-08-10",
     "members": ["all"],
     "parks": [
-      { "name": "Cuyahoga Valley", "notes": "Quick stop off the Ohio Turnpike" }
+      { "name": "Crater Lake", "notes": "Visited via the Bend and central Oregon corridor" },
+      { "name": "Redwood", "notes": "Explored Redwood National and State Parks" }
     ],
     "states": [
-      "Virginia",
-      "Maryland",
-      "Pennsylvania",
-      "Ohio",
-      "Michigan"
+      "Washington",
+      "Oregon",
+      "California"
     ],
-    "notes": "Drove from Virginia to Michigan stopping in Pennsylvania, traveling along the I-70 / I-76 / I-80 corridor through Maryland and Ohio."
+    "route": [
+      {
+        "segment": 1,
+        "from": "Spokane, WA",
+        "to": "Bend, OR",
+        "highways": ["I-90 W", "US-395 S", "US-97 S"],
+        "notes": "Traversed eastern Washington into central Oregon"
+      },
+      {
+        "segment": 2,
+        "from": "Bend, OR",
+        "to": "Crater Lake National Park, OR",
+        "highways": ["US-97 S", "OR-138 W", "OR-62 W"],
+        "notes": "Central Oregon volcanic corridor to Crater Lake"
+      }
+    ],
+    "notes": "Drove from Spokane through central Oregon down to Crater Lake and northern California redwoods."
   }
 }
 \`\`\`
@@ -121,6 +149,22 @@ For multiple trips / travel history:
       "members": ["all"],
       "parks": ["Cuyahoga Valley"],
       "states": ["Virginia", "Maryland", "Pennsylvania", "Ohio", "Michigan"],
+      "route": [
+        {
+          "segment": 1,
+          "from": "Richmond, VA",
+          "to": "Pittsburgh, PA",
+          "highways": ["I-95 N", "I-270 N", "I-70 W", "I-76 W"],
+          "notes": "Traversed MD corridor into PA turnpike"
+        },
+        {
+          "segment": 2,
+          "from": "Pittsburgh, PA",
+          "to": "Detroit, MI",
+          "highways": ["I-76 W", "I-80 W", "I-75 N"],
+          "notes": "Across Ohio corridor up into Michigan"
+        }
+      ],
       "notes": "Drove from Virginia to Michigan via MD, PA, and OH along the I-70/I-76/I-80 corridor."
     },
     {
@@ -494,14 +538,61 @@ For multiple trips / travel history:
       }
     }
 
-    // Must have at least one valid destination (either a park or a state)
-    if (resolvedParks.length === 0 && resolvedStates.length === 0) {
-      errors.push(`${prefix} No recognized National Parks or States/Provinces found.`);
+    // 5. Resolve Route Segments if provided (capped at MAX_ENTITIES_PER_TRIP)
+    const resolvedRoute: ValidatedRouteSegment[] = [];
+    if (Array.isArray(trip.route)) {
+      const rawSegments = trip.route.slice(0, SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP);
+      for (let i = 0; i < rawSegments.length; i++) {
+        const seg = rawSegments[i];
+        if (!seg || typeof seg !== 'object') continue;
+
+        const fromStr =
+          typeof seg.from === 'string'
+            ? sanitizePlainText(seg.from, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH)
+            : '';
+        const toStr =
+          typeof seg.to === 'string'
+            ? sanitizePlainText(seg.to, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH)
+            : '';
+
+        if (!fromStr && !toStr) continue;
+
+        const highways: string[] = [];
+        if (Array.isArray(seg.highways)) {
+          for (const hw of seg.highways) {
+            if (typeof hw === 'string') {
+              const cleanedHw = sanitizePlainText(hw, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+              if (cleanedHw) highways.push(cleanedHw);
+            }
+          }
+        }
+
+        const segNotes =
+          typeof seg.notes === 'string'
+            ? sanitizePlainText(seg.notes, SECURITY_LIMITS.MAX_TRIP_NOTES_LENGTH)
+            : undefined;
+
+        resolvedRoute.push({
+          segment: typeof seg.segment === 'number' ? seg.segment : i + 1,
+          from: fromStr,
+          to: toStr,
+          highways,
+          notes: segNotes,
+        });
+      }
+    }
+
+    // Must have at least one valid destination (a park, a state, or a route)
+    if (resolvedParks.length === 0 && resolvedStates.length === 0 && resolvedRoute.length === 0) {
+      errors.push(
+        `${prefix} No recognized National Parks, States/Provinces, or route segments found.`,
+      );
     }
 
     // Sanitize trip title and notes against XSS, control characters, and length limits
     const rawNameCleaned = sanitizePlainText(trip.name || '', SECURITY_LIMITS.MAX_TRIP_NAME_LENGTH);
-    const tripName = rawNameCleaned || this.generateDefaultTripName(resolvedParks, resolvedStates);
+    const tripName =
+      rawNameCleaned || this.generateDefaultTripName(resolvedParks, resolvedStates, resolvedRoute);
     const tripNotes =
       sanitizePlainText(trip.notes || '', SECURITY_LIMITS.MAX_TRIP_NOTES_LENGTH) || undefined;
 
@@ -509,6 +600,7 @@ For multiple trips / travel history:
       return { errors, warnings };
     }
 
+    const hasRoute = resolvedRoute.length > 0;
     const resolved: ValidatedTripDelta = {
       id: crypto.randomUUID(),
       name: tripName,
@@ -516,6 +608,10 @@ For multiple trips / travel history:
       members: resolvedMembers,
       parks: resolvedParks,
       states: resolvedStates,
+      route: hasRoute ? resolvedRoute : undefined,
+      includeRoute: hasRoute,
+      routeTitle: hasRoute ? tripName : undefined,
+      routeComments: hasRoute ? tripNotes || '' : undefined,
       notes: tripNotes,
       warnings,
       status: 'pending',
@@ -708,10 +804,61 @@ For multiple trips / travel history:
         }
       }
 
+      // 3. Process Road Trip Routes for Approved Trips
+      const updatedSavedRoutes: RouteObject[] = [...(current.savedRoutes || [])];
+      let routesAdded = 0;
+
+      for (let i = 0; i < approvedTrips.length; i++) {
+        const trip = approvedTrips[i];
+        if (trip.includeRoute && trip.route && trip.route.length > 0) {
+          const routeName = trip.routeTitle?.trim() || trip.name || 'Road Trip Route';
+          const defaultNotes = trip.route
+            .map(
+              (s) =>
+                `${s.from} → ${s.to}${s.highways.length > 0 ? ' (' + s.highways.join(', ') + ')' : ''}`,
+            )
+            .join('; ');
+          const routeDesc = trip.routeComments?.trim() || trip.notes || defaultNotes;
+
+          const startQuery = trip.route[0]?.from || '';
+          const endQuery = trip.route[trip.route.length - 1]?.to || '';
+          const stopsQueries =
+            trip.route.length > 1
+              ? trip.route
+                  .slice(0, -1)
+                  .map((s) => s.to)
+                  .filter(Boolean)
+              : [];
+
+          const newRoute: RouteObject = {
+            id: crypto.randomUUID(),
+            name: routeName,
+            description: routeDesc,
+            startDate: trip.date,
+            endDate: trip.date,
+            members: trip.members.map((m) => m.id),
+            status: 'completed',
+            engine: current.routingEngine || 'osrm',
+            distance: 0,
+            duration: 0,
+            timestamp: Date.now() + i,
+            startQuery,
+            endQuery,
+            stopsQueries,
+            waypoints: [],
+            route: [],
+          };
+
+          updatedSavedRoutes.push(newRoute);
+          routesAdded++;
+        }
+      }
+
       const updatedSettings: AppSettings = {
         ...current,
         visitedParks: updatedVisitedParks,
         visitedStates: updatedVisitedStates,
+        savedRoutes: updatedSavedRoutes,
       };
 
       this.stateService.updateSettings(updatedSettings);
@@ -725,10 +872,13 @@ For multiple trips / travel history:
         alreadyVisitedStates,
         totalLogEntriesAdded,
         affectedMembers: Array.from(affectedMembersSet),
+        routesAdded,
       };
 
+      const routeNote =
+        routesAdded > 0 ? ` and ${routesAdded} road trip route${routesAdded > 1 ? 's' : ''}` : '';
       this.toastService.showSuccess(
-        `Successfully imported ${approvedTrips.length} trip${approvedTrips.length > 1 ? 's' : ''}!`,
+        `Successfully imported ${approvedTrips.length} trip${approvedTrips.length > 1 ? 's' : ''}${routeNote}!`,
       );
 
       return receipt;
@@ -868,7 +1018,11 @@ For multiple trips / travel history:
       .trim();
   }
 
-  private generateDefaultTripName(parks: ResolvedEntity[], states: ResolvedEntity[]): string {
+  private generateDefaultTripName(
+    parks: ResolvedEntity[],
+    states: ResolvedEntity[],
+    routes?: ValidatedRouteSegment[],
+  ): string {
     if (parks.length > 0) {
       return `${parks
         .map((p) => p.name)
@@ -880,6 +1034,14 @@ For multiple trips / travel history:
         .map((s) => s.name)
         .slice(0, 2)
         .join(' & ')} Visit`;
+    }
+    if (routes && routes.length > 0) {
+      const first = routes[0];
+      const last = routes[routes.length - 1];
+      if (first.from && last.to) {
+        return `${first.from} to ${last.to} Road Trip`;
+      }
+      return 'Road Trip';
     }
     return 'Travel Tracker Trip';
   }
