@@ -11,9 +11,14 @@ export interface RawRouteSegment {
 export interface RawTripPayload {
   name?: string;
   date?: string;
+  startDate?: string;
+  endDate?: string;
   members?: string[];
   parks?: RawTripLocation[];
   states?: RawTripLocation[];
+  destinations?: RawTripLocation[];
+  corridorStops?: (RawTripLocation & { isWaypointOnly?: boolean })[];
+  highlights?: string[];
   route?: RawRouteSegment[];
   notes?: string;
 }
@@ -65,9 +70,13 @@ export interface ValidatedTripDelta {
   id: string;
   name: string;
   date: string;
+  endDate?: string;
   members: { id: string; name: string }[];
   parks: ResolvedEntity[];
   states: ResolvedEntity[];
+  destinations?: ResolvedEntity[];
+  corridorStops?: (ResolvedEntity & { isWaypointOnly?: boolean })[];
+  highlights?: string[];
   route?: ValidatedRouteSegment[];
   includeRoute?: boolean;
   routeTitle?: string;

@@ -107,21 +107,21 @@ export class App implements OnInit {
   getSmartAddLabel(mode: MapMode): string {
     switch (mode) {
       case 'roads':
-        return 'Add Roads';
+        return 'Add Trip';
       case 'states':
         return 'Add Regions';
       case 'parks':
         return 'Add Parks';
       case 'places':
       default:
-        return 'Log Visits';
+        return 'Log Places Visited';
     }
   }
 
   getSmartAddTitle(mode: MapMode): string {
     switch (mode) {
       case 'roads':
-        return 'Plan or add road trips and routes';
+        return 'Plan or add trips and routes';
       case 'states':
         return 'Log visited states and Canadian provinces';
       case 'parks':

@@ -408,7 +408,7 @@
               <option value="places">📍 Places</option>
               <option value="parks">⛰️ National Parks</option>
               <option value="states">🏛️ States & Regions</option>
-              <option value="roads">🚗 Traveled Roads</option>
+              <option value="roads">🚗 Trips</option>
             </select>
             <span
               class="pointer-events-none absolute right-2 text-[9px] opacity-70"
@@ -418,18 +418,32 @@
             </span>
           </div>
 
-          <!-- Smart Contextual Add Button -->
+          <!-- Add Trip Button (to the left of Log Places Visited) -->
           <button
             type="button"
-            (click)="handleSmartAdd(mode)"
+            (click)="openRoads()"
             class="h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer flex-shrink-0"
             [style.backgroundColor]="currentTheme.buttonBg"
             [style.borderColor]="currentTheme.buttonBorder"
             [style.color]="currentTheme.buttonText"
-            [title]="getSmartAddTitle(mode)"
+            title="Create and route a new trip"
           >
             <span class="text-sm sm:text-base font-extrabold leading-none">+</span>
-            <span class="hidden xs:inline sm:inline">{{ getSmartAddLabel(mode) }}</span>
+            <span class="hidden xs:inline sm:inline">Add Trip</span>
+          </button>
+
+          <!-- Log Places Visited Button -->
+          <button
+            type="button"
+            (click)="openPlacesModal()"
+            class="h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer flex-shrink-0"
+            [style.backgroundColor]="currentTheme.buttonBg"
+            [style.borderColor]="currentTheme.buttonBorder"
+            [style.color]="currentTheme.buttonText"
+            title="Log places, parks, and regions visited"
+          >
+            <span class="text-sm sm:text-base font-extrabold leading-none">+</span>
+            <span class="hidden xs:inline sm:inline">Log Places Visited</span>
           </button>
         </ng-container>
       </div>
@@ -509,7 +523,7 @@
             <span class="text-xs font-extrabold uppercase tracking-wider">
               {{
                 mode === 'roads'
-                  ? '🚗 Road Trips'
+                  ? '🚗 Trips'
                   : mode === 'parks'
                     ? '⛰️ Visited Parks'
                     : mode === 'states'

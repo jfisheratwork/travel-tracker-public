@@ -57,7 +57,11 @@ export class TripService {
    * - Persists custom places if not already recorded.
    * - Bridges trip to savedRoutes for backward compatibility.
    */
-  syncTripToSettings(trip: Trip, currentSettings: AppSettings): AppSettings {
+  syncTripToSettings(
+    trip: Trip,
+    currentSettings: AppSettings,
+    options?: { skipSavedRouteBridge?: boolean },
+  ): AppSettings {
     const updatedSettings: AppSettings = {
       ...currentSettings,
       trips: [...(currentSettings.trips || [])],
@@ -150,43 +154,45 @@ export class TripService {
     }
 
     // 3. Bridge trip to savedRoutes for backward-compatibility
-    const destinations = trip.destinations || [];
-    const corridorStops = trip.corridorStops || [];
-    const startStop = destinations[0];
-    const endStop = destinations.length > 1 ? destinations[destinations.length - 1] : undefined;
+    if (!options?.skipSavedRouteBridge) {
+      const destinations = trip.destinations || [];
+      const corridorStops = trip.corridorStops || [];
+      const startStop = destinations[0];
+      const endStop = destinations.length > 1 ? destinations[destinations.length - 1] : undefined;
 
-    const mappedRoute: RouteObject = {
-      id: trip.id,
-      name: trip.name,
-      description: trip.notes || '',
-      startDate: trip.startDate,
-      endDate: trip.endDate,
-      members: trip.travelerIds.map((id) => {
-        const member = updatedSettings.familyMembers.find((m) => m.id === id);
-        return member?.name || id;
-      }),
-      status: 'completed',
-      engine: 'osrm',
-      distance: trip.distanceMiles || 0,
-      duration: 0,
-      timestamp: Date.now(),
-      startQuery: startStop?.name || '',
-      endQuery: endStop?.name || startStop?.name || '',
-      stopsQueries: corridorStops.map((s) => s.name),
-      coordinates: trip.coordinates,
-      route: trip.coordinates || [],
-      waypoints: allStops.map((s) => ({
-        name: s.name,
-        lat: s.lat,
-        lng: s.lng,
-      })),
-    };
+      const mappedRoute: RouteObject = {
+        id: trip.id,
+        name: trip.name,
+        description: trip.notes || '',
+        startDate: trip.startDate,
+        endDate: trip.endDate,
+        members: trip.travelerIds.map((id) => {
+          const member = updatedSettings.familyMembers.find((m) => m.id === id);
+          return member?.name || id;
+        }),
+        status: 'completed',
+        engine: 'osrm',
+        distance: trip.distanceMiles || 0,
+        duration: 0,
+        timestamp: Date.now(),
+        startQuery: startStop?.name || '',
+        endQuery: endStop?.name || startStop?.name || '',
+        stopsQueries: corridorStops.map((s) => s.name),
+        coordinates: trip.coordinates,
+        route: trip.coordinates || [],
+        waypoints: allStops.map((s) => ({
+          name: s.name,
+          lat: s.lat,
+          lng: s.lng,
+        })),
+      };
 
-    const routeIdx = updatedSettings.savedRoutes.findIndex((r) => r.id === trip.id);
-    if (routeIdx !== -1) {
-      updatedSettings.savedRoutes[routeIdx] = mappedRoute;
-    } else {
-      updatedSettings.savedRoutes.push(mappedRoute);
+      const routeIdx = updatedSettings.savedRoutes.findIndex((r) => r.id === trip.id);
+      if (routeIdx !== -1) {
+        updatedSettings.savedRoutes[routeIdx] = mappedRoute;
+      } else {
+        updatedSettings.savedRoutes.push(mappedRoute);
+      }
     }
 
     this.logger.info(`Synchronized Trip "${trip.name}" with ${allStops.length} stops.`);

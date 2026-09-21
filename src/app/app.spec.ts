@@ -95,8 +95,8 @@ describe('App', () => {
 
     expect(app.getSmartAddLabel('parks')).toBe('Add Parks');
     expect(app.getSmartAddLabel('states')).toBe('Add Regions');
-    expect(app.getSmartAddLabel('roads')).toBe('Add Roads');
-    expect(app.getSmartAddLabel('places')).toBe('Log Visits');
+    expect(app.getSmartAddLabel('roads')).toBe('Add Trip');
+    expect(app.getSmartAddLabel('places')).toBe('Log Places Visited');
 
     expect(app.getSmartAddTitle('parks')).toContain('National Parks');
     expect(app.getSmartAddTitle('states')).toContain('states');

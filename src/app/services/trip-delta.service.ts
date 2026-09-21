@@ -5,6 +5,9 @@ import { ToastService } from '../core/services/toast.service';
 import { LoggerService } from '../core/services/logger.service';
 import { AppSettings, FamilyMember, VisitDetail, VisitLogEntry } from '../models/settings.model';
 import { RouteObject } from '../models/route.model';
+import { Trip, TripStop } from '../models/trip.model';
+import { TripService } from './trip.service';
+import { getStaticPlace } from '../core/constants/curated-places.constants';
 import { AppErrorType } from '../core/models/app-error.model';
 import {
   NATIONAL_PARKS,
@@ -27,6 +30,7 @@ import {
   BatchValidationResult,
   ResolvedEntity,
   RawTripPayload,
+  RawTripLocation,
   ImportReceipt,
   LocationImportSummary,
 } from '../core/models/trip-delta.model';
@@ -38,6 +42,7 @@ export class TripDeltaService {
   private stateService = inject(StateService);
   private toastService = inject(ToastService);
   private logger = inject(LoggerService);
+  private tripService = inject(TripService);
 
   /**
    * Generates a context-aware system prompt tailored for external LLMs
@@ -58,10 +63,14 @@ ${memberContext}
 
 ### How to Interact with the User:
 1. **Initial Greeting / Standby**: If this prompt is provided without a trip description yet, reply warmly:
-   "Hey! I'm ready to help log your travels. Please tell me about the trip (or trips) you want to log — which national parks or states you visited, who went with you, and roughly when!"
-2. **Trip Date Verification**: If the user's travel date or year is ambiguous or unspecified, ask them to verify or approximate the start date (YYYY-MM-DD).
-3. **Route & Highway Corridor Transparency**: In your conversational text accompanying the JSON, explicitly point out any intermediate corridor states you inferred based on their driving route (e.g. "I traced your driving route from Virginia to Michigan and included the Maryland and Ohio highway corridors so your map reflects all states traversed!").
-4. **Delivering the JSON**: Once details are ready, introduce the output with:
+   "Hey! I'm ready to help log your travels. Tell us about your trip! Please mention your start and end dates, your start and end locations, who traveled with you, and any key highlights or stops along the way."
+2. **Trip Date Verification**: If the user's travel date or year is ambiguous or unspecified, ask them to verify or approximate the start date and end date (YYYY-MM-DD).
+3. **Destinations, Corridors & Highlights**:
+   - Extract primary overnight anchors or destinations.
+   - Extract key highlights, activities, or memorable moments (e.g. "Hiked the Rim Trail at sunset", "Explored scenic coastal bypass").
+   - Extract intermediate corridor stops (parks, scenic towns, or landmarks visited along the driving path).
+4. **Route & Highway Corridor Transparency**: In your conversational text accompanying the JSON, explicitly point out any intermediate corridor states or provinces you inferred based on their driving route (e.g. "I traced your driving route from Virginia to Michigan and included the Maryland and Ohio highway corridors so your map reflects all states traversed!").
+5. **Delivering the JSON**: Once details are ready, introduce the output with:
    "Here is the JSON you need to copy back into the Traveled Roads Tracker website:"
    followed immediately by the JSON code block wrapped in standard markdown fences (\`\`\`json ... \`\`\`).
 
@@ -89,13 +98,17 @@ Whenever a trip involves a longer route or road trip (more than just "I visited 
    - \`"notes"\`: Optional 1-sentence description of that driving leg or scenic corridor
 
 ### Extraction Rules:
-1. "date": The trip start date in YYYY-MM-DD format (use the best estimate if only month/year is given).
-2. "parks": Extract all US and Canadian National Parks visited. Can be simple string array (e.g. ["Grand Teton", "Yellowstone"]) or structured objects with individual dates and notes if known (e.g. [{"name": "Grand Teton", "date": "2019-07-03", "notes": "Jenny Lake hike"}]).
-3. "states": Extract all US States and Canadian Provinces visited OR traversed along logical highway corridors (e.g. ["Virginia", "Maryland", "Pennsylvania", "Ohio", "Michigan"]). Can also be structured objects with dates/notes.
-4. "members": Array of member names who took part, or ["all"] if everyone attended.
-5. "name": A concise, descriptive trip title (e.g., "Pacific Northwest to Monterey Road Trip").
-6. "notes": A brief 1-2 sentence summary of the route, highlights, and major highways/corridors traveled.
-7. "route": (For road trips & multi-stop journeys) Chronological array of driving segments with "segment", "from", "to", "highways", and "notes".
+1. "startDate" / "date": The trip start date in YYYY-MM-DD format (use the best estimate if only month/year is given).
+2. "endDate": The trip end date in YYYY-MM-DD format (defaults to startDate if single-day).
+3. "destinations": Array of primary destinations or overnight stays (e.g. ["Bend, OR", "Crater Lake National Park, OR", "Redwood National and State Parks, CA"]).
+4. "corridorStops": Array of secondary parks, landmarks, or scenic detours visited along the way (e.g. ["Smith Rock State Park, OR"]).
+5. "highlights": Array of key memorable moments or activities (e.g. ["Hiked the Rim Trail at sunset", "Stargazing at caldera"]).
+6. "parks": Extract all US and Canadian National Parks visited. Can be simple string array (e.g. ["Grand Teton", "Yellowstone"]) or structured objects with individual dates and notes if known (e.g. [{"name": "Grand Teton", "date": "2019-07-03", "notes": "Jenny Lake hike"}]).
+7. "states": Extract all US States and Canadian Provinces visited OR traversed along logical highway corridors (e.g. ["Virginia", "Maryland", "Pennsylvania", "Ohio", "Michigan"]). Can also be structured objects with dates/notes.
+8. "members": Array of member names who took part, or ["all"] if everyone attended.
+9. "name": A concise, descriptive trip title (e.g., "Pacific Northwest to Monterey Road Trip").
+10. "notes": A brief 1-2 sentence summary of the route, highlights, and major highways/corridors traveled.
+11. "route": (For road trips & multi-stop journeys) Chronological array of driving segments with "segment", "from", "to", "highways", and "notes".
 
 ### Required Output Schema (JSON Only):
 For a single trip (with road trip route):
@@ -105,8 +118,22 @@ For a single trip (with road trip route):
   "version": 1,
   "trip": {
     "name": "Pacific Northwest Road Trip",
+    "startDate": "2023-08-10",
+    "endDate": "2023-08-18",
     "date": "2023-08-10",
     "members": ["all"],
+    "destinations": [
+      "Bend, OR",
+      "Crater Lake National Park, OR",
+      "Redwood National and State Parks, CA"
+    ],
+    "corridorStops": [
+      "Smith Rock State Park, OR"
+    ],
+    "highlights": [
+      "Watched sunset over Crater Lake caldera",
+      "Walked among giant coastal redwoods"
+    ],
     "parks": [
       { "name": "Crater Lake", "notes": "Visited via the Bend and central Oregon corridor" },
       { "name": "Redwood", "notes": "Explored Redwood National and State Parks" }
@@ -145,10 +172,14 @@ For multiple trips / travel history:
   "trips": [
     {
       "name": "Virginia to Michigan Road Trip",
+      "startDate": "2023-08-10",
+      "endDate": "2023-08-15",
       "date": "2023-08-10",
       "members": ["all"],
+      "destinations": ["Pittsburgh, PA", "Detroit, MI"],
       "parks": ["Cuyahoga Valley"],
       "states": ["Virginia", "Maryland", "Pennsylvania", "Ohio", "Michigan"],
+      "highlights": ["Visited Henry Ford Museum", "Hiked Brandywine Falls in Cuyahoga Valley"],
       "route": [
         {
           "segment": 1,
@@ -169,10 +200,14 @@ For multiple trips / travel history:
     },
     {
       "name": "Utah Mighty 5 Tour",
+      "startDate": "2025-05-10",
+      "endDate": "2025-05-18",
       "date": "2025-05-10",
       "members": ["all"],
+      "destinations": ["Moab, UT", "Springdale, UT"],
       "parks": ["Zion", "Bryce Canyon"],
       "states": ["Utah"],
+      "highlights": ["Hiked Angels Landing early morning", "Sunset at Bryce Amphitheater"],
       "notes": "Spring trip across southern Utah."
     }
   ]
@@ -286,6 +321,9 @@ For multiple trips / travel history:
       } else if (
         parsedObj['parks'] ||
         parsedObj['states'] ||
+        parsedObj['destinations'] ||
+        parsedObj['corridorStops'] ||
+        parsedObj['highlights'] ||
         parsedObj['name'] ||
         parsedObj['route']
       ) {
@@ -382,7 +420,7 @@ For multiple trips / travel history:
     const prefix = `[Trip ${index + 1}]`;
 
     // 1. Validate Date with strict calendar arithmetic & limits
-    let resolvedDate = (trip.date || '').trim();
+    let resolvedDate = (trip.startDate || trip.date || '').trim();
     const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!resolvedDate) {
       const today = new Date().toISOString().split('T')[0];
@@ -408,6 +446,14 @@ For multiple trips / travel history:
       const fallback = new Date().toISOString().split('T')[0];
       warnings.push(`${prefix} Invalid calendar date "${resolvedDate}". Defaulted to ${fallback}.`);
       resolvedDate = fallback;
+    }
+
+    let resolvedEndDate = resolvedDate;
+    if (trip.endDate && typeof trip.endDate === 'string') {
+      const cleanedEnd = trip.endDate.trim();
+      if (isValidCalendarDate(cleanedEnd) || isoDateRegex.test(cleanedEnd)) {
+        resolvedEndDate = cleanedEnd;
+      }
     }
 
     // 2. Resolve Family Members (capped at MAX_MEMBERS_PER_TRIP)
@@ -538,7 +584,53 @@ For multiple trips / travel history:
       }
     }
 
-    // 5. Resolve Route Segments if provided (capped at MAX_ENTITIES_PER_TRIP)
+    // 5. Resolve Destinations if provided (capped at MAX_ENTITIES_PER_TRIP)
+    const resolvedDestinations: ResolvedEntity[] = [];
+    const rawDestinations = (Array.isArray(trip.destinations) ? trip.destinations : []).slice(
+      0,
+      SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP,
+    );
+    for (const item of rawDestinations) {
+      const resolved = this.resolveCustomOrStaticPlace(item);
+      if (resolved && !resolvedDestinations.some((d) => d.id === resolved.id)) {
+        resolvedDestinations.push(resolved);
+        if (resolved.id.startsWith('np-') || this.matchPark(resolved.name)) {
+          if (!resolvedParks.some((p) => p.name.toLowerCase() === resolved.name.toLowerCase())) {
+            resolvedParks.push(resolved);
+          }
+        }
+      }
+    }
+
+    // 6. Resolve Corridor Stops if provided (capped at MAX_ENTITIES_PER_TRIP)
+    const resolvedCorridorStops: (ResolvedEntity & { isWaypointOnly?: boolean })[] = [];
+    const rawCorridorStops = (Array.isArray(trip.corridorStops) ? trip.corridorStops : []).slice(
+      0,
+      SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP,
+    );
+    for (const item of rawCorridorStops) {
+      const isWaypoint =
+        typeof item === 'object' && item !== null
+          ? !!(item as { isWaypointOnly?: boolean }).isWaypointOnly
+          : false;
+      const resolved = this.resolveCustomOrStaticPlace(item);
+      if (resolved && !resolvedCorridorStops.some((c) => c.id === resolved.id)) {
+        resolvedCorridorStops.push({ ...resolved, isWaypointOnly: isWaypoint });
+      }
+    }
+
+    // 7. Resolve Highlights if provided (capped at MAX_ENTITIES_PER_TRIP)
+    const resolvedHighlights: string[] = [];
+    if (Array.isArray(trip.highlights)) {
+      for (const h of trip.highlights.slice(0, SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP)) {
+        if (typeof h === 'string') {
+          const cleanedH = sanitizePlainText(h, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+          if (cleanedH) resolvedHighlights.push(cleanedH);
+        }
+      }
+    }
+
+    // 8. Resolve Route Segments if provided (capped at MAX_ENTITIES_PER_TRIP)
     const resolvedRoute: ValidatedRouteSegment[] = [];
     if (Array.isArray(trip.route)) {
       const rawSegments = trip.route.slice(0, SECURITY_LIMITS.MAX_ENTITIES_PER_TRIP);
@@ -582,8 +674,13 @@ For multiple trips / travel history:
       }
     }
 
-    // Must have at least one valid destination (a park, a state, or a route)
-    if (resolvedParks.length === 0 && resolvedStates.length === 0 && resolvedRoute.length === 0) {
+    // Must have at least one valid destination (a park, a state, a destination, or a route)
+    if (
+      resolvedParks.length === 0 &&
+      resolvedStates.length === 0 &&
+      resolvedDestinations.length === 0 &&
+      resolvedRoute.length === 0
+    ) {
       errors.push(
         `${prefix} No recognized National Parks, States/Provinces, or route segments found.`,
       );
@@ -605,9 +702,13 @@ For multiple trips / travel history:
       id: crypto.randomUUID(),
       name: tripName,
       date: resolvedDate,
+      endDate: resolvedEndDate,
       members: resolvedMembers,
       parks: resolvedParks,
       states: resolvedStates,
+      destinations: resolvedDestinations,
+      corridorStops: resolvedCorridorStops,
+      highlights: resolvedHighlights,
       route: hasRoute ? resolvedRoute : undefined,
       includeRoute: hasRoute,
       routeTitle: hasRoute ? tripName : undefined,
@@ -854,12 +955,127 @@ For multiple trips / travel history:
         }
       }
 
-      const updatedSettings: AppSettings = {
+      let updatedSettings: AppSettings = {
         ...current,
         visitedParks: updatedVisitedParks,
         visitedStates: updatedVisitedStates,
         savedRoutes: updatedSavedRoutes,
       };
+
+      // 4. Sync Approved Trips into Schema V4 trips and placeVisits
+      for (const trip of approvedTrips) {
+        const tripId = trip.id || crypto.randomUUID();
+        const tripDestinations: TripStop[] = [];
+        const tripCorridorStops: TripStop[] = [];
+
+        // Destinations from parks
+        for (const park of trip.parks) {
+          const staticPlace = getStaticPlace(park.id) || getStaticPlace(park.name);
+          const rawPark = NATIONAL_PARKS.find((p) => p.id === park.id);
+          const lat = staticPlace?.lat ?? rawPark?.lat ?? 0;
+          const lng = staticPlace?.lng ?? rawPark?.lng ?? 0;
+          const placeId =
+            staticPlace?.id ??
+            (park.id.startsWith('np-') ? park.id : `np-${park.id.toLowerCase()}`);
+          tripDestinations.push({
+            placeId,
+            name: park.name,
+            lat,
+            lng,
+            stopType: 'destination',
+            notes: park.notes,
+            arrivalDate: park.dateVisited || trip.date,
+          });
+        }
+
+        // Destinations from explicitly resolved destinations
+        if (trip.destinations) {
+          for (const dest of trip.destinations) {
+            if (
+              !tripDestinations.some(
+                (d) => d.placeId === dest.id || d.name.toLowerCase() === dest.name.toLowerCase(),
+              )
+            ) {
+              const staticPlace = getStaticPlace(dest.id) || getStaticPlace(dest.name);
+              tripDestinations.push({
+                placeId: staticPlace?.id ?? dest.id,
+                name: dest.name,
+                lat: staticPlace?.lat ?? 0,
+                lng: staticPlace?.lng ?? 0,
+                stopType: 'destination',
+                notes: dest.notes,
+                arrivalDate: dest.dateVisited || trip.date,
+              });
+            }
+          }
+        }
+
+        // Corridor stops
+        if (trip.corridorStops) {
+          for (const stop of trip.corridorStops) {
+            const staticPlace = getStaticPlace(stop.id) || getStaticPlace(stop.name);
+            tripCorridorStops.push({
+              placeId: staticPlace?.id ?? stop.id,
+              name: stop.name,
+              lat: staticPlace?.lat ?? 0,
+              lng: staticPlace?.lng ?? 0,
+              stopType: 'corridor_stop',
+              isWaypointOnly: stop.isWaypointOnly,
+              notes: stop.notes,
+              arrivalDate: stop.dateVisited || trip.date,
+            });
+          }
+        }
+
+        // Route start and end anchors
+        if (trip.route && trip.route.length > 0) {
+          const startName = trip.route[0].from;
+          const endName = trip.route[trip.route.length - 1].to;
+          if (
+            startName &&
+            !tripDestinations.some((d) => d.name.toLowerCase() === startName.toLowerCase())
+          ) {
+            const resolved = this.tripService.resolvePlaceForStop(startName, 0, 0);
+            tripDestinations.unshift({
+              placeId: resolved.id,
+              name: resolved.name,
+              lat: resolved.lat,
+              lng: resolved.lng,
+              stopType: 'destination',
+            });
+          }
+          if (
+            endName &&
+            !tripDestinations.some((d) => d.name.toLowerCase() === endName.toLowerCase())
+          ) {
+            const resolved = this.tripService.resolvePlaceForStop(endName, 0, 0);
+            tripDestinations.push({
+              placeId: resolved.id,
+              name: resolved.name,
+              lat: resolved.lat,
+              lng: resolved.lng,
+              stopType: 'destination',
+            });
+          }
+        }
+
+        const tripEntity: Trip = {
+          id: tripId,
+          name: trip.name,
+          startDate: trip.date,
+          endDate: trip.endDate || trip.date,
+          travelerIds: trip.members.map((m) => m.id),
+          destinations: tripDestinations,
+          corridorStops: tripCorridorStops,
+          transitRegionIds: trip.states.map((s) => s.id),
+          highlights: trip.highlights || [],
+          notes: trip.notes,
+        };
+
+        updatedSettings = this.tripService.syncTripToSettings(tripEntity, updatedSettings, {
+          skipSavedRouteBridge: true,
+        });
+      }
 
       this.stateService.updateSettings(updatedSettings);
 
@@ -898,6 +1114,70 @@ For multiple trips / travel history:
   public applyTripDelta(validated: ValidatedTripDelta): boolean {
     validated.status = 'approved';
     return !!this.applyBatchTripDeltas([validated]);
+  }
+
+  /**
+   * Resolves a named destination or corridor stop.
+   * Matches against static catalog first; falls back to matching parks, then custom entity.
+   */
+  public resolveCustomOrStaticPlace(item: RawTripLocation): ResolvedEntity | null {
+    if (!item) return null;
+    let rawName = '';
+    let itemDate: string | undefined;
+    let itemNotes: string | undefined;
+
+    if (typeof item === 'string') {
+      rawName = sanitizePlainText(item, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+    } else if (typeof item === 'object' && item !== null) {
+      const itemObj = item as { name?: unknown; date?: unknown; notes?: unknown };
+      if (typeof itemObj.name === 'string') {
+        rawName = sanitizePlainText(itemObj.name, SECURITY_LIMITS.MAX_STRING_ITEM_LENGTH);
+      }
+      if (typeof itemObj.date === 'string' && isValidCalendarDate(itemObj.date.trim())) {
+        itemDate = itemObj.date.trim();
+      }
+      if (typeof itemObj.notes === 'string') {
+        itemNotes = sanitizePlainText(itemObj.notes, SECURITY_LIMITS.MAX_TRIP_NOTES_LENGTH);
+      }
+    }
+
+    if (!rawName) return null;
+
+    // 1. Check curated static places (parks, state parks, cities)
+    const staticMatch = getStaticPlace(rawName);
+    if (staticMatch) {
+      return {
+        id: staticMatch.id,
+        name: staticMatch.name,
+        country: staticMatch.countryId === 'CA' ? 'Canada' : 'United States',
+        dateVisited: itemDate,
+        notes: itemNotes,
+      };
+    }
+
+    // 2. Check national parks
+    const parkMatch = this.matchPark(rawName);
+    if (parkMatch) {
+      return {
+        id: parkMatch.id,
+        name: parkMatch.name,
+        country: parkMatch.country,
+        dateVisited: itemDate,
+        notes: itemNotes,
+      };
+    }
+
+    // 3. Fallback to custom named entity
+    const slug = rawName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    return {
+      id: `custom-${slug || Date.now()}`,
+      name: rawName,
+      dateVisited: itemDate,
+      notes: itemNotes,
+    };
   }
 
   /**

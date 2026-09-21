@@ -656,5 +656,64 @@ describe('TripDeltaService', () => {
       const updatedSettings: AppSettings = lastCall[0];
       expect(updatedSettings.savedRoutes.length).toBe(0);
     });
+
+    it('synchronizes approved trips into Schema V4 trips and placeVisits with tripId', () => {
+      mockStateService.updateSettings.mockClear();
+      const validatedTrip: ValidatedTripDelta = {
+        id: 'trip-v4-ai-1',
+        name: 'Pacific Northwest AI Trip',
+        date: '2026-08-10',
+        endDate: '2026-08-18',
+        members: [{ id: 'm-1', name: 'Jacob' }],
+        parks: [{ id: 'crater-lake', name: 'Crater Lake' }],
+        states: [{ id: 'US-OR', name: 'Oregon' }],
+        destinations: [{ id: 'city-bend', name: 'Bend' }],
+        corridorStops: [
+          { id: 'sp-smith-rock', name: 'Smith Rock State Park', isWaypointOnly: false },
+        ],
+        highlights: [
+          'Watched sunset over Crater Lake caldera',
+          'Climbed Monkey Face at Smith Rock',
+        ],
+        includeRoute: false,
+        status: 'approved',
+        warnings: [],
+      };
+
+      const receipt = service.applyBatchTripDeltas([validatedTrip]);
+      expect(receipt?.success).toBe(true);
+
+      const lastCall =
+        mockStateService.updateSettings.mock.calls[
+          mockStateService.updateSettings.mock.calls.length - 1
+        ];
+      const updatedSettings: AppSettings = lastCall[0];
+
+      // 1. Validated Trip saved into V4 trips array
+      expect(updatedSettings.trips.length).toBeGreaterThan(0);
+      const savedTrip = updatedSettings.trips.find((t) => t.id === 'trip-v4-ai-1');
+      expect(savedTrip).toBeDefined();
+      expect(savedTrip?.name).toBe('Pacific Northwest AI Trip');
+      expect(savedTrip?.startDate).toBe('2026-08-10');
+      expect(savedTrip?.endDate).toBe('2026-08-18');
+      expect(savedTrip?.highlights).toContain('Watched sunset over Crater Lake caldera');
+
+      // 2. Place visits logged with tripId
+      expect(updatedSettings.placeVisits).toBeDefined();
+      // At least Crater Lake destination visit should be logged for member m-1
+      const craterVisits =
+        updatedSettings.placeVisits['np-crater-lake'] || updatedSettings.placeVisits['crater-lake'];
+      expect(craterVisits).toBeDefined();
+      expect(craterVisits?.some((v) => v.memberId === 'm-1' && v.tripId === 'trip-v4-ai-1')).toBe(
+        true,
+      );
+    });
+
+    it('guides user prompts with explicit start/end dates, locations, companions, and highlights', () => {
+      const prompt = service.generatePrompt(sampleMembers);
+      expect(prompt).toContain('start and end dates');
+      expect(prompt).toContain('start and end locations');
+      expect(prompt).toContain('key highlights or stops along the way');
+    });
   });
 });
