@@ -77,6 +77,16 @@ export class WelcomeModalComponent implements OnInit {
     return !!(environment.mapboxKey && environment.mapboxKey !== 'YOUR_MAPBOX_API_KEY');
   }
 
+  get isMapboxActive(): boolean {
+    const key = (this.mapboxKeyInput || environment.mapboxKey || '').trim();
+    return !!(key && key !== 'YOUR_MAPBOX_API_KEY');
+  }
+
+  get isCartoActive(): boolean {
+    const key = (this.cartoKeyInput || environment.cartoKey || '').trim();
+    return !!(key && key !== 'YOUR_CARTO_API_KEY');
+  }
+
   @HostListener('document:keydown.escape')
   onEscape(): void {
     this.skip();
@@ -188,7 +198,8 @@ export class WelcomeModalComponent implements OnInit {
       hometowns,
       mapboxKey: mapboxKey || undefined,
       cartoKey: cartoKey || undefined,
-      routingEngine: mapboxKey ? ('mapbox' as const) : current.routingEngine || 'osrm',
+      routingEngine:
+        mapboxKey || this.hasEnvMapboxKey ? ('mapbox' as const) : current.routingEngine || 'osrm',
     };
 
     this.stateService.updateSettings(updatedSettings);

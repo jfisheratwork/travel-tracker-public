@@ -5,15 +5,23 @@ import { Observable, map } from 'rxjs';
 import { Waypoint } from '../../models/route.model';
 import { API_ENDPOINTS } from '../../core/constants/api.constants';
 import { environment } from '../../../environments/environment';
+import { StateService } from '../state.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class GeocodingService {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private stateService: StateService,
+  ) {}
+
+  getEffectiveMapboxKey(): string {
+    return (this.stateService.getSettings()?.mapboxKey || environment.mapboxKey || '').trim();
+  }
 
   searchLocations(query: string, limit: number = 5): Observable<Waypoint[]> {
-    const token = environment.mapboxKey;
+    const token = this.getEffectiveMapboxKey();
     if (token && token !== 'YOUR_MAPBOX_API_KEY') {
       const url = `${API_ENDPOINTS.MAPBOX_GEOCODE}?q=${encodeURIComponent(query)}&access_token=${token}&limit=${limit}`;
       return this.http.get<any>(url).pipe(

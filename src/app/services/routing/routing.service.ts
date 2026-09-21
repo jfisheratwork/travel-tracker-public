@@ -5,6 +5,7 @@ import { Observable, map } from 'rxjs';
 import { Waypoint } from '../../models/route.model';
 import { environment } from '../../../environments/environment';
 import { API_ENDPOINTS } from '../../core/constants/api.constants';
+import { StateService } from '../state.service';
 
 export interface RouteOption {
   distance: number;
@@ -41,13 +42,16 @@ export class OSRMRoutingAdapter implements RoutingAdapter {
 }
 
 export class MapboxRoutingAdapter implements RoutingAdapter {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private apiKey?: string,
+  ) {}
 
   getRoutes(waypoints: Waypoint[]): Observable<RouteOption[]> {
     const coordsStr = waypoints.map((wp) => `${wp.lng},${wp.lat}`).join(';');
-    const token = environment.mapboxKey;
+    const token = (this.apiKey || environment.mapboxKey || '').trim();
     if (!token || token === 'YOUR_MAPBOX_API_KEY') {
-      throw new Error('Mapbox API key is not configured in environment.');
+      throw new Error('Mapbox API key is not configured.');
     }
     const url = `${API_ENDPOINTS.MAPBOX_DRIVING_ROUTE}/${coordsStr}?geometries=geojson&overview=full&alternatives=true&access_token=${token}`;
 
@@ -72,16 +76,22 @@ export class MapboxRoutingAdapter implements RoutingAdapter {
   providedIn: 'root',
 })
 export class RoutingService {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private stateService: StateService,
+  ) {}
+
+  getEffectiveMapboxKey(): string {
+    return (this.stateService.getSettings()?.mapboxKey || environment.mapboxKey || '').trim();
+  }
 
   getRoutes(engine: 'osrm' | 'mapbox', waypoints: Waypoint[]): Observable<RouteOption[]> {
+    const token = this.getEffectiveMapboxKey();
+    const hasMapbox = !!(token && token !== 'YOUR_MAPBOX_API_KEY');
+
     let adapter: RoutingAdapter;
-    if (
-      engine === 'mapbox' &&
-      environment.mapboxKey &&
-      environment.mapboxKey !== 'YOUR_MAPBOX_API_KEY'
-    ) {
-      adapter = new MapboxRoutingAdapter(this.http);
+    if (engine === 'mapbox' && hasMapbox) {
+      adapter = new MapboxRoutingAdapter(this.http, token);
     } else {
       adapter = new OSRMRoutingAdapter(this.http);
     }

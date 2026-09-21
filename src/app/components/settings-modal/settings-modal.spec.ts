@@ -142,4 +142,15 @@ describe('SettingsModal', () => {
       'Portland, OR',
     ]);
   });
+
+  it('should correctly report isMapboxActive and isCartoActive', () => {
+    component.viewModel.mapboxKey = '';
+    component.viewModel.cartoKey = '';
+    // If environment has key, it uses env key; if custom key is provided, it uses custom key
+    component.viewModel.mapboxKey = 'pk.custom_token_123';
+    expect(component.isMapboxActive).toBe(true);
+
+    component.viewModel.cartoKey = 'cb1_custom_key_456';
+    expect(component.isCartoActive).toBe(true);
+  });
 });

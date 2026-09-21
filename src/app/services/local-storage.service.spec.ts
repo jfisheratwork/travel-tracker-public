@@ -197,4 +197,20 @@ describe('LocalStorageService', () => {
     });
     expect(service.isFirstVisitOrNoData()).toBe(false);
   });
+
+  it('should auto-migrate legacy routeReduction (0.01) to 0 and default routingEngine to mapbox when available', () => {
+    service = TestBed.inject(LocalStorageService);
+    const success = service.applyParsedData({
+      settings: {
+        schemaVersion: 4,
+        routeReduction: 0.01,
+        routingEngine: 'osrm',
+        mapboxKey: 'pk.test_mapbox',
+      },
+    });
+    expect(success).toBe(true);
+    const updated = stateService.getSettings();
+    expect(updated.routeReduction).toBe(0);
+    expect(updated.routingEngine).toBe('mapbox');
+  });
 });

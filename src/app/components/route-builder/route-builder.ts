@@ -9,7 +9,7 @@ import { LocalStorageService } from '../../services/local-storage.service';
 import { TripService } from '../../services/trip.service';
 import { Trip, TripStop } from '../../models/trip.model';
 import { Place } from '../../models/location.model';
-import { CorridorPlaceMatch } from '../../core/utils/geo.utils';
+import { CorridorPlaceMatch, reduceCoordinates } from '../../core/utils/geo.utils';
 import { RouteObject, Waypoint } from '../../models/route.model';
 import { FamilyMember } from '../../models/settings.model';
 import { firstValueFrom } from 'rxjs';
@@ -36,7 +36,7 @@ export interface RouteBuilderStop {
 export class RouteBuilderComponent implements OnInit {
   savedRoutes: RouteObject[] = [];
   routingEngine: 'osrm' | 'mapbox' = 'osrm';
-  routeReduction: number = 0.01;
+  routeReduction: number = 0;
 
   isFormExpanded = false;
   isCreating = false;
@@ -87,7 +87,7 @@ export class RouteBuilderComponent implements OnInit {
         id: r.id || (r.timestamp ? String(r.timestamp) : `route-${i}`),
       }));
       this.routingEngine = settings.routingEngine;
-      this.routeReduction = settings.routeReduction ?? 0.01;
+      this.routeReduction = settings.routeReduction ?? 0;
       this.familyMembers = settings.familyMembers || [];
 
       // Auto-populate active hometown as start query if empty
@@ -325,6 +325,13 @@ export class RouteBuilderComponent implements OnInit {
 
       // Preview the first route on the map
       this.previewSelectedOption();
+
+      // Scroll smoothly to route options & save section
+      window.setTimeout(() => {
+        document
+          .getElementById('route-options-section')
+          ?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
     } catch (err: unknown) {
       this.logger.error('Error in calculateRoute:', err);
       this.errorMessage = err instanceof Error ? err.message : 'Failed to calculate route.';
@@ -357,7 +364,7 @@ export class RouteBuilderComponent implements OnInit {
         stopsQueries: this.stopsQueries,
         waypoints: this.calculatedWaypoints,
         route: option.route,
-        coordinates: this.reduceCoordinates(option.route), // Use reduced for immediate preview
+        coordinates: reduceCoordinates(option.route, this.routeReduction), // Use reduced for immediate preview
       };
       this.stateService.setSelectedRoute(previewRoute);
     }
@@ -676,20 +683,5 @@ export class RouteBuilderComponent implements OnInit {
     this.suggestedCorridorPlaces = [];
     this.routeOptions = [];
     this.errorMessage = '';
-  }
-
-  private reduceCoordinates(route: [number, number][]): [number, number][] {
-    // Basic array reduction for caching based on settings.routeReduction
-    // e.g., 0.01 means keep ~1% of points, so step = 100
-    const reduced = [];
-    const step = Math.max(1, Math.ceil(1 / this.routeReduction));
-    for (let i = 0; i < route.length; i += step) {
-      reduced.push(route[i]);
-    }
-    // Always include the last point
-    if (reduced[reduced.length - 1] !== route[route.length - 1]) {
-      reduced.push(route[route.length - 1]);
-    }
-    return reduced;
   }
 }

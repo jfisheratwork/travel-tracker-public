@@ -2,6 +2,7 @@ import { RouteObject } from './route.model';
 import { Trip } from './trip.model';
 import { Place, PlaceVisit } from './location.model';
 import { ColorThemeId, DEFAULT_THEME_ID } from '../core/constants/theme.constants';
+import { environment } from '../../environments/environment';
 
 export interface FamilyMember {
   id: string;
@@ -65,6 +66,8 @@ export interface AppSettings {
   colorTheme?: ColorThemeId;
 }
 
+const hasEnvMapbox = !!(environment?.mapboxKey && environment.mapboxKey !== 'YOUR_MAPBOX_API_KEY');
+
 export const DEFAULT_SETTINGS: AppSettings = {
   schemaVersion: 4,
   familyMembers: [],
@@ -73,8 +76,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   customPlaces: [],
   placeVisits: {},
   tags: DEFAULT_TAGS,
-  routingEngine: 'osrm',
-  routeReduction: 0.01,
+  routingEngine: hasEnvMapbox ? 'mapbox' : 'osrm',
+  routeReduction: 0,
   savedRoutes: [],
   visitedStates: {},
   visitedParks: {},

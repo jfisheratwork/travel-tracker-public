@@ -304,7 +304,18 @@
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-semibold text-stone-800 mb-1">Routing Engine</label>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-sm font-semibold text-stone-800">Routing Engine</label>
+                <span
+                  *ngIf="viewModel.routingEngine === 'mapbox' && isMapboxActive"
+                  class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium flex items-center gap-1"
+                >
+                  <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Mapbox Active
+                </span>
+              </div>
               <select
                 [(ngModel)]="viewModel.routingEngine"
                 class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:border-green-600"
@@ -317,11 +328,28 @@
             <div *ngIf="viewModel.routingEngine === 'mapbox'">
               <div class="flex items-center justify-between mb-1">
                 <label class="block text-sm font-semibold text-stone-800">Mapbox API Key</label>
-                <span
-                  *ngIf="hasEnvMapboxKey && !viewModel.mapboxKey"
-                  class="text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded"
-                  >Configured via .env</span
-                >
+                <div class="flex items-center gap-1.5">
+                  <span
+                    *ngIf="hasEnvMapboxKey && !viewModel.mapboxKey"
+                    class="text-xs text-stone-500 bg-stone-100 px-2 py-0.5 rounded"
+                    >Configured via .env</span
+                  >
+                  <span
+                    *ngIf="isMapboxActive"
+                    class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded font-medium flex items-center gap-1"
+                  >
+                    <svg class="w-3 h-3 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Mapbox Active
+                  </span>
+                  <span
+                    *ngIf="!isMapboxActive"
+                    class="text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded font-medium"
+                  >
+                    Key Required
+                  </span>
+                </div>
               </div>
               <input
                 type="text"
@@ -389,13 +417,13 @@
                 [(ngModel)]="viewModel.routeReduction"
                 class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white focus:outline-none focus:border-green-600"
               >
-                <option [ngValue]="0">None (Exact Path)</option>
-                <option [ngValue]="0.001">Low (Minimal simplification)</option>
-                <option [ngValue]="0.01">Medium (Good balance)</option>
-                <option [ngValue]="0.05">High (Straighten curves)</option>
+                <option [ngValue]="0">None (Exact Path - Highest Detail)</option>
+                <option [ngValue]="0.5">Low (Minimal simplification - 50% Points)</option>
+                <option [ngValue]="0.25">Medium (Balanced - 25% Points)</option>
+                <option [ngValue]="0.1">High (Compact storage - 10% Points)</option>
               </select>
               <p class="text-xs text-stone-500 mt-1">
-                Higher reduction lowers storage usage but smooths out tight curves.
+                Higher reduction lowers storage usage but smooths out tight curves. Default is Exact Path.
               </p>
             </div>
           </div>

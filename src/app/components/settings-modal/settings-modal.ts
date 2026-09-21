@@ -70,6 +70,11 @@ export class SettingsModal implements OnInit, OnDestroy {
     return !!(key && key !== 'YOUR_CARTO_API_KEY');
   }
 
+  get isMapboxActive(): boolean {
+    const key = (this.viewModel.mapboxKey || environment.mapboxKey || '').trim();
+    return !!(key && key !== 'YOUR_MAPBOX_API_KEY');
+  }
+
   save(): void {
     if (this.viewModel.cartoKey) {
       this.viewModel.cartoKey = this.viewModel.cartoKey.trim();

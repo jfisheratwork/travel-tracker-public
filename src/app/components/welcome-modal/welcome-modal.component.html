@@ -246,7 +246,18 @@
           <!-- Mapbox Card -->
           <div class="p-3.5 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-stone-800">Mapbox API Key</span>
+              <span class="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                <span>Mapbox API Key</span>
+                <span
+                  *ngIf="isMapboxActive"
+                  class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-medium flex items-center gap-0.5"
+                >
+                  <svg class="w-2.5 h-2.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Active
+                </span>
+              </span>
               <a
                 href="https://account.mapbox.com/auth/signup/"
                 target="_blank"
@@ -273,7 +284,18 @@
           <!-- CARTO Card -->
           <div class="p-3.5 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
             <div class="flex items-center justify-between">
-              <span class="text-xs font-bold text-stone-800">CARTO Basemap Key</span>
+              <span class="text-xs font-bold text-stone-800 flex items-center gap-1.5">
+                <span>CARTO Basemap Key</span>
+                <span
+                  *ngIf="isCartoActive"
+                  class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded font-medium flex items-center gap-0.5"
+                >
+                  <svg class="w-2.5 h-2.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Active
+                </span>
+              </span>
               <a
                 href="https://carto.com/basemaps/apikey/"
                 target="_blank"

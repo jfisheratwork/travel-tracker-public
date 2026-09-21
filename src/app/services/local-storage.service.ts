@@ -17,6 +17,7 @@ import { LoggerService } from '../core/services/logger.service';
 import { ToastService } from '../core/services/toast.service';
 import { HttpClient } from '@angular/common/http';
 import { NATIONAL_PARKS, STATES } from '../core/constants/geography.constants';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -244,6 +245,28 @@ export class LocalStorageService {
         startDate: r.startDate || (r as unknown as Record<string, string>)['date'] || '',
       }));
 
+      let routeReduction =
+        typeof rootSettings['routeReduction'] === 'number'
+          ? (rootSettings['routeReduction'] as number)
+          : DEFAULT_SETTINGS.routeReduction;
+      // Auto-correct flawed legacy reduction values (0.01 was 1% points, 0.001 was 0.1%, 0.05 was 5%)
+      if (routeReduction === 0.01 || routeReduction === 0.001 || routeReduction === 0.05) {
+        routeReduction = 0;
+      }
+
+      let routingEngine =
+        (rootSettings['routingEngine'] as 'osrm' | 'mapbox') || DEFAULT_SETTINGS.routingEngine;
+      const hasMapbox = !!(
+        (rootSettings['mapboxKey'] as string) ||
+        (environment.mapboxKey && environment.mapboxKey !== 'YOUR_MAPBOX_API_KEY')
+      );
+      if (
+        hasMapbox &&
+        (!rootSettings['routingEngine'] || rootSettings['routingEngine'] === 'osrm')
+      ) {
+        routingEngine = 'mapbox';
+      }
+
       const migratedSettings: AppSettings = {
         ...DEFAULT_SETTINGS,
         schemaVersion: 4,
@@ -256,6 +279,8 @@ export class LocalStorageService {
         visitedStates,
         visitedParks,
         savedRoutes,
+        routeReduction,
+        routingEngine,
       };
 
       this.stateService.updateSettings(migratedSettings);
