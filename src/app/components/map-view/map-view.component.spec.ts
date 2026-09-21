@@ -27,10 +27,10 @@ vi.mock('leaflet', () => {
       },
     },
     map: vi.fn().mockReturnValue(mapInstance),
-    tileLayer: vi.fn().mockReturnValue({
+    tileLayer: vi.fn().mockImplementation(() => ({
       addTo: vi.fn().mockReturnThis(),
       setUrl: vi.fn(),
-    }),
+    })),
     layerGroup: vi.fn().mockReturnValue({
       addTo: vi.fn().mockReturnValue({
         clearLayers: vi.fn(),
@@ -127,6 +127,14 @@ describe('MapViewComponent', () => {
     fixture = TestBed.createComponent(MapViewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+  });
+
+  afterEach(() => {
+    if (fixture) {
+      fixture.destroy();
+    }
+    TestBed.resetTestingModule();
+    vi.clearAllMocks();
   });
 
   it('should create', () => {

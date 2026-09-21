@@ -1,14 +1,16 @@
-# Skip docs/newsite check in CI
-if [ "$GITHUB_ACTIONS" != "true" ] && [ "$CI" != "true" ]; then
-  # Check if any files in docs/newsite/ are staged
-  STAGED_DOCS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^docs/newsite/' || true)
+# Skip in CI / GitHub Actions
+if [ "$GITHUB_ACTIONS" = "true" ] || [ "$CI" = "true" ]; then
+  exit 0
+fi
 
-  if [ -n "$STAGED_DOCS_FILES" ]; then
-    echo "⚠️  Auto-unstaging docs/newsite/ files (built automatically by GitHub Actions):"
-    echo "$STAGED_DOCS_FILES"
-    echo "$STAGED_DOCS_FILES" | xargs git restore --staged
-    echo ""
-  fi
+# Check if any files in docs/newsite/ are staged
+STAGED_DOCS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '^docs/newsite/' || true)
+
+if [ -n "$STAGED_DOCS_FILES" ]; then
+  echo "⚠️  Auto-unstaging docs/newsite/ files (built automatically by GitHub Actions):"
+  echo "$STAGED_DOCS_FILES"
+  echo "$STAGED_DOCS_FILES" | xargs git restore --staged
+  echo ""
 fi
 
 CI=true HOME=$(pwd)/scratch NG_CLI_ANALYTICS=false npm test -- --watch=false

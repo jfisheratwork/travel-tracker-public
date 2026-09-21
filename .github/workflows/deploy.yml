@@ -48,5 +48,5 @@ jobs:
           git add docs/newsite
           
           # Only commit if there are changes
-          git diff --quiet && git diff --staged --quiet || git commit -m "Deploy Angular app to docs/newsite"
+          git diff --quiet && git diff --staged --quiet || git commit --no-verify -m "Deploy Angular app to docs/newsite"
           git push
