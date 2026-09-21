@@ -4,6 +4,7 @@ import { RouteBuilderComponent } from './route-builder';
 import { RoutingService } from '../../services/routing/routing.service';
 import { LocalStorageService } from '../../services/local-storage.service';
 import { StateService } from '../../services/state.service';
+import { Place } from '../../models/location.model';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 
@@ -261,5 +262,109 @@ describe('RouteBuilderComponent', () => {
 
     expect(component.selectedMembers).toEqual(['Bob', 'Brittany']);
     expect(component.getMemberName('uuid-bob')).toBe('Bob');
+  });
+
+  it('should filter out places already in stops, start location, or end location from corridor suggestions', () => {
+    const mockCraterLake: Place = {
+      id: 'np-crater-lake',
+      name: 'Crater Lake National Park',
+      category: 'national_park',
+      countryId: 'US',
+      lat: 42.9446,
+      lng: -122.109,
+      source: 'static',
+      isCurated: true,
+    };
+    const mockHumboldt: Place = {
+      id: 'sp-humboldt-redwoods',
+      name: 'Humboldt Redwoods State Park',
+      category: 'state_park',
+      countryId: 'US',
+      lat: 40.3344,
+      lng: -123.9161,
+      source: 'static',
+      isCurated: true,
+    };
+    const mockPortland: Place = {
+      id: 'city-portland',
+      name: 'Portland',
+      category: 'city',
+      countryId: 'US',
+      lat: 45.5152,
+      lng: -122.6784,
+      source: 'static',
+      isCurated: true,
+    };
+    const mockBeaconRock: Place = {
+      id: 'sp-beacon-rock',
+      name: 'Beacon Rock State Park',
+      category: 'state_park',
+      countryId: 'US',
+      lat: 45.6289,
+      lng: -122.0222,
+      source: 'static',
+      isCurated: true,
+    };
+
+    component.startQuery = 'Spokane, WA';
+    component.endQuery = 'Portland, OR';
+    component.stops = [
+      {
+        query: 'Crater Lake National Park, OR',
+        isWaypointOnly: false,
+        stopType: 'corridor_stop',
+      },
+      {
+        query: 'Humboldt Redwoods State Park',
+        isWaypointOnly: false,
+        stopType: 'corridor_stop',
+      },
+    ];
+    component.syncStopsQueries();
+
+    component.rawCorridorPlaces = [
+      { place: mockCraterLake, distanceMiles: 0.1 },
+      { place: mockHumboldt, distanceMiles: 0.0 },
+      { place: mockPortland, distanceMiles: 0.2 },
+      { place: mockBeaconRock, distanceMiles: 1.2 },
+    ];
+
+    component.refreshSuggestedCorridorPlaces();
+
+    // Crater Lake, Humboldt, and Portland should all be filtered out.
+    // Only Beacon Rock should remain.
+    expect(component.suggestedCorridorPlaces.length).toBe(1);
+    expect(component.suggestedCorridorPlaces[0].place.id).toBe('sp-beacon-rock');
+  });
+
+  it('should filter out places by coordinate proximity when stops are within 3 miles', () => {
+    const mockPark: Place = {
+      id: 'np-redwood',
+      name: 'Redwood National Park',
+      category: 'national_park',
+      countryId: 'US',
+      lat: 41.2132,
+      lng: -124.0046,
+      source: 'static',
+      isCurated: true,
+    };
+
+    component.startQuery = 'San Francisco, CA';
+    component.endQuery = 'Seattle, WA';
+    component.stops = [
+      {
+        query: 'Klamath River Overlook',
+        isWaypointOnly: false,
+        stopType: 'corridor_stop',
+        lat: 41.2135,
+        lng: -124.005,
+      },
+    ];
+    component.syncStopsQueries();
+
+    component.rawCorridorPlaces = [{ place: mockPark, distanceMiles: 0.1 }];
+
+    component.refreshSuggestedCorridorPlaces();
+    expect(component.suggestedCorridorPlaces.length).toBe(0);
   });
 });

@@ -9,7 +9,11 @@ import { LocalStorageService } from '../../services/local-storage.service';
 import { TripService } from '../../services/trip.service';
 import { Trip, TripStop } from '../../models/trip.model';
 import { Place } from '../../models/location.model';
-import { CorridorPlaceMatch, reduceCoordinates } from '../../core/utils/geo.utils';
+import {
+  CorridorPlaceMatch,
+  haversineDistanceMiles,
+  reduceCoordinates,
+} from '../../core/utils/geo.utils';
 import { RouteObject, Waypoint } from '../../models/route.model';
 import { FamilyMember } from '../../models/settings.model';
 import { firstValueFrom } from 'rxjs';
@@ -58,6 +62,7 @@ export class RouteBuilderComponent implements OnInit {
   endQuery = '';
   stops: RouteBuilderStop[] = [];
   stopsQueries: string[] = [];
+  rawCorridorPlaces: CorridorPlaceMatch<Place>[] = [];
   suggestedCorridorPlaces: CorridorPlaceMatch<Place>[] = [];
 
   familyMembers: FamilyMember[] = [];
@@ -310,11 +315,13 @@ export class RouteBuilderComponent implements OnInit {
   onStartQueryChange(val: string) {
     this.startQuery = val;
     this.updateAutoTripName();
+    this.refreshSuggestedCorridorPlaces();
   }
 
   onEndQueryChange(val: string) {
     this.endQuery = val;
     this.updateAutoTripName();
+    this.refreshSuggestedCorridorPlaces();
   }
 
   loadAllRoutes() {
@@ -329,11 +336,13 @@ export class RouteBuilderComponent implements OnInit {
       stopType: 'corridor_stop',
     });
     this.syncStopsQueries();
+    this.refreshSuggestedCorridorPlaces();
   }
 
   removeStop(index: number) {
     this.stops.splice(index, 1);
     this.syncStopsQueries();
+    this.refreshSuggestedCorridorPlaces();
   }
 
   syncStopsQueries() {
@@ -363,6 +372,7 @@ export class RouteBuilderComponent implements OnInit {
     if (this.stops[index]) {
       this.stops[index].query = query;
       this.syncStopsQueries();
+      this.refreshSuggestedCorridorPlaces();
     }
   }
 
@@ -376,12 +386,140 @@ export class RouteBuilderComponent implements OnInit {
       lng: place.lng,
     });
     this.syncStopsQueries();
-    this.suggestedCorridorPlaces = this.suggestedCorridorPlaces.filter(
-      (s) => s.place.id !== place.id,
-    );
+    this.refreshSuggestedCorridorPlaces();
     if (this.startQuery && this.endQuery) {
       this.calculateRoute();
     }
+  }
+
+  private cleanAndNormalize(str: string): string {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  private stripParkQualifiers(str: string): string {
+    const PARK_QUALIFIER_REGEX =
+      /\b(national and state parks?|national & state parks?|national state parks?|national park and preserve|national park & preserve|national parks?|state parks?|state historic parks?|state historical parks?|state recreation (area|site)|national scenic area|national monuments?|national recreation area|national seashore|national lakeshore|provincial parks?|regional parks?|preserves?|parks?)\b/gi;
+    return str.replace(PARK_QUALIFIER_REGEX, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  isPlaceAlreadyInTrip(place: Place): boolean {
+    if (!place) return false;
+
+    // 1. Direct ID match against existing stops with placeId
+    const placeIdLower = place.id.toLowerCase();
+    if (this.stops.some((s) => s.placeId && s.placeId.toLowerCase() === placeIdLower)) {
+      return true;
+    }
+
+    // 2. Coordinate proximity match:
+    // If a stop or calculated waypoint is within 3 miles of the place's coordinates,
+    // they are at the exact same location.
+    const WAYPOINT_PROXIMITY_MILES = 3.0;
+    for (const stop of this.stops) {
+      if (stop.lat !== undefined && stop.lng !== undefined && (stop.lat !== 0 || stop.lng !== 0)) {
+        if (
+          haversineDistanceMiles(stop.lat, stop.lng, place.lat, place.lng) <=
+          WAYPOINT_PROXIMITY_MILES
+        ) {
+          return true;
+        }
+      }
+    }
+    for (const wp of this.calculatedWaypoints) {
+      if (wp.lat !== undefined && wp.lng !== undefined && (wp.lat !== 0 || wp.lng !== 0)) {
+        if (
+          haversineDistanceMiles(wp.lat, wp.lng, place.lat, place.lng) <= WAYPOINT_PROXIMITY_MILES
+        ) {
+          return true;
+        }
+      }
+    }
+
+    // 3. Text query matching against start, end, and all stops
+    const allTripQueries: string[] = [
+      this.startQuery,
+      this.endQuery,
+      ...this.stops.map((s) => s.query),
+      ...this.stopsQueries,
+      ...this.calculatedWaypoints.map((w) => w.name || ''),
+    ].filter((q) => !!q && q.trim().length > 0);
+
+    const pName = this.cleanAndNormalize(place.name);
+    const pStripped = this.stripParkQualifiers(pName);
+    const pSlug = place.id.toLowerCase().replace(/^(np|sp|city)-/, '');
+
+    const MODIFIER_PREFIXES = [
+      'south',
+      'north',
+      'east',
+      'west',
+      'new',
+      'old',
+      'upper',
+      'lower',
+      'fort',
+      'mount',
+      'st',
+      'saint',
+    ];
+
+    for (const rawQuery of allTripQueries) {
+      const qClean = this.cleanAndNormalize(rawQuery);
+      if (!qClean) continue;
+
+      // Extract the primary entity segment before comma (e.g. "Bend" from "Bend, OR")
+      const qFirstPart = this.cleanAndNormalize(rawQuery.split(',')[0]);
+      const qStripped = this.stripParkQualifiers(qClean);
+      const qFirstPartStripped = this.stripParkQualifiers(qFirstPart);
+
+      // Check exact normalized or stripped matches
+      if (
+        pName === qFirstPart ||
+        pName === qClean ||
+        pStripped === qFirstPartStripped ||
+        pStripped === qStripped
+      ) {
+        return true;
+      }
+
+      // Check slug match (e.g. 'crater-lake' vs 'crater lake')
+      if (
+        pSlug === qFirstPartStripped.replace(/\s+/g, '-') ||
+        pSlug === qClean.replace(/\s+/g, '-')
+      ) {
+        return true;
+      }
+
+      // Check containment for multi-word or park/landmark names
+      if (pStripped.length >= 3) {
+        // Prevent false positive for directional city prefixes if place name is a single word
+        // (e.g. "South Bend" vs "Bend")
+        const isDirectionalMismatch =
+          !pStripped.includes(' ') &&
+          MODIFIER_PREFIXES.some(
+            (mod) => qFirstPartStripped.startsWith(mod + ' ') && !pStripped.startsWith(mod + ' '),
+          );
+
+        if (!isDirectionalMismatch) {
+          if (qClean.includes(pStripped) || pStripped.includes(qFirstPartStripped)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }
+
+  refreshSuggestedCorridorPlaces() {
+    this.suggestedCorridorPlaces = this.rawCorridorPlaces.filter(
+      (match) => !this.isPlaceAlreadyInTrip(match.place),
+    );
   }
 
   formatDistance(meters: number): string {
@@ -398,6 +536,7 @@ export class RouteBuilderComponent implements OnInit {
     this.syncStopsFromQueries();
     moveItemInArray(this.stops, event.previousIndex, event.currentIndex);
     this.syncStopsQueries();
+    this.refreshSuggestedCorridorPlaces();
   }
 
   trackByIndex(index: number): number {
@@ -449,10 +588,8 @@ export class RouteBuilderComponent implements OnInit {
 
       // Extract corridor suggestions from first route option
       if (options.length > 0 && options[0].route) {
-        this.suggestedCorridorPlaces = this.tripService.getSuggestedCorridorPlaces(
-          options[0].route,
-          50,
-        );
+        this.rawCorridorPlaces = this.tripService.getSuggestedCorridorPlaces(options[0].route, 50);
+        this.refreshSuggestedCorridorPlaces();
       }
 
       // Preview the first route on the map
@@ -476,10 +613,8 @@ export class RouteBuilderComponent implements OnInit {
     if (this.routeOptions.length > 0) {
       const option = this.routeOptions[this.selectedOptionIndex];
       if (option?.route) {
-        this.suggestedCorridorPlaces = this.tripService.getSuggestedCorridorPlaces(
-          option.route,
-          50,
-        );
+        this.rawCorridorPlaces = this.tripService.getSuggestedCorridorPlaces(option.route, 50);
+        this.refreshSuggestedCorridorPlaces();
       }
       const previewRoute: RouteObject = {
         id: 'preview',
@@ -705,14 +840,29 @@ export class RouteBuilderComponent implements OnInit {
     const trip = this.stateService.getSettings().trips?.find((t) => t.id === route.id);
     const queries = route.stopsQueries ? [...route.stopsQueries] : [];
     this.stops = queries.map((q, i) => {
-      const matchingCorridorStop = trip?.corridorStops?.[i];
+      const matchingCorridorStop =
+        trip?.corridorStops?.[i] || trip?.destinations?.find((d) => d.name === q);
       return {
         query: q,
         isWaypointOnly: matchingCorridorStop?.isWaypointOnly ?? false,
         stopType: matchingCorridorStop?.stopType ?? 'corridor_stop',
+        placeId: matchingCorridorStop?.placeId,
+        lat: matchingCorridorStop?.lat,
+        lng: matchingCorridorStop?.lng,
       };
     });
     this.syncStopsQueries();
+
+    this.calculatedWaypoints = route.waypoints ? [...route.waypoints] : [];
+
+    const routeCoords = route.route && route.route.length > 0 ? route.route : route.coordinates;
+    if (routeCoords && routeCoords.length > 0) {
+      this.rawCorridorPlaces = this.tripService.getSuggestedCorridorPlaces(routeCoords, 50);
+      this.refreshSuggestedCorridorPlaces();
+    } else {
+      this.rawCorridorPlaces = [];
+      this.suggestedCorridorPlaces = [];
+    }
 
     this.routeOptions = [];
     this.showNotes = !!route.description; // Auto-show notes if they exist
@@ -827,6 +977,7 @@ export class RouteBuilderComponent implements OnInit {
     this.endQuery = '';
     this.stops = [];
     this.stopsQueries = [];
+    this.rawCorridorPlaces = [];
     this.suggestedCorridorPlaces = [];
     this.routeOptions = [];
     this.errorMessage = '';
