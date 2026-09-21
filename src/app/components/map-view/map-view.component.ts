@@ -64,7 +64,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
   showMobileLegend = false;
   showParksStatesModal = false;
-  parksStatesModalMode: 'parks' | 'states' = 'parks';
+  parksStatesModalMode: 'parks' | 'states' | 'places' = 'places';
+
   currentThemeId: ColorThemeId = DEFAULT_THEME_ID;
   currentTheme: ColorThemeDefinition = COLOR_THEMES[DEFAULT_THEME_ID];
 
@@ -119,6 +120,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
   openStatesModal(): void {
     this.parksStatesModalMode = 'states';
+    this.showParksStatesModal = true;
+  }
+
+  openPlacesModal(): void {
+    this.parksStatesModalMode = 'places';
     this.showParksStatesModal = true;
   }
 

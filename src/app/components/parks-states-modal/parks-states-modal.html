@@ -7,18 +7,40 @@
     class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl flex flex-col max-h-[95vh] m-4 cursor-default"
   >
     <!-- Header -->
-    <div class="p-3.5 sm:p-5 border-b border-stone-100 flex justify-between items-center flex-shrink-0 gap-2">
+    <div
+      class="p-3.5 sm:p-5 border-b border-stone-100 flex justify-between items-center flex-shrink-0 gap-2"
+    >
       <div class="flex items-center gap-2 sm:gap-3 flex-wrap min-w-0">
         <h2 class="text-base sm:text-xl font-bold text-stone-800 flex items-center gap-1.5 truncate">
-          {{ mode === 'parks' ? '⛰️ National Parks' : '🏛️ States & Regions' }}
+          <span *ngIf="mode === 'places'">📍 Places & Landmarks</span>
+          <span *ngIf="mode === 'parks'">⛰️ National Parks</span>
+          <span *ngIf="mode === 'states'">🏛️ States & Regions</span>
         </h2>
         <!-- In-Modal Mode Tabs -->
-        <div class="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-xs flex-shrink-0">
+        <div
+          class="flex items-center bg-stone-100 p-0.5 rounded-xl border border-stone-200 text-xs flex-shrink-0"
+        >
+          <button
+            type="button"
+            (click)="switchModalMode('places')"
+            class="px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer"
+            [ngClass]="
+              mode === 'places'
+                ? 'bg-white text-stone-900 shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
+            "
+          >
+            📍 All Places
+          </button>
           <button
             type="button"
             (click)="switchModalMode('parks')"
             class="px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer"
-            [ngClass]="mode === 'parks' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-800'"
+            [ngClass]="
+              mode === 'parks'
+                ? 'bg-white text-stone-900 shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
+            "
           >
             ⛰️ Parks
           </button>
@@ -26,7 +48,11 @@
             type="button"
             (click)="switchModalMode('states')"
             class="px-2.5 py-1 rounded-lg font-bold transition-all cursor-pointer"
-            [ngClass]="mode === 'states' ? 'bg-white text-stone-900 shadow-xs' : 'text-stone-500 hover:text-stone-800'"
+            [ngClass]="
+              mode === 'states'
+                ? 'bg-white text-stone-900 shadow-xs'
+                : 'text-stone-500 hover:text-stone-800'
+            "
           >
             🏛️ Regions
           </button>
@@ -42,87 +68,162 @@
       </button>
     </div>
 
-    <!-- Toolbar -->
+    <!-- Toolbar Filters -->
     <div
-      class="p-4 border-b border-stone-100 bg-white flex flex-wrap items-center justify-between flex-shrink-0 gap-4"
+      class="p-4 border-b border-stone-100 bg-white flex flex-col gap-3 flex-shrink-0"
     >
-      <div class="relative flex-1 min-w-[250px] max-w-md">
-        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-stone-400">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <!-- Search Input -->
+        <div class="relative flex-1 min-w-[240px] max-w-md">
+          <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-stone-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </span>
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            placeholder="Search curated places, cities, parks, or tags..."
+            class="w-full border border-stone-300 rounded-lg pl-10 pr-8 py-2 text-sm focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
+          />
+          <button
+            *ngIf="searchQuery"
+            (click)="searchQuery = ''"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-400 hover:text-stone-600 cursor-pointer"
           >
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-        </span>
-        <input
-          type="text"
-          [(ngModel)]="searchQuery"
-          placeholder="Search {{ mode === 'parks' ? 'national parks' : 'states & provinces' }}..."
-          class="w-full border border-stone-300 rounded-lg pl-10 pr-3 py-2 text-sm focus:outline-none focus:border-green-600 focus:ring-1 focus:ring-green-600"
-        />
+            ✕
+          </button>
+        </div>
+
+        <!-- Filter Dropdowns -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <!-- Country Filter -->
+          <select
+            [(ngModel)]="countryFilter"
+            (ngModelChange)="onCountryChange()"
+            class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+            title="Filter by Country"
+          >
+            <option value="all">All Countries</option>
+            <optgroup label="Primary Nations">
+              <option *ngFor="let c of primaryCountries" [value]="c.id">
+                {{ c.code === 'US' ? '🇺🇸 United States' : '🇨🇦 Canada' }}
+              </option>
+            </optgroup>
+            <optgroup label="World Nations">
+              <option *ngFor="let c of otherCountries" [value]="c.id">
+                {{ c.name }}
+              </option>
+            </optgroup>
+          </select>
+
+          <!-- Region / State Filter -->
+          <select
+            [(ngModel)]="stateFilter"
+            class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+            title="Filter by State or Province"
+          >
+            <option value="all">All States & Provinces</option>
+            <option *ngFor="let r of availableRegions" [value]="r.id">
+              {{ r.name }} ({{ r.code }})
+            </option>
+          </select>
+
+          <!-- Member Filter -->
+          <select
+            [(ngModel)]="memberFilter"
+            class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+            title="Filter by Group Member"
+          >
+            <option value="all">All Members</option>
+            <option *ngFor="let m of viewModel?.familyMembers" [value]="m.id">
+              {{ m.name }}
+            </option>
+          </select>
+
+          <!-- Status Filter -->
+          <select
+            [(ngModel)]="visibilityFilter"
+            class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
+            title="Filter by Visit Status"
+          >
+            <option value="all">All Statuses</option>
+            <option value="visited">Visited</option>
+            <option value="want">Want to Visit</option>
+            <option value="unvisited">Not Visited</option>
+          </select>
+        </div>
       </div>
 
-      <div class="flex items-center gap-2.5 flex-wrap">
-        <!-- Country Filter -->
-        <select
-          [(ngModel)]="countryFilter"
-          (ngModelChange)="onCountryChange()"
-          class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
-          title="Filter by Country"
+      <!-- Category Filter Chips (Places Mode) -->
+      <div
+        *ngIf="mode === 'places'"
+        class="flex items-center gap-2 flex-wrap pt-1 text-xs"
+      >
+        <span class="text-stone-500 font-semibold mr-1">Filter Catalogs:</span>
+        <button
+          type="button"
+          (click)="toggleCategoryFilter('national_park')"
+          class="px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+          [ngClass]="
+            selectedCategories.has('national_park') && !capitalsOnly
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-300 font-bold'
+              : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'
+          "
         >
-          <option value="all">All Countries</option>
-          <option value="USA">USA</option>
-          <option value="Canada">Canada</option>
-        </select>
-
-        <!-- State / Province Filter -->
-        <select
-          [(ngModel)]="stateFilter"
-          class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
-          title="Filter by State or Province"
+          ⛰️ National Parks
+        </button>
+        <button
+          type="button"
+          (click)="toggleCategoryFilter('state_park')"
+          class="px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+          [ngClass]="
+            selectedCategories.has('state_park') && !capitalsOnly
+              ? 'bg-teal-100 text-teal-800 border-teal-300 font-bold'
+              : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'
+          "
         >
-          <option value="all">
-            {{ mode === 'parks' ? 'All States/Provinces' : 'All States & Provinces' }}
-          </option>
-          <option *ngFor="let s of availableStates; trackBy: trackByCode" [value]="s.code">
-            {{ s.label }}
-          </option>
-        </select>
-
-        <!-- Member Filter -->
-        <select
-          [(ngModel)]="memberFilter"
-          class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
-          title="Filter by Group Member"
+          🌲 State Parks
+        </button>
+        <button
+          type="button"
+          (click)="toggleCategoryFilter('city')"
+          class="px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+          [ngClass]="
+            selectedCategories.has('city') && !capitalsOnly
+              ? 'bg-blue-100 text-blue-800 border-blue-300 font-bold'
+              : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'
+          "
         >
-          <option value="all">All Members</option>
-          <option *ngFor="let m of viewModel?.familyMembers" [value]="m.id">{{ m.name }}</option>
-        </select>
-
-        <!-- Visibility Filter -->
-        <select
-          [(ngModel)]="visibilityFilter"
-          class="border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white"
-          title="Filter by Visit Status"
+          🏙️ Major Cities
+        </button>
+        <button
+          type="button"
+          (click)="toggleCapitalsOnly()"
+          class="px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+          [ngClass]="
+            capitalsOnly
+              ? 'bg-amber-100 text-amber-800 border-amber-300 font-bold'
+              : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'
+          "
         >
-          <option value="all">All Visible Locations</option>
-          <option value="visited">Visited</option>
-          <option value="want">Want to Visit</option>
-          <option value="unvisited">Not Visited</option>
-        </select>
+          ⭐ Capitals Only
+        </button>
       </div>
     </div>
 
-    <!-- Main Content (Table) -->
+    <!-- Main Content Table -->
     <div class="overflow-y-auto flex-1 bg-white relative">
       <div *ngIf="!viewModel?.familyMembers?.length" class="text-center p-8 bg-white">
         <p class="text-stone-500 mb-4">No group members added yet.</p>
@@ -137,51 +238,65 @@
       >
         <thead class="bg-stone-50 text-stone-600 sticky top-0 z-10 shadow-sm font-bold">
           <tr>
-            <th class="px-2 py-4 w-28 text-center">All</th>
+            <th class="px-2 py-3.5 w-28 text-center">All</th>
             <th
-              class="px-4 py-4 cursor-pointer hover:bg-stone-100 transition"
+              class="px-4 py-3.5 cursor-pointer hover:bg-stone-100 transition"
               (click)="setSort('name')"
             >
               Name
-              <span *ngIf="sortColumn === 'name'" class="text-xs ml-1">{{
-                sortDirection === 'asc' ? '↑' : '↓'
-              }}</span>
+              <span *ngIf="sortColumn === 'name'" class="text-xs ml-1">
+                {{ sortDirection === 'asc' ? '↑' : '↓' }}
+              </span>
             </th>
             <th
-              class="px-4 py-4 cursor-pointer hover:bg-stone-100 transition"
+              *ngIf="mode === 'places'"
+              class="px-3 py-3.5 cursor-pointer hover:bg-stone-100 transition text-xs"
+              (click)="setSort('category')"
+            >
+              Category
+              <span *ngIf="sortColumn === 'category'" class="text-xs ml-0.5">↕</span>
+            </th>
+            <th
+              class="px-4 py-3.5 cursor-pointer hover:bg-stone-100 transition"
               (click)="setSort('country')"
             >
-              Country
+              Country / Region
               <span *ngIf="sortColumn === 'country'" class="text-xs ml-1">↕</span>
             </th>
             <th
               *ngFor="let m of viewModel?.familyMembers"
-              class="px-4 py-4 cursor-pointer hover:bg-stone-100 transition uppercase text-xs text-center"
+              class="px-3 py-3.5 cursor-pointer hover:bg-stone-100 transition uppercase text-xs text-center"
               (click)="setSort(m.id)"
             >
               {{ m.name }}
-              <span *ngIf="sortColumn === m.id" class="text-xs ml-1">↕</span>
+              <span *ngIf="sortColumn === m.id" class="text-xs ml-0.5">↕</span>
             </th>
-            <th class="px-4 py-4 bg-stone-100 border-l border-stone-200 text-center">
-              Our Group ↕
+            <th class="px-4 py-3.5 bg-stone-100 border-l border-stone-200 text-center">
+              Group Summary
             </th>
           </tr>
         </thead>
         <tbody>
           <tr
-            *ngFor="let loc of filteredLocations"
+            *ngFor="let loc of filteredLocations; trackBy: trackById"
             [class.bg-emerald-50]="getVisitCount(loc.id) > 0"
             [class.bg-purple-50]="getVisitCount(loc.id) === 0 && getWantCount(loc.id) > 0"
             [class.bg-white]="getVisitCount(loc.id) === 0 && getWantCount(loc.id) === 0"
             class="border-b border-stone-100 hover:bg-opacity-80 transition group"
           >
             <!-- All Column: Tri-state Control -->
-            <td class="px-2 py-3 text-center">
-              <div class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200 text-xs">
+            <td class="px-2 py-2.5 text-center">
+              <div
+                class="inline-flex p-0.5 bg-stone-100 rounded-lg border border-stone-200 text-xs"
+              >
                 <button
                   type="button"
                   (click)="setAllStatus(loc.id, 'visited')"
-                  [class]="isAllVisited(loc.id) ? 'bg-emerald-600 text-white font-bold px-1.5 py-1 rounded shadow-xs' : 'text-stone-500 hover:text-stone-900 px-1.5 py-1 rounded transition cursor-pointer'"
+                  [class]="
+                    isAllVisited(loc.id)
+                      ? 'bg-emerald-600 text-white font-bold px-1.5 py-1 rounded shadow-xs'
+                      : 'text-stone-500 hover:text-stone-900 px-1.5 py-1 rounded transition cursor-pointer'
+                  "
                   title="Mark all as Visited"
                 >
                   🌲
@@ -189,7 +304,11 @@
                 <button
                   type="button"
                   (click)="setAllStatus(loc.id, 'want')"
-                  [class]="isAllWant(loc.id) ? 'bg-purple-600 text-white font-bold px-1.5 py-1 rounded shadow-xs' : 'text-stone-500 hover:text-stone-900 px-1.5 py-1 rounded transition cursor-pointer'"
+                  [class]="
+                    isAllWant(loc.id)
+                      ? 'bg-purple-600 text-white font-bold px-1.5 py-1 rounded shadow-xs'
+                      : 'text-stone-500 hover:text-stone-900 px-1.5 py-1 rounded transition cursor-pointer'
+                  "
                   title="Mark all as Want to Visit"
                 >
                   💜
@@ -197,8 +316,12 @@
                 <button
                   type="button"
                   (click)="setAllStatus(loc.id, 'unvisited')"
-                  [class]="!hasAnyVisitOrWant(loc.id) ? 'bg-stone-300 text-stone-800 font-bold px-1.5 py-1 rounded shadow-xs' : 'text-stone-400 hover:text-stone-600 px-1.5 py-1 rounded transition cursor-pointer'"
-                  title="Clear all (Not Visited)"
+                  [class]="
+                    !hasAnyVisitOrWant(loc.id)
+                      ? 'bg-stone-300 text-stone-800 font-bold px-1.5 py-1 rounded shadow-xs'
+                      : 'text-stone-400 hover:text-stone-600 px-1.5 py-1 rounded transition cursor-pointer'
+                  "
+                  title="Clear all"
                 >
                   ⚪
                 </button>
@@ -206,73 +329,123 @@
             </td>
 
             <!-- Name -->
-            <td class="px-4 py-3 font-medium text-stone-800 flex items-center gap-2">
-              {{ loc.name }}
-              <button
-                (click)="openExternal(loc.name)"
-                class="text-stone-300 hover:text-stone-500 cursor-pointer"
-                title="Open search"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
+            <td class="px-4 py-2.5 font-medium text-stone-800">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-semibold">{{ loc.name }}</span>
+                <span
+                  *ngIf="loc.isCapital"
+                  class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded border border-amber-200"
                 >
-                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <line x1="10" y1="14" x2="21" y2="3"></line>
-                </svg>
-              </button>
-              <button
-                (click)="editLocationDetails(loc.id)"
-                [class.bg-blue-50]="hasLocationDetails(loc.id)"
-                [class.text-blue-700]="hasLocationDetails(loc.id)"
-                [class.border-blue-200]="hasLocationDetails(loc.id)"
-                [class.bg-stone-50]="!hasLocationDetails(loc.id)"
-                [class.text-stone-400]="!hasLocationDetails(loc.id)"
-                [class.border-stone-200]="!hasLocationDetails(loc.id)"
-                class="hover:text-blue-700 hover:bg-stone-100 px-1.5 py-0.5 rounded border transition flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
-                [title]="
-                  hasLocationDetails(loc.id)
-                    ? 'Edit visit details (memories logged)'
-                    : 'Add visit details'
-                "
-              >
-                <span>✏️</span>
-                <span class="text-[10px]" [class.text-blue-700]="hasLocationDetails(loc.id)"
-                  >Details</span
+                  ⭐ Capital
+                </span>
+                <button
+                  (click)="openExternal(loc.name)"
+                  class="text-stone-300 hover:text-stone-500 cursor-pointer"
+                  title="Search online"
                 >
-              </button>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                    <polyline points="15 3 21 3 21 9"></polyline>
+                    <line x1="10" y1="14" x2="21" y2="3"></line>
+                  </svg>
+                </button>
+                <button
+                  (click)="editLocationDetails(loc.id)"
+                  class="hover:text-blue-700 hover:bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200 transition flex items-center gap-1 text-[11px] font-semibold cursor-pointer"
+                  [ngClass]="
+                    hasLocationDetails(loc.id)
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-stone-50 text-stone-400'
+                  "
+                  title="Edit visit notes or memories"
+                >
+                  <span>✏️</span>
+                  <span class="text-[10px]">Details</span>
+                </button>
+              </div>
             </td>
 
-            <!-- Country -->
-            <td class="px-4 py-3 text-stone-600">
-              {{ getCountry(loc) }}
+            <!-- Category Badge (Places mode) -->
+            <td *ngIf="mode === 'places'" class="px-3 py-2.5">
+              <span
+                *ngIf="loc.category === 'national_park'"
+                class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-md border border-emerald-200"
+              >
+                ⛰️ NP
+              </span>
+              <span
+                *ngIf="loc.category === 'state_park' || loc.category === 'provincial_park'"
+                class="px-2 py-0.5 bg-teal-100 text-teal-800 text-xs font-semibold rounded-md border border-teal-200"
+              >
+                🌲 SP
+              </span>
+              <span
+                *ngIf="loc.category === 'city'"
+                class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-semibold rounded-md border border-blue-200"
+              >
+                🏙️ City
+              </span>
+              <span
+                *ngIf="loc.category === 'custom'"
+                class="px-2 py-0.5 bg-purple-100 text-purple-800 text-xs font-semibold rounded-md border border-purple-200"
+              >
+                📍 Custom
+              </span>
+              <span
+                *ngIf="loc.category === 'region'"
+                class="px-2 py-0.5 bg-stone-100 text-stone-700 text-xs font-semibold rounded-md border border-stone-200"
+              >
+                🏛️ Region
+              </span>
             </td>
 
-            <!-- Member Status Cycle -->
-            <td *ngFor="let member of viewModel?.familyMembers" class="px-3 py-3 text-center">
+            <!-- Country & Region -->
+            <td class="px-4 py-2.5 text-stone-600 text-xs">
+              <div class="flex items-center gap-1.5">
+                <span class="font-medium text-stone-800">{{ loc.countryName }}</span>
+                <span *ngIf="loc.regionName || loc.sub" class="text-stone-400">/</span>
+                <span *ngIf="loc.regionName" class="text-stone-600">
+                  {{ loc.regionName }}
+                </span>
+                <span *ngIf="!loc.regionName && loc.sub" class="text-stone-500 font-mono text-[11px]">
+                  {{ loc.sub }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Family Member Status Buttons -->
+            <td *ngFor="let member of viewModel?.familyMembers" class="px-3 py-2.5 text-center">
               <button
                 type="button"
                 (click)="cycleMemberStatus(loc.id, member.id)"
                 class="w-7 h-7 inline-flex items-center justify-center rounded-lg text-xs font-bold border transition cursor-pointer"
                 [ngClass]="{
-                  'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs hover:scale-105': getMemberStatus(loc.id, member.id) === 'visited',
-                  'bg-purple-100 text-purple-800 border-purple-300 shadow-xs hover:scale-105': getMemberStatus(loc.id, member.id) === 'want',
-                  'bg-stone-100 text-stone-400 border-stone-200 hover:bg-stone-200': getMemberStatus(loc.id, member.id) === 'unvisited'
+                  'bg-emerald-100 text-emerald-800 border-emerald-300 shadow-xs hover:scale-105':
+                    getMemberStatus(loc.id, member.id) === 'visited',
+                  'bg-purple-100 text-purple-800 border-purple-300 shadow-xs hover:scale-105':
+                    getMemberStatus(loc.id, member.id) === 'want',
+                  'bg-stone-100 text-stone-400 border-stone-200 hover:bg-stone-200':
+                    getMemberStatus(loc.id, member.id) === 'unvisited'
                 }"
                 [title]="
-                  getMemberStatus(loc.id, member.id) === 'visited'
-                    ? member.name + ': Visited (click to cycle to Want to Visit)'
+                  member.name +
+                  ': ' +
+                  (getMemberStatus(loc.id, member.id) === 'visited'
+                    ? 'Visited'
                     : getMemberStatus(loc.id, member.id) === 'want'
-                      ? member.name + ': Want to Visit (click to cycle to Not Visited)'
-                      : member.name + ': Not Visited (click to cycle to Visited)'
+                      ? 'Want to visit'
+                      : 'Unvisited') +
+                  ' (click to cycle)'
                 "
               >
                 <span *ngIf="getMemberStatus(loc.id, member.id) === 'visited'">🌲</span>
@@ -281,8 +454,8 @@
               </button>
             </td>
 
-            <!-- Family Summary -->
-            <td class="px-4 py-3 bg-stone-50 border-l border-stone-200 font-bold text-center w-28 text-xs">
+            <!-- Group Summary -->
+            <td class="px-4 py-2.5 bg-stone-50 border-l border-stone-200 font-bold text-center w-28 text-xs">
               <div class="flex items-center justify-center gap-1.5 flex-wrap">
                 <span
                   *ngIf="getVisitCount(loc.id) > 0"
@@ -309,13 +482,75 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Secondary OpenStreetMap Search Fallback Section -->
+      <div
+        *ngIf="mode !== 'states'"
+        class="p-4 bg-stone-50 border-t border-stone-200 flex flex-col gap-3"
+      >
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <span class="text-xs font-bold text-stone-700">
+              Didn't find what you're looking for in the curated lists?
+            </span>
+            <p class="text-xs text-stone-500">
+              Search OpenStreetMap / Nominatim to track any local park, beach, city, or roadside attraction.
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="searchOsm()"
+            [disabled]="isSearchingOsm || !searchQuery.trim()"
+            class="px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer shadow-xs flex-shrink-0"
+          >
+            <span *ngIf="isSearchingOsm">⏳ Searching...</span>
+            <span *ngIf="!isSearchingOsm">
+              🔍 Search Map for "{{ searchQuery || 'any place' }}"
+            </span>
+          </button>
+        </div>
+
+        <!-- OpenStreetMap Results Cards -->
+        <div *ngIf="osmResults.length > 0" class="mt-2 space-y-2">
+          <div class="text-xs font-bold text-stone-600 flex items-center gap-1.5">
+            <span>OpenStreetMap Results ({{ osmResults.length }}):</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div
+              *ngFor="let res of osmResults"
+              class="p-2.5 bg-white rounded-xl border border-stone-200 shadow-xs flex items-center justify-between gap-2 text-xs"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-stone-800 truncate" [title]="res.name">
+                  {{ res.name }}
+                </p>
+                <p class="text-[11px] text-stone-400">
+                  {{ res.lat.toFixed(4) }}, {{ res.lng.toFixed(4) }}
+                </p>
+              </div>
+              <button
+                type="button"
+                (click)="addCustomPlaceFromOsm(res)"
+                class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition cursor-pointer flex-shrink-0"
+              >
+                + Track Place
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Footer -->
-    <div class="p-5 border-t border-stone-100 bg-white flex justify-end flex-shrink-0">
+    <div
+      class="p-4 sm:p-5 border-t border-stone-100 bg-white flex items-center justify-between flex-shrink-0"
+    >
+      <div class="text-xs text-stone-500 font-medium">
+        Showing {{ filteredLocations.length }} of {{ locations.length }} locations
+      </div>
       <button
         (click)="save()"
-        class="px-8 py-2.5 rounded-lg text-sm font-bold text-white bg-green-700 hover:bg-green-800 shadow-sm transition cursor-pointer"
+        class="px-6 sm:px-8 py-2.5 rounded-xl text-sm font-bold text-white bg-green-700 hover:bg-green-800 shadow-sm transition cursor-pointer"
       >
         Done
       </button>

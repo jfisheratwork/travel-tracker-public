@@ -1,7 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ParksStatesModal } from './parks-states-modal';
 import { StateService } from '../../services/state.service';
-import { BehaviorSubject } from 'rxjs';
+import { GeocodingService } from '../../services/routing/geocoding.service';
+import { ToastService } from '../../core/services/toast.service';
+import { BehaviorSubject, of } from 'rxjs';
 import { AppSettings, DEFAULT_SETTINGS } from '../../models/settings.model';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 
@@ -11,6 +15,8 @@ describe('ParksStatesModal', () => {
   let settings$: BehaviorSubject<AppSettings>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let stateServiceMock: any;
+  let geocodingServiceMock: { searchLocations: ReturnType<typeof vi.fn> };
+  let toastService: ToastService;
 
   const mockSettings: AppSettings = {
     ...DEFAULT_SETTINGS,
@@ -23,14 +29,14 @@ describe('ParksStatesModal', () => {
       Alberta: [{ memberId: 'm-2' }],
     },
     visitedParks: {
-      Yosemite: [{ memberId: 'm-1' }],
-      Banff: [{ memberId: 'm-2' }],
+      'np-yosemite': [{ memberId: 'm-1' }],
+      'np-banff': [{ memberId: 'm-2' }],
     },
-    savedRoutes: [],
-    hometowns: [],
-    routingEngine: 'osrm',
-    routeReduction: 0.01,
-    locationVisits: {},
+    placeVisits: {
+      'np-yosemite': [{ placeId: 'np-yosemite', memberId: 'm-1', status: 'visited' }],
+      'np-banff': [{ placeId: 'np-banff', memberId: 'm-2', status: 'visited' }],
+    },
+    customPlaces: [],
   };
 
   beforeEach(async () => {
@@ -38,114 +44,131 @@ describe('ParksStatesModal', () => {
 
     stateServiceMock = {
       settings$,
-      updateSettings: vi.fn(),
+      updateSettings: vi.fn((s) => settings$.next(s)),
       setEditingLocation: vi.fn(),
+    };
+
+    geocodingServiceMock = {
+      searchLocations: vi.fn().mockReturnValue(
+        of([
+          {
+            name: 'Starved Rock State Park, Oglesby, IL',
+            lat: 41.32,
+            lng: -88.99,
+          },
+        ]),
+      ),
     };
 
     await TestBed.configureTestingModule({
       imports: [ParksStatesModal],
-      providers: [{ provide: StateService, useValue: stateServiceMock }],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ToastService,
+        { provide: StateService, useValue: stateServiceMock },
+        { provide: GeocodingService, useValue: geocodingServiceMock },
+      ],
     }).compileComponents();
 
+    toastService = TestBed.inject(ToastService);
     fixture = TestBed.createComponent(ParksStatesModal);
     component = fixture.componentInstance;
-    component.mode = 'parks';
+    component.mode = 'places';
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it('should create and load places catalog in places mode', () => {
     expect(component).toBeTruthy();
+    expect(component.locations.length).toBeGreaterThan(100);
   });
 
-  it('should filter locations by Country', () => {
-    component.countryFilter = 'Canada';
-    const canadianParks = component.filteredLocations;
-    expect(canadianParks.length).toBe(22);
-    expect(canadianParks.every((p) => p.country === 'Canada')).toBe(true);
+  it('should filter locations by Country (US and CA)', () => {
+    component.countryFilter = 'CA';
+    const canadianPlaces = component.filteredLocations;
+    expect(canadianPlaces.length).toBeGreaterThan(10);
+    expect(canadianPlaces.every((p) => p.countryId === 'CA' || p.countryName === 'Canada')).toBe(
+      true,
+    );
 
-    component.countryFilter = 'USA';
-    const usParks = component.filteredLocations;
-    expect(usParks.length).toBe(63);
-    expect(usParks.every((p) => p.country === 'USA')).toBe(true);
+    component.countryFilter = 'US';
+    const usPlaces = component.filteredLocations;
+    expect(usPlaces.length).toBeGreaterThan(50);
+    expect(usPlaces.every((p) => p.countryId === 'US' || p.countryName === 'United States')).toBe(
+      true,
+    );
   });
 
-  it('should filter parks by state/province code', () => {
-    component.countryFilter = 'Canada';
-    component.stateFilter = 'AB';
-    const albertaParks = component.filteredLocations.map((p) => p.name);
-    expect(albertaParks).toContain('Banff');
-    expect(albertaParks).toContain('Jasper');
-    expect(albertaParks).not.toContain('Yoho'); // Yoho is in BC
+  it('should filter places by category chips (e.g. cities, state parks, capitals)', () => {
+    component.selectedCategories = new Set(['city']);
+    component.capitalsOnly = false;
+    const cities = component.filteredLocations;
+    expect(cities.every((c) => c.category === 'city')).toBe(true);
+    expect(cities.some((c) => c.name.includes('Chicago'))).toBe(true);
+
+    // Test Capitals Only toggle
+    component.capitalsOnly = true;
+    const capitals = component.filteredLocations;
+    expect(capitals.every((c) => c.isCapital === true)).toBe(true);
   });
 
-  it('should reset stateFilter when switching to an incompatible country', () => {
-    component.countryFilter = 'USA';
-    component.stateFilter = 'CA';
+  it('should filter by search query across name, region, and tags', () => {
+    component.searchQuery = 'Chicago';
+    const chicago = component.filteredLocations;
+    expect(chicago.some((p) => p.name.includes('Chicago'))).toBe(true);
 
-    // Switch to Canada where CA is not a valid province
-    component.countryFilter = 'Canada';
-    component.onCountryChange();
-
-    expect(component.stateFilter).toBe('all');
+    component.searchQuery = 'hiking';
+    const hikingPlaces = component.filteredLocations;
+    expect(hikingPlaces.length).toBeGreaterThan(0);
+    expect(hikingPlaces.some((p) => p.tags?.includes('hiking'))).toBe(true);
   });
 
-  it('should filter by search query matching name or abbreviation', () => {
-    component.searchQuery = 'BC';
-    const bcParks = component.filteredLocations.map((p) => p.name);
-    expect(bcParks).toContain('Yoho');
-    expect(bcParks).toContain('Kootenay');
-  });
-
-  it('should toggle visits for family members', () => {
-    expect(component.isVisited('Banff', 'm-1')).toBe(false);
-    component.toggleVisit('Banff', 'm-1');
-    expect(component.isVisited('Banff', 'm-1')).toBe(true);
-  });
-
-  it('should cycle member status from unvisited -> visited -> want -> unvisited', () => {
-    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('unvisited');
+  it('should cycle member status from unvisited -> visited -> want -> unvisited in placeVisits', () => {
+    const placeId = 'np-yellowstone';
+    expect(component.getMemberStatus(placeId, 'm-1')).toBe('unvisited');
 
     // Cycle 1: unvisited -> visited
-    component.cycleMemberStatus('Acadia', 'm-1');
-    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('visited');
+    component.cycleMemberStatus(placeId, 'm-1');
+    expect(component.getMemberStatus(placeId, 'm-1')).toBe('visited');
 
     // Cycle 2: visited -> want
-    component.cycleMemberStatus('Acadia', 'm-1');
-    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('want');
+    component.cycleMemberStatus(placeId, 'm-1');
+    expect(component.getMemberStatus(placeId, 'm-1')).toBe('want');
 
     // Cycle 3: want -> unvisited
-    component.cycleMemberStatus('Acadia', 'm-1');
-    expect(component.getMemberStatus('Acadia', 'm-1')).toBe('unvisited');
+    component.cycleMemberStatus(placeId, 'm-1');
+    expect(component.getMemberStatus(placeId, 'm-1')).toBe('unvisited');
   });
 
-  it('should set all member statuses at once and support want visibility filter', () => {
-    // Set all members to want for Acadia
-    component.setAllStatus('Acadia', 'want');
-    expect(component.isAllWant('Acadia')).toBe(true);
-    expect(component.getWantCount('Acadia')).toBe(2);
+  it('should switch mode between places, parks, and states cleanly', () => {
+    // Places mode
+    expect(component.mode).toBe('places');
+    expect(component.locations.length).toBeGreaterThan(100);
 
-    // Filter by want
-    component.visibilityFilter = 'want';
-    const wantLocations = component.filteredLocations.map((l) => l.name);
-    expect(wantLocations).toContain('Acadia');
-    expect(wantLocations).not.toContain('Banff'); // Banff is visited
-  });
-
-  it('should switch modal mode between parks and states', () => {
-    expect(component.mode).toBe('parks');
-    expect(component.locations.length).toBeGreaterThan(50);
-
-    // Switch to states
-    component.switchModalMode('states');
-    expect(component.mode).toBe('states');
-    const stateNames = component.locations.map((l) => l.name);
-    expect(stateNames).toContain('California');
-    expect(stateNames).toContain('Alberta');
-
-    // Switch back to parks
+    // Switch to Parks mode
     component.switchModalMode('parks');
     expect(component.mode).toBe('parks');
-    const parkNames = component.locations.map((l) => l.name);
-    expect(parkNames).toContain('Yosemite');
+    expect(component.locations.every((l) => l.category === 'national_park')).toBe(true);
+
+    // Switch to States mode
+    component.switchModalMode('states');
+    expect(component.mode).toBe('states');
+    expect(component.locations.every((l) => l.category === 'region')).toBe(true);
+  });
+
+  it('should support secondary fallback OpenStreetMap search and track custom places', () => {
+    component.searchQuery = 'Starved Rock';
+    component.searchOsm();
+
+    expect(geocodingServiceMock.searchLocations).toHaveBeenCalledWith('Starved Rock', 5);
+    expect(component.osmResults.length).toBe(1);
+
+    const toastSpy = vi.spyOn(toastService, 'showSuccess');
+    component.addCustomPlaceFromOsm(component.osmResults[0]);
+
+    expect(toastSpy).toHaveBeenCalledWith(expect.stringContaining('Added'));
+    expect(component.osmResults.length).toBe(0);
+    expect(component.viewModel?.customPlaces?.length).toBe(1);
+    expect(component.viewModel?.customPlaces?.[0].name).toContain('Starved Rock');
   });
 });

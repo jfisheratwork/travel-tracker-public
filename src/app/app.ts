@@ -97,8 +97,10 @@ export class App implements OnInit {
       this.openRoads();
     } else if (mode === 'states') {
       this.openStatesModal();
-    } else {
+    } else if (mode === 'parks') {
       this.openParksModal();
+    } else {
+      this.openPlacesModal();
     }
   }
 
@@ -140,6 +142,10 @@ export class App implements OnInit {
 
   openStatesModal(): void {
     this.mapView?.openStatesModal();
+  }
+
+  openPlacesModal(): void {
+    this.mapView?.openPlacesModal();
   }
 
   @HostListener('document:click', ['$event'])
