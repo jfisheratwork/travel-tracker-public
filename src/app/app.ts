@@ -221,7 +221,7 @@ export class App implements OnInit {
 
   getTripsFilterButtonLabel(): string {
     if (this.isAllTripsDrawn()) {
-      return `Filter Trips (${this.savedRoutes.length})`;
+      return 'Filter';
     }
     if (this.selectedRouteIds && this.selectedRouteIds.length === 1) {
       const match = this.savedRoutes.find(
@@ -232,7 +232,7 @@ export class App implements OnInit {
     if (this.selectedRouteIds) {
       return `${this.selectedRouteIds.length} Trips`;
     }
-    return `Filter Trips (${this.savedRoutes.length})`;
+    return 'Filter';
   }
 
   toggleProfileMenu(): void {

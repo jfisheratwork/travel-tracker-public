@@ -200,7 +200,7 @@ describe('App', () => {
     ];
 
     expect(app.isAllTripsDrawn()).toBe(true);
-    expect(app.getTripsFilterButtonLabel()).toContain('Filter Trips (2)');
+    expect(app.getTripsFilterButtonLabel()).toBe('Filter');
 
     // Search
     app.tripSearchQuery = 'Pacific';
