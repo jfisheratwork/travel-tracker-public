@@ -15,5 +15,6 @@ import { MAP_THEME } from '../../../../core/constants/map.constants';
 })
 export class MapVisitedLegendComponent {
   @Input({ required: true }) theme!: ColorThemeDefinition;
+  @Input() inline = false;
   @Input() wantToVisitColor: string = MAP_THEME.WANT_TO_VISIT_COLOR;
 }

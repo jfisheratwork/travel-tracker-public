@@ -174,8 +174,34 @@
                   >
                 </div>
               </div>
-              <div class="flex items-center gap-1 ml-2">
-                <button (click)="removeHometown(h.id)" class="text-red-500 hover:text-red-700 ml-1">
+              <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+                <button
+                  type="button"
+                  (click)="moveHometown(i, 'up')"
+                  [disabled]="i === 0"
+                  class="w-6 h-6 flex items-center justify-center rounded bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-25 disabled:pointer-events-none text-xs transition cursor-pointer"
+                  title="Move hometown up"
+                  aria-label="Move hometown up"
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  (click)="moveHometown(i, 'down')"
+                  [disabled]="i === viewModel.hometowns.length - 1"
+                  class="w-6 h-6 flex items-center justify-center rounded bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-25 disabled:pointer-events-none text-xs transition cursor-pointer"
+                  title="Move hometown down"
+                  aria-label="Move hometown down"
+                >
+                  ▼
+                </button>
+                <button
+                  type="button"
+                  (click)="removeHometown(h.id)"
+                  class="w-6 h-6 flex items-center justify-center rounded text-red-500 hover:bg-red-50 ml-1 transition cursor-pointer"
+                  title="Remove hometown"
+                  aria-label="Remove hometown"
+                >
                   ✕
                 </button>
               </div>
@@ -230,12 +256,37 @@
                 ></div>
                 <span class="text-sm font-bold">{{ member.name }}</span>
               </div>
-              <button
-                (click)="removeFamilyMember(member.id)"
-                class="text-red-500 hover:text-red-700"
-              >
-                ✕
-              </button>
+              <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+                <button
+                  type="button"
+                  (click)="moveFamilyMember(i, 'up')"
+                  [disabled]="i === 0"
+                  class="w-6 h-6 flex items-center justify-center rounded bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-25 disabled:pointer-events-none text-xs transition cursor-pointer"
+                  title="Move member up"
+                  aria-label="Move member up"
+                >
+                  ▲
+                </button>
+                <button
+                  type="button"
+                  (click)="moveFamilyMember(i, 'down')"
+                  [disabled]="i === viewModel.familyMembers.length - 1"
+                  class="w-6 h-6 flex items-center justify-center rounded bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-25 disabled:pointer-events-none text-xs transition cursor-pointer"
+                  title="Move member down"
+                  aria-label="Move member down"
+                >
+                  ▼
+                </button>
+                <button
+                  type="button"
+                  (click)="removeFamilyMember(member.id)"
+                  class="w-6 h-6 flex items-center justify-center rounded text-red-500 hover:bg-red-50 ml-1 transition cursor-pointer"
+                  title="Remove member"
+                  aria-label="Remove member"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
           </div>
           <div *ngIf="viewModel.familyMembers.length === 0" class="text-sm text-stone-400 italic">

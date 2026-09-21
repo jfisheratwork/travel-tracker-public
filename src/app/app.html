@@ -3,508 +3,479 @@
 >
   <!-- Page Title (Bordered title bar with centered title, utility controls, and profile) -->
   <div
-    class="w-full flex items-center justify-between py-1.5 sm:py-2 px-3 sm:px-5 rounded-2xl shadow-sm mb-2 transition-colors duration-200"
+    class="w-full py-1.5 sm:py-2 px-2.5 sm:px-5 rounded-2xl shadow-sm mb-2 transition-colors duration-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-0"
     [style.backgroundColor]="currentTheme.headerBg"
     [style.borderColor]="currentTheme.headerBorder"
     style="border-width: 2px; border-style: solid"
   >
-    <!-- Left: Global Search Bar -->
-    <div class="flex items-center w-60 sm:w-72 xl:w-96 flex-shrink-0">
-      <app-global-search class="w-full"></app-global-search>
-    </div>
-
-    <!-- Centered Title -->
-    <h1
-      class="text-lg sm:text-2xl md:text-3xl font-extrabold tracking-tight m-0 text-center flex-1 transition-colors duration-200"
-      [style.color]="currentTheme.headerText"
-    >
-      Traveled Roads Tracker
-    </h1>
-
-    <!-- Right Controls: Utility Tools, Setup Wizard & Profile Widget -->
-    <div class="flex items-center gap-1.5 sm:gap-2 xl:w-96 justify-end">
-      <!-- Stats Modal Trigger -->
-      <button
-        type="button"
-        (click)="showStatsModal = true"
-        class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer"
-        [style.backgroundColor]="currentTheme.isDark ? '#1e1b4b' : '#eef2ff'"
-        [style.borderColor]="currentTheme.isDark ? '#4338ca' : '#c7d2fe'"
-        title="Show Statistics"
-        aria-label="Show Statistics"
+    <!-- Top Row on Mobile (Brand + Actions) / Flattened to Desktop Row -->
+    <div class="flex items-center justify-between w-full sm:w-auto sm:contents">
+      <!-- App Brand Title -->
+      <h1
+        class="text-base sm:text-2xl md:text-3xl font-extrabold tracking-tight m-0 sm:text-center sm:flex-1 sm:order-2 transition-colors duration-200 truncate sm:overflow-visible flex items-center gap-1.5"
+        [style.color]="currentTheme.headerText"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-4 h-4 sm:w-4.5 sm:h-4.5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <line x1="6" y1="20" x2="6" y2="14" stroke="#3b82f6" stroke-width="2.5"></line>
-          <line x1="12" y1="20" x2="12" y2="4" stroke="#8b5cf6" stroke-width="2.5"></line>
-          <line x1="18" y1="20" x2="18" y2="10" stroke="#ec4899" stroke-width="2.5"></line>
-        </svg>
-      </button>
+        <span class="sm:hidden text-lg">🗺️</span>
+        <span class="sm:hidden font-extrabold">Traveled Roads</span>
+        <span class="hidden sm:inline">Traveled Roads Tracker</span>
+      </h1>
 
-      <!-- Color Wheel Theme Selector Dropdown -->
-      <div class="relative" #themeMenuRef>
+      <!-- Right Controls: Utility Tools, Setup Wizard & Profile Widget -->
+      <div class="flex items-center gap-1 sm:gap-2 sm:order-3 xl:w-[450px] justify-end flex-shrink-0">
+        <!-- Stats Modal Trigger -->
         <button
           type="button"
-          (click)="toggleThemeMenu()"
-          class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer"
-          [style.backgroundColor]="currentTheme.isDark ? '#451a03' : '#fff7ed'"
-          [style.borderColor]="currentTheme.isDark ? '#9a3412' : '#fed7aa'"
-          [style.color]="currentTheme.isDark ? '#fdba74' : '#ea580c'"
-          [class.ring-2]="showThemeMenu"
-          [class.ring-amber-400]="showThemeMenu"
-          title="Color Theme"
-          aria-label="Select Color Theme"
+          (click)="showStatsModal = true"
+          class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer flex-shrink-0"
+          [style.backgroundColor]="currentTheme.isDark ? '#1e1b4b' : '#eef2ff'"
+          [style.borderColor]="currentTheme.isDark ? '#4338ca' : '#c7d2fe'"
+          title="Show Statistics"
+          aria-label="Show Statistics"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             class="w-4 h-4 sm:w-4.5 sm:h-4.5"
-            viewBox="0 0 24 24"
             fill="none"
-            stroke="currentColor"
-            stroke-width="2"
+            viewBox="0 0 24 24"
             stroke-linecap="round"
             stroke-linejoin="round"
           >
-            <circle cx="13.5" cy="6.5" r="1.3" fill="#ef4444" stroke="#ef4444"></circle>
-            <circle cx="17.5" cy="10.5" r="1.3" fill="#3b82f6" stroke="#3b82f6"></circle>
-            <circle cx="8.5" cy="7.5" r="1.3" fill="#10b981" stroke="#10b981"></circle>
-            <circle cx="6.5" cy="12.5" r="1.3" fill="#f59e0b" stroke="#f59e0b"></circle>
-            <path
-              d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
-            ></path>
+            <line x1="6" y1="20" x2="6" y2="14" stroke="#3b82f6" stroke-width="2.5"></line>
+            <line x1="12" y1="20" x2="12" y2="4" stroke="#8b5cf6" stroke-width="2.5"></line>
+            <line x1="18" y1="20" x2="18" y2="10" stroke="#ec4899" stroke-width="2.5"></line>
           </svg>
         </button>
 
-        <!-- Dropdown Menu -->
-        <div
-          *ngIf="showThemeMenu"
-          class="absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-[1300] animate-fadeIn border"
-          [style.backgroundColor]="currentTheme.cardBg"
-          [style.borderColor]="currentTheme.cardBorder"
-        >
-          <div
-            class="px-3.5 py-2 border-b flex items-center justify-between"
-            [style.borderBottomColor]="currentTheme.cardBorder"
+        <!-- Color Wheel Theme Selector Dropdown -->
+        <div class="relative" #themeMenuRef>
+          <button
+            type="button"
+            (click)="toggleThemeMenu()"
+            class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer flex-shrink-0"
+            [style.backgroundColor]="currentTheme.isDark ? '#451a03' : '#fff7ed'"
+            [style.borderColor]="currentTheme.isDark ? '#9a3412' : '#fed7aa'"
+            [style.color]="currentTheme.isDark ? '#fdba74' : '#ea580c'"
+            [class.ring-2]="showThemeMenu"
+            [class.ring-amber-400]="showThemeMenu"
+            title="Color Theme"
+            aria-label="Select Color Theme"
           >
-            <span
-              class="text-xs font-bold uppercase tracking-wider"
-              [style.color]="currentTheme.subtextColor"
-              >Color Themes</span
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="w-4 h-4 sm:w-4.5 sm:h-4.5"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
             >
-            <span class="text-[10px] font-medium" [style.color]="currentTheme.subtextColor"
-              >{{ availableThemes.length }} options</span
-            >
-          </div>
+              <circle cx="13.5" cy="6.5" r="1.3" fill="#ef4444" stroke="#ef4444"></circle>
+              <circle cx="17.5" cy="10.5" r="1.3" fill="#3b82f6" stroke="#3b82f6"></circle>
+              <circle cx="8.5" cy="7.5" r="1.3" fill="#10b981" stroke="#10b981"></circle>
+              <circle cx="6.5" cy="12.5" r="1.3" fill="#f59e0b" stroke="#f59e0b"></circle>
+              <path
+                d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"
+              ></path>
+            </svg>
+          </button>
 
-          <div class="max-h-80 overflow-y-auto py-1">
-            <button
-              *ngFor="let t of availableThemes"
-              (click)="selectTheme(t.id)"
-              class="w-full px-3.5 py-2.5 flex items-center justify-between transition text-left group cursor-pointer"
-              [style.backgroundColor]="
-                currentThemeId === t.id ? currentTheme.buttonBg : 'transparent'
-              "
+          <!-- Dropdown Menu -->
+          <div
+            *ngIf="showThemeMenu"
+            class="absolute right-0 mt-2 w-72 rounded-2xl shadow-2xl py-2 z-[1300] animate-fadeIn border"
+            [style.backgroundColor]="currentTheme.cardBg"
+            [style.borderColor]="currentTheme.cardBorder"
+          >
+            <div
+              class="px-3.5 py-2 border-b flex items-center justify-between"
+              [style.borderBottomColor]="currentTheme.cardBorder"
             >
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="flex items-center -space-x-1.5 flex-shrink-0">
-                  <span
-                    class="w-4 h-4 rounded-full border border-white shadow-xs"
-                    [style.backgroundColor]="t.swatches[0]"
-                  ></span>
-                  <span
-                    class="w-4 h-4 rounded-full border border-white shadow-xs"
-                    [style.backgroundColor]="t.swatches[1]"
-                  ></span>
-                  <span
-                    class="w-4 h-4 rounded-full border border-white shadow-xs"
-                    [style.backgroundColor]="t.swatches[2]"
-                  ></span>
-                </div>
-                <div class="flex flex-col min-w-0">
-                  <span
-                    class="text-sm font-semibold truncate"
-                    [style.color]="
-                      currentThemeId === t.id ? currentTheme.buttonActiveBg : currentTheme.textColor
-                    "
-                    [style.fontFamily]="t.fontFamily"
-                  >
-                    {{ t.name }}
-                  </span>
-                  <span
-                    class="text-[10px] font-medium leading-none mt-0.5"
-                    [style.color]="currentTheme.subtextColor"
-                  >
-                    {{ t.fontName }}
-                  </span>
-                </div>
-              </div>
-
-              <svg
-                *ngIf="currentThemeId === t.id"
-                class="w-4 h-4 flex-shrink-0"
-                [style.color]="currentTheme.buttonActiveBg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                stroke-width="2.5"
+              <span
+                class="text-xs font-bold uppercase tracking-wider"
+                [style.color]="currentTheme.subtextColor"
+                >Color Themes</span
               >
-                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </button>
+              <span class="text-[10px] font-medium" [style.color]="currentTheme.subtextColor"
+                >{{ availableThemes.length }} options</span
+              >
+            </div>
+
+            <div class="max-h-80 overflow-y-auto py-1">
+              <button
+                *ngFor="let t of availableThemes"
+                (click)="selectTheme(t.id)"
+                class="w-full px-3.5 py-2.5 flex items-center justify-between transition text-left group cursor-pointer"
+                [style.backgroundColor]="
+                  currentThemeId === t.id ? currentTheme.buttonBg : 'transparent'
+                "
+              >
+                <div class="flex items-center gap-3 min-w-0">
+                  <div class="flex items-center -space-x-1.5 flex-shrink-0">
+                    <span
+                      class="w-4 h-4 rounded-full border border-white shadow-xs"
+                      [style.backgroundColor]="t.swatches[0]"
+                    ></span>
+                    <span
+                      class="w-4 h-4 rounded-full border border-white shadow-xs"
+                      [style.backgroundColor]="t.swatches[1]"
+                    ></span>
+                    <span
+                      class="w-4 h-4 rounded-full border border-white shadow-xs"
+                      [style.backgroundColor]="t.swatches[2]"
+                    ></span>
+                  </div>
+                  <div class="flex flex-col min-w-0">
+                    <span
+                      class="text-sm font-semibold truncate"
+                      [style.color]="
+                        currentThemeId === t.id ? currentTheme.buttonActiveBg : currentTheme.textColor
+                      "
+                      [style.fontFamily]="t.fontFamily"
+                    >
+                      {{ t.name }}
+                    </span>
+                    <span
+                      class="text-[10px] font-medium leading-none mt-0.5"
+                      [style.color]="currentTheme.subtextColor"
+                    >
+                      {{ t.fontName }}
+                    </span>
+                  </div>
+                </div>
+
+                <svg
+                  *ngIf="currentThemeId === t.id"
+                  class="w-4 h-4 flex-shrink-0"
+                  [style.color]="currentTheme.buttonActiveBg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Settings Button -->
-      <button
-        type="button"
-        (click)="showSettingsModal = true"
-        class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer group"
-        [style.backgroundColor]="currentTheme.isDark ? '#083344' : '#ecfeff'"
-        [style.borderColor]="currentTheme.isDark ? '#0e7490' : '#a5f3fc'"
-        [style.color]="currentTheme.isDark ? '#67e8f9' : '#0891b2'"
-        title="Settings"
-        aria-label="Settings"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-300 group-hover:rotate-45"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-          />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      </button>
-
-      <!-- Help Button -->
-      <button
-        type="button"
-        (click)="showHelpModal = true"
-        class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer"
-        [style.backgroundColor]="currentTheme.isDark ? '#064e3b' : '#ecfdf5'"
-        [style.borderColor]="currentTheme.isDark ? '#047857' : '#a7f3d0'"
-        [style.color]="currentTheme.isDark ? '#6ee7b7' : '#059669'"
-        title="Help & Information"
-        aria-label="Help & Information"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="w-4 h-4 sm:w-4.5 sm:h-4.5"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"
-          />
-          <line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2" />
-        </svg>
-      </button>
-
-      <!-- Setup Wizard Button -->
-      <button
-        type="button"
-        (click)="showWelcomeModal = true"
-        class="flex items-center gap-1.5 py-1 px-2.5 sm:px-3 rounded-full text-xs font-semibold transition-all active:scale-95 border cursor-pointer"
-        [style.borderColor]="currentTheme.headerBorder"
-        [style.color]="currentTheme.headerText"
-        [style.backgroundColor]="
-          currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)'
-        "
-        title="Quick Setup Wizard"
-        aria-label="Quick Setup Wizard"
-      >
-        <span>✨</span>
-        <span class="hidden md:inline">Setup Wizard</span>
-      </button>
-
-      <!-- Profile Widget & Dropdown -->
-      <div class="relative" #profileMenuRef>
+        <!-- Settings Button -->
         <button
-          (click)="toggleProfileMenu()"
-          class="flex items-center gap-2 py-1 px-2 sm:px-2.5 rounded-full transition-all active:scale-95 border cursor-pointer"
+          type="button"
+          (click)="showSettingsModal = true"
+          class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer group flex-shrink-0"
+          [style.backgroundColor]="currentTheme.isDark ? '#083344' : '#ecfeff'"
+          [style.borderColor]="currentTheme.isDark ? '#0e7490' : '#a5f3fc'"
+          [style.color]="currentTheme.isDark ? '#67e8f9' : '#0891b2'"
+          title="Settings"
+          aria-label="Settings"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 sm:w-4.5 sm:h-4.5 transition-transform duration-300 group-hover:rotate-45"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+
+        <!-- Help Button -->
+        <button
+          type="button"
+          (click)="showHelpModal = true"
+          class="h-8 w-8 sm:h-9 sm:w-9 rounded-xl transition flex items-center justify-center shadow-xs active:scale-95 border cursor-pointer flex-shrink-0"
+          [style.backgroundColor]="currentTheme.isDark ? '#064e3b' : '#ecfdf5'"
+          [style.borderColor]="currentTheme.isDark ? '#047857' : '#a7f3d0'"
+          [style.color]="currentTheme.isDark ? '#6ee7b7' : '#059669'"
+          title="Help & Information"
+          aria-label="Help & Information"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-4 h-4 sm:w-4.5 sm:h-4.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"
+            />
+            <line x1="12" y1="17" x2="12.01" y2="17" stroke-linecap="round" stroke-width="2" />
+          </svg>
+        </button>
+
+        <!-- Try It Out Button -->
+        <button
+          type="button"
+          id="tryItOutButton"
+          (click)="loadTryItOutData()"
+          [disabled]="isLoadingSample"
+          class="flex items-center gap-1 sm:gap-1.5 py-1 px-2 sm:px-3 rounded-full text-xs font-bold transition-all active:scale-95 border cursor-pointer shadow-xs hover:opacity-95 flex-shrink-0"
+          [style.borderColor]="currentTheme.accent"
+          [style.color]="currentTheme.headerText"
+          [style.backgroundColor]="
+            currentTheme.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.22)'
+          "
+          title="Try It Out - Load Sample Travel Data"
+          aria-label="Try It Out - Load Sample Travel Data"
+        >
+          <span *ngIf="!isLoadingSample" class="text-sm leading-none">🚀</span>
+          <svg
+            *ngIf="isLoadingSample"
+            class="animate-spin h-3.5 w-3.5 text-current"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v8H4z"
+            ></path>
+          </svg>
+          <span class="hidden sm:inline">{{ isLoadingSample ? 'Loading...' : 'Try It Out' }}</span>
+        </button>
+
+        <!-- Mobile Search Toggle Button (< sm) -->
+        <button
+          type="button"
+          (click)="showMobileSearch = !showMobileSearch"
+          class="sm:hidden py-1 px-2.5 rounded-full text-xs font-semibold transition-all active:scale-95 border cursor-pointer flex-shrink-0 flex items-center justify-center"
           [style.borderColor]="currentTheme.headerBorder"
+          [style.color]="currentTheme.headerText"
+          [style.backgroundColor]="
+            showMobileSearch
+              ? (currentTheme.isDark ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.35)')
+              : (currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)')
+          "
+          title="Search places, parks, and locations"
+          aria-label="Toggle Search"
+        >
+          <span>🔍</span>
+        </button>
+
+        <!-- Setup Wizard Button -->
+        <button
+          type="button"
+          (click)="showWelcomeModal = true"
+          class="hidden md:inline-flex items-center gap-1.5 py-1 px-2.5 sm:px-3 rounded-full text-xs font-semibold transition-all active:scale-95 border cursor-pointer flex-shrink-0"
+          [style.borderColor]="currentTheme.headerBorder"
+          [style.color]="currentTheme.headerText"
           [style.backgroundColor]="
             currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)'
           "
-          title="User Profile"
-          aria-label="User Profile Menu"
+          title="Quick Setup Wizard"
+          aria-label="Quick Setup Wizard"
         >
-          <div
-            class="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-xs"
-            [style.backgroundColor]="currentTheme.accent"
-          >
-            TU
-          </div>
-          <span
-            class="text-xs font-semibold hidden md:inline-block"
-            [style.color]="currentTheme.headerText"
-          >
-            Test User
-          </span>
-          <svg
-            class="w-3.5 h-3.5 transition-transform"
-            [class.rotate-180]="showProfileMenu"
-            [style.color]="currentTheme.headerText"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            stroke-width="2.5"
-          >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
+          <span>✨</span>
+          <span class="hidden lg:inline">Setup Wizard</span>
         </button>
 
-        <!-- Profile Dropdown Menu -->
-        <div
-          *ngIf="showProfileMenu"
-          class="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-2xl border border-stone-200 py-3 px-3.5 z-[1200] animate-fadeIn text-stone-800"
-        >
-          <div class="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b border-stone-100">
+        <!-- Profile Widget & Dropdown -->
+        <div class="relative" #profileMenuRef>
+          <button
+            (click)="toggleProfileMenu()"
+            class="flex items-center gap-1.5 sm:gap-2 py-0.5 sm:py-1 px-1.5 sm:px-2.5 rounded-full transition-all active:scale-95 border cursor-pointer flex-shrink-0"
+            [style.borderColor]="currentTheme.headerBorder"
+            [style.backgroundColor]="
+              currentTheme.isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.18)'
+            "
+            title="User Profile"
+            aria-label="User Profile Menu"
+          >
             <div
-              class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-xs"
+              class="w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center font-bold text-[10px] sm:text-xs text-white shadow-xs"
               [style.backgroundColor]="currentTheme.accent"
             >
               TU
             </div>
-            <div class="flex flex-col min-w-0 text-left">
-              <span class="text-sm font-bold text-stone-900 truncate">Test User</span>
-              <span class="text-[11px] text-stone-500 truncate">testuser&#64;example.com</span>
-            </div>
-          </div>
-          <div
-            class="px-2.5 py-2 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs font-medium flex items-center gap-2"
-          >
-            <span class="text-sm">🚧</span>
-            <span>In progress</span>
-          </div>
-
-          <div class="mt-2.5 pt-2 border-t border-stone-100">
-            <button
-              type="button"
-              (click)="showWelcomeModal = true; showProfileMenu = false"
-              class="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-stone-700 hover:bg-stone-100 flex items-center gap-2 transition"
+            <span
+              class="text-xs font-semibold hidden md:inline-block"
+              [style.color]="currentTheme.headerText"
             >
-              <span>✨</span>
-              <span>Quick Setup Wizard</span>
-            </button>
+              Test User
+            </span>
+            <svg
+              class="w-3 h-3 sm:w-3.5 sm:h-3.5 transition-transform"
+              [class.rotate-180]="showProfileMenu"
+              [style.color]="currentTheme.headerText"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          <!-- Profile Dropdown Menu -->
+          <div
+            *ngIf="showProfileMenu"
+            class="absolute right-0 top-full mt-2 w-60 bg-white rounded-2xl shadow-2xl border border-stone-200 py-3 px-3.5 z-[1200] animate-fadeIn text-stone-800"
+          >
+            <div class="flex items-center gap-2.5 pb-2.5 mb-2.5 border-b border-stone-100">
+              <div
+                class="w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs text-white shadow-xs"
+                [style.backgroundColor]="currentTheme.accent"
+              >
+                TU
+              </div>
+              <div class="flex flex-col min-w-0 text-left">
+                <span class="text-sm font-bold text-stone-900 truncate">Test User</span>
+                <span class="text-[11px] text-stone-500 truncate">testuser&#64;example.com</span>
+              </div>
+            </div>
+            <div
+              class="px-2.5 py-2 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs font-medium flex items-center gap-2"
+            >
+              <span class="text-sm">🚧</span>
+              <span>In progress</span>
+            </div>
+
+            <div class="mt-2.5 pt-2 border-t border-stone-100">
+              <button
+                type="button"
+                (click)="showWelcomeModal = true; showProfileMenu = false"
+                class="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-stone-700 hover:bg-stone-100 flex items-center gap-2 transition cursor-pointer"
+              >
+                <span>✨</span>
+                <span>Quick Setup Wizard</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- Search Bar on mobile when toggled (< sm) -->
+    <div *ngIf="showMobileSearch" class="sm:hidden w-full order-3 pt-2 animate-fadeIn">
+      <app-global-search class="w-full"></app-global-search>
+    </div>
+
+    <!-- Search Bar on desktop (always visible on >= sm) -->
+    <div class="hidden sm:block sm:w-60 md:w-72 xl:w-[450px] sm:order-1 flex-shrink-0">
+      <app-global-search class="w-full"></app-global-search>
     </div>
   </div>
 
   <!-- Main Display Container: Stacked Map and Details Drawer -->
   <div class="flex flex-col gap-3">
-    <!-- Horizontal Action Toolbar: Visited Mode Switcher + Action Buttons -->
+    <!-- Horizontal Action Toolbar: Mode Dropdown Selector + Smart Add + AI Import + Details -->
     <div
-      class="w-full px-3 py-2 rounded-2xl md:rounded-3xl shadow-md border-[2px] transition-colors duration-200 flex flex-wrap items-center justify-between gap-2.5"
+      class="w-full px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-2xl md:rounded-3xl shadow-md border-[2px] transition-colors duration-200 flex flex-row items-center justify-between gap-2"
       [style.backgroundColor]="currentTheme.cardBg"
       [style.borderColor]="currentTheme.cardBorder"
     >
-      <!-- Visited Mode Switcher Group -->
-      <div class="flex items-center gap-1.5 flex-wrap">
-        <div
-          class="py-1 px-2.5 text-xs font-black uppercase tracking-wider rounded-lg shadow-2xs"
-          [style.backgroundColor]="currentTheme.headerBg"
-          [style.color]="currentTheme.headerText"
-        >
-          Visited
-        </div>
-
+      <!-- Left: Mode Dropdown Selector + Smart Add -->
+      <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
         <ng-container *ngIf="stateService.mapMode$ | async as mode">
-          <button
-            type="button"
-            (click)="setMapMode('places')"
-            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
-            [style.backgroundColor]="
-              mode === 'places' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-            "
-            [style.color]="
-              mode === 'places' ? currentTheme.buttonActiveText : currentTheme.buttonText
-            "
-            [style.borderColor]="
-              mode === 'places' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
-            "
-          >
-            📍 Places Visited
-          </button>
+          <!-- Mode Dropdown -->
+          <div class="relative flex items-center flex-shrink-0">
+            <select
+              [value]="mode"
+              (change)="onModeSelectChange($event)"
+              class="h-8 sm:h-9 pl-2.5 sm:pl-3 pr-7 sm:pr-8 rounded-xl text-xs sm:text-sm font-bold border transition cursor-pointer appearance-none shadow-xs active:scale-95 focus:outline-none"
+              [style.backgroundColor]="currentTheme.buttonBg"
+              [style.borderColor]="currentTheme.buttonBorder"
+              [style.color]="currentTheme.buttonText"
+              aria-label="Select Map Mode"
+            >
+              <option value="places">📍 Places</option>
+              <option value="parks">⛰️ National Parks</option>
+              <option value="states">🏛️ States & Regions</option>
+              <option value="roads">🚗 Traveled Roads</option>
+            </select>
+            <span
+              class="pointer-events-none absolute right-2 text-[9px] opacity-70"
+              [style.color]="currentTheme.buttonText"
+            >
+              ▼
+            </span>
+          </div>
 
+          <!-- Smart Contextual Add Button -->
           <button
             type="button"
-            (click)="setMapMode('parks')"
-            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
-            [style.backgroundColor]="
-              mode === 'parks' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-            "
-            [style.color]="
-              mode === 'parks' ? currentTheme.buttonActiveText : currentTheme.buttonText
-            "
-            [style.borderColor]="
-              mode === 'parks' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
-            "
+            (click)="handleSmartAdd(mode)"
+            class="h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer flex-shrink-0"
+            [style.backgroundColor]="currentTheme.buttonBg"
+            [style.borderColor]="currentTheme.buttonBorder"
+            [style.color]="currentTheme.buttonText"
+            [title]="getSmartAddTitle(mode)"
           >
-            ⛰️ Parks Visited
-          </button>
-
-          <button
-            type="button"
-            (click)="setMapMode('states')"
-            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
-            [style.backgroundColor]="
-              mode === 'states' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-            "
-            [style.color]="
-              mode === 'states' ? currentTheme.buttonActiveText : currentTheme.buttonText
-            "
-            [style.borderColor]="
-              mode === 'states' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
-            "
-            title="States, Provinces & Administrative Regions"
-          >
-            🏛️ Regions Visited
-          </button>
-
-          <button
-            type="button"
-            (click)="setMapMode('roads')"
-            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold shadow-xs transition border active:scale-95 flex items-center justify-center cursor-pointer whitespace-nowrap"
-            [style.backgroundColor]="
-              mode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-            "
-            [style.color]="
-              mode === 'roads' ? currentTheme.buttonActiveText : currentTheme.buttonText
-            "
-            [style.borderColor]="
-              mode === 'roads' ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
-            "
-          >
-            🚗 Roads Visited
+            <span class="text-sm sm:text-base font-extrabold leading-none">+</span>
+            <span class="hidden xs:inline sm:inline">{{ getSmartAddLabel(mode) }}</span>
           </button>
         </ng-container>
       </div>
 
-      <!-- Action Buttons Group -->
-      <div class="flex items-center gap-2 flex-wrap">
-        <!-- Contextual Add Button matching active mode -->
-        <ng-container *ngIf="stateService.mapMode$ | async as mode">
-          <button
-            type="button"
-            *ngIf="mode === 'roads'"
-            (click)="openRoads()"
-            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
-            [style.backgroundColor]="currentTheme.buttonBg"
-            [style.borderColor]="currentTheme.buttonBorder"
-            [style.color]="currentTheme.buttonText"
-          >
-            🚗 Add Roads
-          </button>
-          <button
-            type="button"
-            *ngIf="mode === 'parks'"
-            (click)="openParksModal()"
-            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
-            [style.backgroundColor]="currentTheme.buttonBg"
-            [style.borderColor]="currentTheme.buttonBorder"
-            [style.color]="currentTheme.buttonText"
-          >
-            ⛰️ Add Parks
-          </button>
-          <button
-            type="button"
-            *ngIf="mode === 'states'"
-            (click)="openStatesModal()"
-            class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
-            [style.backgroundColor]="currentTheme.buttonBg"
-            [style.borderColor]="currentTheme.buttonBorder"
-            [style.color]="currentTheme.buttonText"
-          >
-            🏛️ Add Regions
-          </button>
-          <div *ngIf="mode === 'places'" class="flex items-center gap-1.5">
-            <button
-              type="button"
-              (click)="openParksModal()"
-              class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
-              [style.backgroundColor]="currentTheme.buttonBg"
-              [style.borderColor]="currentTheme.buttonBorder"
-              [style.color]="currentTheme.buttonText"
-            >
-              ⛰️ Add Parks
-            </button>
-            <button
-              type="button"
-              (click)="openStatesModal()"
-              class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
-              [style.backgroundColor]="currentTheme.buttonBg"
-              [style.borderColor]="currentTheme.buttonBorder"
-              [style.color]="currentTheme.buttonText"
-            >
-              🏛️ Add Regions
-            </button>
-          </div>
-        </ng-container>
-
+      <!-- Right: AI Import & Details Drawer Toggle -->
+      <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
         <!-- AI Trip Import Button -->
         <button
           type="button"
           (click)="showAiTripModal = true"
-          class="h-9 px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer"
+          class="h-8 sm:h-9 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold transition flex items-center justify-center gap-1 sm:gap-1.5 shadow-xs whitespace-nowrap active:scale-95 border cursor-pointer flex-shrink-0"
           [style.backgroundColor]="currentTheme.buttonBg"
           [style.borderColor]="currentTheme.buttonBorder"
           [style.color]="currentTheme.buttonText"
           title="Import trip using AI prompt and structured text"
         >
-          <span>🪄 AI Trip Import</span>
+          <span>🪄</span>
+          <span class="hidden sm:inline">AI Import</span>
         </button>
 
         <!-- Show / Hide Details Button -->
         <button
           type="button"
           (click)="toggleDetailsDrawer()"
-          class="h-9 px-3 rounded-xl font-bold text-xs sm:text-sm shadow-xs transition border active:scale-95 whitespace-nowrap flex items-center justify-center gap-1.5 cursor-pointer"
+          class="h-8 sm:h-9 px-2 sm:px-3 rounded-xl font-bold text-xs sm:text-sm shadow-xs transition border active:scale-95 whitespace-nowrap flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer flex-shrink-0"
           [style.backgroundColor]="
             showDetailsDrawer ? currentTheme.buttonActiveBg : currentTheme.buttonBg
-          "
-          [style.color]="
-            showDetailsDrawer ? currentTheme.buttonActiveText : currentTheme.buttonText
           "
           [style.borderColor]="
             showDetailsDrawer ? currentTheme.buttonActiveBg : currentTheme.buttonBorder
           "
-          title="Toggle Details Pane"
+          [style.color]="
+            showDetailsDrawer ? currentTheme.buttonActiveText : currentTheme.buttonText
+          "
         >
-          <span>{{ showDetailsDrawer ? '▶ Hide Details' : '◀ Show Details' }}</span>
+          <span>{{ showDetailsDrawer ? '✕' : '📋' }}</span>
+          <span class="hidden xs:inline sm:inline">{{ showDetailsDrawer ? 'Hide Details' : 'Details' }}</span>
         </button>
       </div>
     </div>
 
     <!-- Map Row: Map Widget + Side Details Pane (NO middle vertical column!) -->
-    <div class="flex flex-col lg:flex-row gap-3 items-start w-full">
+    <div class="flex flex-col lg:flex-row gap-3 items-start w-full relative">
       <!-- Map Area (Fills remaining horizontal space when details pane is open, full width when closed) -->
       <div
-        class="w-full flex-1 rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0 h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px]"
+        class="w-full flex-1 rounded-2xl md:rounded-3xl shadow-xl relative overflow-hidden transition-all duration-300 min-w-0 h-[calc(100dvh-185px)] sm:h-[calc(100vh-172px)] min-h-[380px] sm:min-h-[550px]"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
         style="border-width: 3.5px; border-style: solid"
@@ -512,11 +483,18 @@
         <app-map-view #mapView (settingsClick)="showSettingsModal = true"></app-map-view>
       </div>
 
-      <!-- Right Side Details Pane: Docked cleanly on the right taking 45% width on desktop -->
+      <!-- Mobile Details Backdrop (< lg) -->
+      <div
+        *ngIf="showDetailsDrawer"
+        (click)="toggleDetailsDrawer()"
+        class="fixed inset-0 bg-black/40 backdrop-blur-xs z-[1090] lg:hidden animate-fadeIn"
+      ></div>
+
+      <!-- Right Side Details Pane: Docked cleanly on the right taking 45% width on desktop, fixed slide-over on mobile -->
       <div
         id="detailsDrawer"
         *ngIf="showDetailsDrawer && (stateService.mapMode$ | async) as mode"
-        class="w-full lg:w-[45%] lg:flex-none h-[calc(100vh-190px)] sm:h-[calc(100vh-172px)] min-h-[550px] flex flex-col rounded-2xl md:rounded-3xl shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
+        class="fixed inset-x-2 bottom-2 top-16 z-[1100] lg:static lg:inset-auto lg:z-auto w-auto lg:w-[45%] lg:flex-none h-auto lg:h-[calc(100vh-172px)] lg:min-h-[550px] flex flex-col rounded-2xl md:rounded-3xl shadow-2xl lg:shadow-xl border-[2.5px] overflow-hidden transition-all duration-300 animate-fadeIn"
         [style.backgroundColor]="currentTheme.cardBg"
         [style.borderColor]="currentTheme.cardBorder"
       >

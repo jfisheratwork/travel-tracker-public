@@ -1,6 +1,6 @@
 {
   "meta": {
-    "exportedAt": "2026-09-19T00:36:04.081Z",
+    "exportedAt": "2026-09-21T00:11:08.463Z",
     "version": "v4-angular"
   },
   "settings": {
@@ -32,6 +32,30 @@
       }
     ],
     "hometowns": [
+      {
+        "id": "d5714597-3751-43e8-9619-b37b736b3161",
+        "name": "Novi, Michigan, United States",
+        "lat": 42.480812,
+        "lng": -83.475575
+      },
+      {
+        "id": "81d414eb-2a6b-4a4f-a776-db3e02e4bfb0",
+        "name": "Hamilton, Michigan, United States",
+        "lat": 42.683129,
+        "lng": -86.011615
+      },
+      {
+        "id": "8f7d0933-956d-49bf-9f9c-7727a755f168",
+        "name": "Pittsburgh, Pennsylvania, United States",
+        "lat": 40.439375,
+        "lng": -79.996754
+      },
+      {
+        "id": "621cf001-b9c1-4c09-8cd4-64896df35d66",
+        "name": "Richmond, Virginia, United States",
+        "lat": 37.535871,
+        "lng": -77.434646
+      },
       {
         "name": "Spokane",
         "lat": 47.6571934,
@@ -1217,10 +1241,30 @@
       ],
       "Hawaiʻi Volcanoes": [
         {
-          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68",
+          "firstVisitedDate": ""
         },
         {
-          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1",
+          "firstVisitedDate": ""
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09",
+          "dateVisited": "",
+          "firstVisitedDate": "",
+          "notes": ""
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428",
+          "dateVisited": "",
+          "firstVisitedDate": "",
+          "notes": ""
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698",
+          "dateVisited": "",
+          "firstVisitedDate": "",
+          "notes": ""
         }
       ],
       "Joshua Tree": [
@@ -1442,9 +1486,186 @@
         }
       ]
     },
+    "wantToVisitStates": {
+      "Saskatchewan": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Manitoba": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Northwest Territories": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Nunavut": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Newfoundland and Labrador": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "New Mexico": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Oklahoma": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Mississippi": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Arkansas": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ],
+      "Louisiana": [
+        {
+          "memberId": "116fd596-e1fb-490b-9a1b-e10973036c68"
+        },
+        {
+          "memberId": "fa813fa0-d9a5-4f3a-9f33-142fcdae96a1"
+        },
+        {
+          "memberId": "c654b365-5556-4437-9b00-d97e98c66c09"
+        },
+        {
+          "memberId": "f2d31014-1569-41fa-bd92-ea080ab26428"
+        },
+        {
+          "memberId": "173a9c2d-5b9d-4344-a0ef-eb86ec26c698"
+        }
+      ]
+    },
+    "wantToVisitParks": {},
+    "colorTheme": "forest-ranger",
     "showUSA": true,
     "showCanada": true,
     "showUSAParks": true,
-    "showCanadianParks": true
+    "showCanadianParks": true,
+    "locationVisits": {
+      "Hawaiʻi Volcanoes": []
+    }
   }
 }

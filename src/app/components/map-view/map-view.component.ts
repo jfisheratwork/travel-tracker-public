@@ -62,6 +62,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   private resizeObserver?: ResizeObserver;
+  showMobileLegend = false;
   showParksStatesModal = false;
   parksStatesModalMode: 'parks' | 'states' = 'parks';
   currentThemeId: ColorThemeId = DEFAULT_THEME_ID;

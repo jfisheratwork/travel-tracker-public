@@ -20,6 +20,7 @@ import {
 })
 export class MapStatsLegendComponent {
   @Input({ required: true }) theme!: ColorThemeDefinition;
+  @Input() inline = false;
   @Input() visitedUSStatesCount = 0;
   @Input() visitedCAProvincesCount = 0;
   @Input() visitedUSParksCount = 0;

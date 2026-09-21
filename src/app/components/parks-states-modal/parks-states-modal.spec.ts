@@ -129,4 +129,22 @@ describe('ParksStatesModal', () => {
     expect(wantLocations).toContain('Acadia');
     expect(wantLocations).not.toContain('Banff'); // Banff is visited
   });
+
+  it('should switch modal mode between parks and states', () => {
+    expect(component.mode).toBe('parks');
+    expect(component.locations.length).toBeGreaterThan(50);
+
+    // Switch to states
+    component.switchModalMode('states');
+    expect(component.mode).toBe('states');
+    const stateNames = component.locations.map((l) => l.name);
+    expect(stateNames).toContain('California');
+    expect(stateNames).toContain('Alberta');
+
+    // Switch back to parks
+    component.switchModalMode('parks');
+    expect(component.mode).toBe('parks');
+    const parkNames = component.locations.map((l) => l.name);
+    expect(parkNames).toContain('Yosemite');
+  });
 });

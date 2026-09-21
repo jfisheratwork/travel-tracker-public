@@ -149,6 +149,20 @@ export class SettingsModal implements OnInit, OnDestroy {
     this.draggedType = null;
   }
 
+  moveFamilyMember(index: number, direction: 'up' | 'down'): void {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= this.viewModel.familyMembers.length) return;
+    const item = this.viewModel.familyMembers.splice(index, 1)[0];
+    this.viewModel.familyMembers.splice(targetIndex, 0, item);
+  }
+
+  moveHometown(index: number, direction: 'up' | 'down'): void {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= this.viewModel.hometowns.length) return;
+    const item = this.viewModel.hometowns.splice(index, 1)[0];
+    this.viewModel.hometowns.splice(targetIndex, 0, item);
+  }
+
   // --- Hometowns ---
   async searchHometown(): Promise<void> {
     const query = this.hometownQuery.trim();

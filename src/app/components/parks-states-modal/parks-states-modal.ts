@@ -60,6 +60,15 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     if (this.sub) this.sub.unsubscribe();
   }
 
+  switchModalMode(newMode: 'parks' | 'states'): void {
+    if (this.mode === newMode) return;
+    this.mode = newMode;
+    this.locations = newMode === 'parks' ? NATIONAL_PARKS : STATES;
+    this.stateFilter = 'all';
+    this.searchQuery = '';
+    this.updateAvailableStates();
+  }
+
   updateAvailableStates(): void {
     this.availableStates = getAvailableStateOptions(this.countryFilter, this.mode);
   }
@@ -306,8 +315,6 @@ export class ParksStatesModal implements OnInit, OnDestroy {
       this.stateService.updateSettings(this.viewModel);
     }
     this.stateService.setEditingLocation({ id: locationId, mode: this.mode });
-    // optionally close this modal:
-    // this.close.emit();
   }
 
   save(): void {

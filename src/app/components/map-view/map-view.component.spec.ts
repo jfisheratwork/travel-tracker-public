@@ -192,5 +192,11 @@ describe('MapViewComponent', () => {
       await new Promise((r) => setTimeout(r, 150));
       expect(setViewSpy).not.toHaveBeenCalled();
     });
+
+    it('should toggle showMobileLegend state', () => {
+      expect(component.showMobileLegend).toBe(false);
+      component.showMobileLegend = !component.showMobileLegend;
+      expect(component.showMobileLegend).toBe(true);
+    });
   });
 });

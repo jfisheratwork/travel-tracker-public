@@ -83,4 +83,63 @@ describe('SettingsModal', () => {
     expect(component.viewModel.familyMembers.length).toBe(4);
     expect(component.viewModel.familyMembers[3].name).toBe('David');
   });
+
+  it('should reorder family members up and down', () => {
+    component.newMemberName = 'Alice, Bob, Charlie';
+    component.addFamilyMember();
+
+    // Move Bob up (index 1 -> 0)
+    component.moveFamilyMember(1, 'up');
+    expect(component.viewModel.familyMembers.map((m) => m.name)).toEqual([
+      'Bob',
+      'Alice',
+      'Charlie',
+    ]);
+
+    // Move Bob down (index 0 -> 1)
+    component.moveFamilyMember(0, 'down');
+    expect(component.viewModel.familyMembers.map((m) => m.name)).toEqual([
+      'Alice',
+      'Bob',
+      'Charlie',
+    ]);
+
+    // Out of bounds up (index 0 -> -1) should be a no-op
+    component.moveFamilyMember(0, 'up');
+    expect(component.viewModel.familyMembers.map((m) => m.name)).toEqual([
+      'Alice',
+      'Bob',
+      'Charlie',
+    ]);
+
+    // Out of bounds down (index 2 -> 3) should be a no-op
+    component.moveFamilyMember(2, 'down');
+    expect(component.viewModel.familyMembers.map((m) => m.name)).toEqual([
+      'Alice',
+      'Bob',
+      'Charlie',
+    ]);
+  });
+
+  it('should reorder hometowns up and down', () => {
+    component.addHometown({ name: 'Seattle, WA', lat: 47, lng: -122 });
+    component.addHometown({ name: 'Portland, OR', lat: 45, lng: -122 });
+    component.addHometown({ name: 'San Francisco, CA', lat: 37, lng: -122 });
+
+    // Move San Francisco up (index 2 -> 1)
+    component.moveHometown(2, 'up');
+    expect(component.viewModel.hometowns.map((h) => h.name)).toEqual([
+      'Seattle, WA',
+      'San Francisco, CA',
+      'Portland, OR',
+    ]);
+
+    // Move Seattle down (index 0 -> 1)
+    component.moveHometown(0, 'down');
+    expect(component.viewModel.hometowns.map((h) => h.name)).toEqual([
+      'San Francisco, CA',
+      'Seattle, WA',
+      'Portland, OR',
+    ]);
+  });
 });

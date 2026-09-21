@@ -15,6 +15,8 @@ import { WelcomeModalComponent } from './components/welcome-modal/welcome-modal.
 import { AiTripModalComponent } from './components/ai-trip-modal/ai-trip-modal.component';
 import { GlobalSearchComponent } from './components/global-search/global-search.component';
 import { MapMode } from './models/location.model';
+import { ToastService } from './core/services/toast.service';
+import { AppErrorType } from './core/models/app-error.model';
 import {
   COLOR_THEMES,
   DEFAULT_THEME_ID,
@@ -77,8 +79,55 @@ export class App implements OnInit {
     this.stateService.setDetailsDrawerOpen(!this.showDetailsDrawer);
   }
 
+  showMobileSearch = false;
+
   setMapMode(mode: MapMode): void {
     this.stateService.setMapMode(mode);
+  }
+
+  onModeSelectChange(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    if (select?.value) {
+      this.setMapMode(select.value as MapMode);
+    }
+  }
+
+  handleSmartAdd(mode: MapMode): void {
+    if (mode === 'roads') {
+      this.openRoads();
+    } else if (mode === 'states') {
+      this.openStatesModal();
+    } else {
+      this.openParksModal();
+    }
+  }
+
+  getSmartAddLabel(mode: MapMode): string {
+    switch (mode) {
+      case 'roads':
+        return 'Add Roads';
+      case 'states':
+        return 'Add Regions';
+      case 'parks':
+        return 'Add Parks';
+      case 'places':
+      default:
+        return 'Log Visits';
+    }
+  }
+
+  getSmartAddTitle(mode: MapMode): string {
+    switch (mode) {
+      case 'roads':
+        return 'Plan or add road trips and routes';
+      case 'states':
+        return 'Log visited states and Canadian provinces';
+      case 'parks':
+        return 'Log visited US and Canadian National Parks';
+      case 'places':
+      default:
+        return 'Log visited parks, regions, and places';
+    }
   }
 
   openRoads(): void {
@@ -117,12 +166,40 @@ export class App implements OnInit {
     }
   }
 
+  isLoadingSample = false;
+
   // We inject LocalStorageService here to ensure it's instantiated immediately
   // upon application startup. This guarantees the initial state load.
   constructor(
     private localStorageService: LocalStorageService,
     public stateService: StateService,
+    private toastService: ToastService,
   ) {}
+
+  async loadTryItOutData(): Promise<void> {
+    if (this.isLoadingSample) return;
+    this.isLoadingSample = true;
+    try {
+      const res = await this.localStorageService.loadSamplePreset('family1.json');
+      if (res.success) {
+        this.localStorageService.markWelcomeDismissed();
+        this.showWelcomeModal = false;
+        this.toastService.showSuccess('Sample data loaded! Have fun exploring.');
+      } else {
+        this.toastService.showError({
+          type: AppErrorType.UNKNOWN,
+          message: res.message || 'Could not load sample data.',
+        });
+      }
+    } catch {
+      this.toastService.showError({
+        type: AppErrorType.UNKNOWN,
+        message: 'Could not load sample data.',
+      });
+    } finally {
+      this.isLoadingSample = false;
+    }
+  }
 
   ngOnInit() {
     this.showWelcomeModal = this.localStorageService.isFirstVisitOrNoData();
@@ -131,7 +208,7 @@ export class App implements OnInit {
       this.showDetailsDrawer = isOpen;
       setTimeout(() => {
         this.mapView?.invalidateSize();
-        if (isOpen) {
+        if (isOpen && typeof window !== 'undefined' && window.innerWidth >= 1024) {
           const drawer = document.getElementById('detailsDrawer');
           drawer?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }

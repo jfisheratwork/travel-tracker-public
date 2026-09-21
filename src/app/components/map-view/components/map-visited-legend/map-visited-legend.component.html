@@ -1,5 +1,6 @@
 <div
-  class="absolute right-3 bottom-3 z-[1000] backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3.5 flex flex-col gap-2 select-none no-print transition-colors duration-200"
+  [ngClass]="inline ? 'w-full' : 'hidden md:flex absolute right-3 bottom-3 z-[1000]'"
+  class="backdrop-blur-xs border rounded-2xl shadow-md py-2.5 px-3.5 flex flex-col gap-2 select-none no-print transition-colors duration-200"
   [style.backgroundColor]="theme.cardBg"
   [style.borderColor]="theme.cardBorder"
   [style.color]="theme.textColor"
