@@ -78,7 +78,8 @@ export class App implements OnInit {
     { key: 'state_parks', label: 'State Parks', icon: '🌲' },
     { key: 'landmarks', label: 'Landmarks & Historic', icon: '🗽' },
     { key: 'theme_parks', label: 'Theme Parks', icon: '🎢' },
-    { key: 'cities', label: 'Cities & Capitals', icon: '🏙️' },
+    { key: 'cities', label: 'Cities', icon: '🏙️' },
+    { key: 'capitals', label: 'Capitals', icon: '⭐' },
     { key: 'custom', label: 'Custom Places', icon: '📍' },
   ];
 
@@ -110,6 +111,14 @@ export class App implements OnInit {
 
   togglePlacesFilter(category: PlaceFilterCategory): void {
     this.stateService.togglePlacesFilter(category);
+  }
+
+  isShowUnvisitedPlaces(): boolean {
+    return this.stateService.getShowUnvisitedPlaces();
+  }
+
+  toggleShowUnvisitedPlaces(): void {
+    this.stateService.toggleShowUnvisitedPlaces();
   }
 
   selectAllPlacesFilters(): void {

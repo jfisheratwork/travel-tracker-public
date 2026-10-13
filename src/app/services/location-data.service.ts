@@ -2,7 +2,8 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 // DOCS: https://rxjs.dev/api/index/class/BehaviorSubject
 // DOCS: https://rxjs.dev/api/index/function/of
-import { BehaviorSubject, of } from 'rxjs';
+// DOCS: https://rxjs.dev/api/index/function/combineLatest
+import { BehaviorSubject, combineLatest, of } from 'rxjs';
 // DOCS: https://rxjs.dev/api/operators/catchError
 import { catchError } from 'rxjs/operators';
 import { LocationPoint } from '../models/location.model';
@@ -71,18 +72,35 @@ export class LocationDataService {
 
     this.statesSubject.next([...mappedStates, ...mappedCountryCapitals]);
 
-    this.http
+    const statesGeo$ = this.http
       .get<GeoJSON.FeatureCollection>('assets/data/us_ca_states.geojson')
       .pipe(
         catchError((err) => {
           this.logger.error('Failed to load states GeoJSON data', err);
           return of(null);
         }),
-      )
-      .subscribe((geoJson) => {
-        if (geoJson) {
-          this.statesGeoJsonSubject.next(geoJson);
-        }
+      );
+
+    const worldCountriesGeo$ = this.http
+      .get<GeoJSON.FeatureCollection>('assets/data/world_countries.geojson')
+      .pipe(
+        catchError(() => {
+          return of(null);
+        }),
+      );
+
+    combineLatest([statesGeo$, worldCountriesGeo$]).subscribe(([statesGeo, worldGeo]) => {
+      if (!statesGeo && !worldGeo) {
+        return;
+      }
+      const combinedFeatures: GeoJSON.Feature[] = [
+        ...(statesGeo?.features || []),
+        ...(worldGeo?.features || []),
+      ];
+      this.statesGeoJsonSubject.next({
+        type: 'FeatureCollection',
+        features: combinedFeatures,
       });
+    });
   }
 }

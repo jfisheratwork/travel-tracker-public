@@ -5,6 +5,9 @@ import { StateService } from '../../services/state.service';
 import { AppSettings, VisitDetail, VisitLogEntry } from '../../models/settings.model';
 import { Subscription } from 'rxjs';
 import { NATIONAL_PARKS, STATES, GeoLocation } from '../../core/constants/geography.constants';
+import { GLOBAL_COUNTRIES, COUNTRIES_MAP } from '../../core/constants/countries.constants';
+import { REGIONS_MAP } from '../../core/constants/regions.constants';
+import { STATIC_PLACES_CATALOG } from '../../core/constants/curated-places.constants';
 
 @Component({
   selector: 'app-location-detail-modal',
@@ -29,13 +32,70 @@ export class LocationDetailModal implements OnInit, OnDestroy {
   constructor(private stateService: StateService) {}
 
   ngOnInit(): void {
-    const list = this.mode === 'parks' ? NATIONAL_PARKS : STATES;
+    this.sub = this.stateService.settings$.subscribe((settings) => {
+      this.viewModel = JSON.parse(JSON.stringify(settings));
+      this.resolveLocation();
+      this.initializeEditingState();
+    });
+  }
+
+  private resolveLocation(): void {
+    const allCountries: GeoLocation[] = GLOBAL_COUNTRIES.map((c) => ({
+      id: c.name,
+      name: c.name,
+      lat: 0,
+      lng: 0,
+      sub: c.code,
+      country: c.name,
+      category: 'country',
+    }));
+    const curatedLocs: GeoLocation[] = STATIC_PLACES_CATALOG.map((p) => {
+      const cName =
+        COUNTRIES_MAP.get(p.countryId)?.name ||
+        (p.countryId === 'US' ? 'USA' : p.countryId === 'CA' ? 'Canada' : p.countryId);
+      const rName = p.regionId ? REGIONS_MAP.get(p.regionId)?.name : undefined;
+      return {
+        id: p.id,
+        name: p.name,
+        lat: p.lat,
+        lng: p.lng,
+        sub: rName || '',
+        country: cName,
+        category: p.category,
+        regionName: rName,
+      };
+    });
+    const customLocs: GeoLocation[] = (this.viewModel?.customPlaces || []).map((p) => {
+      const cName =
+        COUNTRIES_MAP.get(p.countryId)?.name ||
+        (p.countryId === 'US' ? 'USA' : p.countryId === 'CA' ? 'Canada' : p.countryId);
+      const rName = p.regionId ? REGIONS_MAP.get(p.regionId)?.name : undefined;
+      return {
+        id: p.id,
+        name: p.name,
+        lat: p.lat,
+        lng: p.lng,
+        sub: rName || '',
+        country: cName,
+        category: p.category,
+        regionName: rName,
+      };
+    });
+
+    const primaryList = this.mode === 'parks' ? NATIONAL_PARKS : [...STATES, ...allCountries];
+    const fallbackList = [
+      ...primaryList,
+      ...(this.mode === 'parks' ? [...STATES, ...allCountries] : NATIONAL_PARKS),
+      ...curatedLocs,
+      ...customLocs,
+    ];
+
     const cleanId = this.locationId
       .replace(/^park-/, '')
       .replace(/^state-/, '')
       .toLowerCase();
     this.location =
-      list.find(
+      fallbackList.find(
         (l) =>
           l.id === this.locationId ||
           l.id.toLowerCase() === cleanId ||
@@ -46,22 +106,36 @@ export class LocationDetailModal implements OnInit, OnDestroy {
     if (this.location) {
       this.locationId = this.location.id;
     }
-
-    this.sub = this.stateService.settings$.subscribe((settings) => {
-      this.viewModel = JSON.parse(JSON.stringify(settings));
-      this.initializeEditingState();
-    });
   }
 
   ngOnDestroy(): void {
     if (this.sub) this.sub.unsubscribe();
   }
 
+  private getVisitsMap(): Record<string, VisitDetail[]> {
+    if (!this.viewModel) return {};
+    if (!this.viewModel.visitedParks) this.viewModel.visitedParks = {};
+    if (!this.viewModel.visitedStates) this.viewModel.visitedStates = {};
+    return this.mode === 'parks' ? this.viewModel.visitedParks : this.viewModel.visitedStates;
+  }
+
   private initializeEditingState(): void {
     if (!this.viewModel) return;
-    const visits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
-    const locVisits = visits[this.locationId] || [];
+    const visits = this.getVisitsMap();
+    const locVisits = [...(visits[this.locationId] || [])];
+    const v4Visits = this.viewModel.placeVisits?.[this.locationId] || [];
+
+    for (const v4 of v4Visits) {
+      if (v4.status === 'visited' && !locVisits.some((v) => v.memberId === v4.memberId)) {
+        locVisits.push({
+          memberId: v4.memberId,
+          firstVisitedDate: v4.dateVisited || '',
+          dateVisited: v4.dateVisited || '',
+          notes: v4.notes || '',
+        });
+      }
+    }
+    visits[this.locationId] = locVisits;
 
     this.editingVisits = {};
     for (const member of this.viewModel.familyMembers) {
@@ -88,8 +162,7 @@ export class LocationDetailModal implements OnInit, OnDestroy {
 
   isVisited(memberId: string): boolean {
     if (!this.viewModel) return false;
-    const visits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const visits = this.getVisitsMap();
     const locVisits = visits[this.locationId] || [];
     return locVisits.some((v) => v.memberId === memberId);
   }
@@ -98,8 +171,7 @@ export class LocationDetailModal implements OnInit, OnDestroy {
     const isChecked = (event.target as HTMLInputElement).checked;
     if (!this.viewModel) return;
 
-    const visits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const visits = this.getVisitsMap();
     if (!visits[this.locationId]) visits[this.locationId] = [];
 
     const locVisits = visits[this.locationId];
@@ -114,8 +186,7 @@ export class LocationDetailModal implements OnInit, OnDestroy {
 
   updateDetails(memberId: string): void {
     if (!this.viewModel) return;
-    const visits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const visits = this.getVisitsMap();
     const locVisits = visits[this.locationId] || [];
 
     const idx = locVisits.findIndex((v) => v.memberId === memberId);
@@ -151,9 +222,12 @@ export class LocationDetailModal implements OnInit, OnDestroy {
     this.viewModel.locationVisits[this.locationId] = this.locationVisitLogs;
 
     // Update visited details per member
-    const visits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const visits = this.getVisitsMap();
     const locVisits = visits[this.locationId] || [];
+
+    if (!this.viewModel.placeVisits) {
+      this.viewModel.placeVisits = {};
+    }
 
     locVisits.forEach((v) => {
       const edit = this.editingVisits[v.memberId];
@@ -163,6 +237,15 @@ export class LocationDetailModal implements OnInit, OnDestroy {
         v.notes = edit.notes;
       }
     });
+
+    // Sync V4 placeVisits for this location
+    this.viewModel.placeVisits[this.locationId] = locVisits.map((v) => ({
+      placeId: this.locationId,
+      memberId: v.memberId,
+      status: 'visited',
+      dateVisited: v.firstVisitedDate || v.dateVisited,
+      notes: v.notes,
+    }));
 
     this.stateService.updateSettings(this.viewModel);
     this.close.emit();

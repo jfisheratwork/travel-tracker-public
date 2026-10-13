@@ -19,14 +19,16 @@ describe('MapStatsLegendComponent', () => {
     component.visitedCAProvincesCount = 3;
     component.visitedUSParksCount = 5;
     component.visitedCAParksCount = 1;
+    component.visitedCountriesCount = 4;
     fixture.detectChanges();
   });
 
-  it('should create and render statistics', () => {
+  it('should create and render statistics including countries visited', () => {
     expect(component).toBeTruthy();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('12 / 50');
     expect(compiled.textContent).toContain('3 / 13');
+    expect(compiled.textContent).toContain(`4 / ${component.TOTAL_GLOBAL_COUNTRIES}`);
     expect(compiled.textContent).toContain('5 / 63');
     expect(compiled.textContent).toContain(`1 / ${component.TOTAL_CA_PARKS}`);
   });

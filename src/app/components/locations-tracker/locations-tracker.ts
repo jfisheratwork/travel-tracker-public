@@ -14,6 +14,9 @@ import {
   STATE_CODE_TO_NAME,
   getAvailableStateOptions,
 } from '../../core/constants/geography.constants';
+import { GLOBAL_COUNTRIES, COUNTRIES_MAP } from '../../core/constants/countries.constants';
+import { REGIONS_MAP } from '../../core/constants/regions.constants';
+import { STATIC_PLACES_CATALOG } from '../../core/constants/curated-places.constants';
 
 export interface VisitedLocationItem {
   location: GeoLocation;
@@ -39,7 +42,7 @@ export interface VisitedLocationItem {
 })
 export class LocationsTrackerComponent implements OnInit, OnDestroy {
   mode: 'parks' | 'states' | 'places' = 'parks';
-  editModalMode: 'parks' | 'states' = 'parks';
+  editModalMode: 'parks' | 'states' | 'places' = 'parks';
   settings: AppSettings | null = null;
   searchTerm = '';
   showModal = false;
@@ -89,12 +92,19 @@ export class LocationsTrackerComponent implements OnInit, OnDestroy {
   }
 
   isParkLocation(location: GeoLocation): boolean {
-    return NATIONAL_PARKS.some((p) => p.id === location.id);
+    return location.category === 'park' || NATIONAL_PARKS.some((p) => p.id === location.id);
   }
 
   getSubtitle(location: GeoLocation): string {
     const sub = location.sub || '';
-    if (this.isParkLocation(location)) {
+    if (location.category === 'country') {
+      return location.capital ? `Capital: ${location.capital}` : sub;
+    }
+    if (
+      this.isParkLocation(location) ||
+      location.category === 'city' ||
+      location.category === 'landmark'
+    ) {
       return location.country ? (sub ? `${sub}, ${location.country}` : location.country) : sub;
     }
     return location.capital ? `Capital: ${location.capital}` : sub;
@@ -176,6 +186,8 @@ export class LocationsTrackerComponent implements OnInit, OnDestroy {
     if (!this.settings) return [];
 
     const result: VisitedLocationItem[] = [];
+    const seenIds = new Set<string>();
+    const placeVisitsMap = this.settings.placeVisits || {};
 
     const processLocations = (
       visitsMap:
@@ -204,19 +216,64 @@ export class LocationsTrackerComponent implements OnInit, OnDestroy {
       const allLocIds = new Set<string>([
         ...Object.keys(visitsMap || {}),
         ...Object.keys(wantMap || {}),
+        ...Object.keys(placeVisitsMap),
       ]);
 
       for (const locId of allLocIds) {
-        const visitDetails = visitsMap?.[locId] || [];
-        const wantDetails = wantMap?.[locId] || [];
+        if (seenIds.has(locId)) continue;
+
+        const location = allLocs.find((l) => l.id === locId);
+        if (!location) continue;
+
+        const legacyVisits = visitsMap?.[locId] || [];
+        const legacyWant = wantMap?.[locId] || [];
+        const v4Entries = placeVisitsMap[locId] || [];
+
+        const visitDetailsMap = new Map<
+          string,
+          { memberId: string; firstVisitedDate?: string; dateVisited?: string; notes?: string }
+        >();
+        for (const v of legacyVisits) {
+          visitDetailsMap.set(v.memberId, v);
+        }
+        for (const v of v4Entries) {
+          if (v.status === 'visited' && !visitDetailsMap.has(v.memberId)) {
+            visitDetailsMap.set(v.memberId, {
+              memberId: v.memberId,
+              firstVisitedDate: v.dateVisited,
+              dateVisited: v.dateVisited,
+              notes: v.notes,
+            });
+          }
+        }
+        const visitDetails = Array.from(visitDetailsMap.values());
+
+        const wantDetailsMap = new Map<string, { memberId: string; notes?: string }>();
+        for (const w of legacyWant) {
+          if (!visitDetailsMap.has(w.memberId)) {
+            wantDetailsMap.set(w.memberId, w);
+          }
+        }
+        for (const v of v4Entries) {
+          if (
+            v.status === 'want_to_visit' &&
+            !visitDetailsMap.has(v.memberId) &&
+            !wantDetailsMap.has(v.memberId)
+          ) {
+            wantDetailsMap.set(v.memberId, {
+              memberId: v.memberId,
+              notes: v.notes,
+            });
+          }
+        }
+        const wantDetails = Array.from(wantDetailsMap.values());
         const visitLogs = this.settings!.locationVisits?.[locId] || [];
 
         if (visitDetails.length === 0 && wantDetails.length === 0 && visitLogs.length === 0) {
           continue;
         }
 
-        const location = allLocs.find((l) => l.id === locId);
-        if (!location) continue;
+        seenIds.add(locId);
 
         const visitedMemberIds = Array.from(new Set(visitDetails.map((v) => v.memberId)));
         const wantMemberIds = Array.from(new Set(wantDetails.map((v) => v.memberId)));
@@ -279,12 +336,65 @@ export class LocationsTrackerComponent implements OnInit, OnDestroy {
       processLocations(
         this.settings.visitedParks,
         this.settings.wantToVisitParks,
-        NATIONAL_PARKS,
+        NATIONAL_PARKS.map((p) => ({ ...p, category: 'park' })),
         true,
       );
     }
     if (this.mode === 'states' || this.mode === 'places') {
-      processLocations(this.settings.visitedStates, this.settings.wantToVisitStates, STATES, false);
+      const allCountries: GeoLocation[] = GLOBAL_COUNTRIES.map((c) => ({
+        id: c.name,
+        name: c.name,
+        lat: 0,
+        lng: 0,
+        sub: c.code,
+        country: c.name === 'United States' ? 'USA' : c.name,
+        category: 'country',
+      }));
+      const statesAndCountries: GeoLocation[] = [
+        ...STATES.map((s) => ({ ...s, category: 'region' })),
+        ...allCountries,
+      ];
+      processLocations(
+        this.settings.visitedStates,
+        this.settings.wantToVisitStates,
+        statesAndCountries,
+        false,
+      );
+    }
+    if (this.mode === 'places') {
+      const curatedLocs: GeoLocation[] = STATIC_PLACES_CATALOG.map((p) => {
+        const cName =
+          COUNTRIES_MAP.get(p.countryId)?.name ||
+          (p.countryId === 'US' ? 'USA' : p.countryId === 'CA' ? 'Canada' : p.countryId);
+        const rName = p.regionId ? REGIONS_MAP.get(p.regionId)?.name : undefined;
+        return {
+          id: p.id,
+          name: p.name,
+          lat: p.lat,
+          lng: p.lng,
+          sub: rName || '',
+          country: cName === 'United States' ? 'USA' : cName,
+          category: p.category,
+          regionName: rName,
+        };
+      });
+      const customLocs: GeoLocation[] = (this.settings.customPlaces || []).map((p) => {
+        const cName =
+          COUNTRIES_MAP.get(p.countryId)?.name ||
+          (p.countryId === 'US' ? 'USA' : p.countryId === 'CA' ? 'Canada' : p.countryId);
+        const rName = p.regionId ? REGIONS_MAP.get(p.regionId)?.name : undefined;
+        return {
+          id: p.id,
+          name: p.name,
+          lat: p.lat,
+          lng: p.lng,
+          sub: rName || '',
+          country: cName === 'United States' ? 'USA' : cName,
+          category: p.category,
+          regionName: rName,
+        };
+      });
+      processLocations(undefined, undefined, [...curatedLocs, ...customLocs], false);
     }
 
     let filtered = result;
@@ -365,8 +475,10 @@ export class LocationsTrackerComponent implements OnInit, OnDestroy {
     this.stateService.setLocationStatus(item.location.id, locMode, newStatus, targetMember);
   }
 
-  openEditModal(modalMode?: 'parks' | 'states'): void {
-    this.editModalMode = modalMode || (this.mode === 'states' ? 'states' : 'parks');
+  openEditModal(modalMode?: 'parks' | 'states' | 'places'): void {
+    this.editModalMode =
+      modalMode ||
+      (this.mode === 'states' ? 'states' : this.mode === 'places' ? 'places' : 'parks');
     this.showModal = true;
   }
 

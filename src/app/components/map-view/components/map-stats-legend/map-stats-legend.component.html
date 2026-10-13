@@ -14,6 +14,16 @@
 
   <div class="w-full h-px" [style.backgroundColor]="theme.cardBorder"></div>
 
+  <!-- Countries -->
+  <div class="flex items-center justify-between gap-3 text-xs">
+    <span class="flex items-center gap-1.5 font-medium" [style.color]="theme.subtextColor">
+      <span>🌍</span> Countries
+    </span>
+    <span class="font-bold" [style.color]="theme.textColor">
+      {{ visitedCountriesCount }} / {{ TOTAL_GLOBAL_COUNTRIES }}
+    </span>
+  </div>
+
   <!-- US States -->
   <div class="flex items-center justify-between gap-3 text-xs">
     <span class="flex items-center gap-1.5 font-medium" [style.color]="theme.subtextColor">

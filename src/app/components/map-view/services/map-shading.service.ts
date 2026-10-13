@@ -55,6 +55,77 @@ export class MapShadingService {
     const totalFamily = settings.familyMembers?.length || 0;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const getFeatureVisitState = (feature: any) => {
+      const stateId = feature?.id as string;
+      const codeId = feature?.properties?.id || feature?.properties?.code;
+
+      const visitDetails = [
+        ...(settings.visitedStates?.[stateId] || []),
+        ...(codeId && codeId !== stateId ? settings.visitedStates?.[codeId] || [] : []),
+      ];
+      const wantDetails = [
+        ...(settings.wantToVisitStates?.[stateId] || []),
+        ...(codeId && codeId !== stateId ? settings.wantToVisitStates?.[codeId] || [] : []),
+      ];
+      const v4Visits = [
+        ...(settings.placeVisits?.[stateId] || []),
+        ...(codeId && codeId !== stateId ? settings.placeVisits?.[codeId] || [] : []),
+      ];
+      const locationLogs = [
+        ...(settings.locationVisits?.[stateId] || []),
+        ...(codeId && codeId !== stateId ? settings.locationVisits?.[codeId] || [] : []),
+      ];
+
+      const visitedMemberMap = new Map<string, LocationPopupMemberVisit>();
+      for (const v of visitDetails) {
+        const mem = settings.familyMembers?.find((m) => m.id === v.memberId);
+        if (mem && !visitedMemberMap.has(mem.id)) {
+          visitedMemberMap.set(mem.id, {
+            ...mem,
+            date: v.firstVisitedDate || v.dateVisited,
+            notes: v.notes,
+          });
+        }
+      }
+      for (const v of v4Visits) {
+        if (v.status === 'visited') {
+          const mem = settings.familyMembers?.find((m) => m.id === v.memberId);
+          if (mem && !visitedMemberMap.has(mem.id)) {
+            visitedMemberMap.set(mem.id, {
+              ...mem,
+              date: v.dateVisited,
+              notes: v.notes,
+            });
+          }
+        }
+      }
+
+      const visitors = Array.from(visitedMemberMap.values());
+      const v4VisitedCount = v4Visits.filter((v) => v.status === 'visited').length;
+      const v4WantCount = v4Visits.filter((v) => v.status === 'want_to_visit').length;
+
+      const isVisited =
+        visitors.length > 0 ||
+        visitDetails.length > 0 ||
+        v4VisitedCount > 0 ||
+        locationLogs.length > 0;
+      const isAllVisited = totalFamily > 0 ? visitors.length === totalFamily : isVisited;
+      const isPartiallyVisited =
+        totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
+      const hasWantToVisit = !isVisited && (wantDetails.length > 0 || v4WantCount > 0);
+
+      return {
+        stateId,
+        visitors,
+        locationLogs,
+        isVisited,
+        isAllVisited,
+        isPartiallyVisited,
+        hasWantToVisit,
+      };
+    };
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getFeatureStyle = (feature: any): L.PathOptions => {
       if (!feature) {
         return {
@@ -64,20 +135,7 @@ export class MapShadingService {
           weight: 0.75,
         };
       }
-      const stateId = feature.id as string;
-      const visitDetails = settings.visitedStates?.[stateId] || [];
-      const locationLogs = settings.locationVisits?.[stateId] || [];
-      const visitors = visitDetails
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((v: any) => settings.familyMembers?.find((m) => m.id === v.memberId))
-        .filter(Boolean);
-
-      const isAllVisited =
-        totalFamily > 0
-          ? visitors.length === totalFamily
-          : visitDetails.length > 0 || locationLogs.length > 0;
-      const isPartiallyVisited =
-        totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
+      const { isAllVisited, isPartiallyVisited, hasWantToVisit } = getFeatureVisitState(feature);
 
       const stateName = (feature.properties?.name || feature.id || '').toLowerCase();
       const matchesSearch = !currentSearchTerm || stateName.includes(currentSearchTerm);
@@ -90,8 +148,6 @@ export class MapShadingService {
           weight: 0.5,
         };
       }
-      const wantDetails = settings.wantToVisitStates?.[stateId] || [];
-      const hasWantToVisit = wantDetails.length > 0;
 
       if (isAllVisited) {
         return {
@@ -134,25 +190,9 @@ export class MapShadingService {
         if (isParksMode) {
           return;
         }
-        const stateId = feature.id as string;
         const stateName = feature.properties?.name || feature.id;
-        const visitDetails = settings.visitedStates?.[stateId] || [];
-        const wantDetails = settings.wantToVisitStates?.[stateId] || [];
-        const locationLogs = settings.locationVisits?.[stateId] || [];
-        const isVisited = visitDetails.length > 0 || locationLogs.length > 0;
-        const isWant = !isVisited && wantDetails.length > 0;
-
-        const visitors: LocationPopupMemberVisit[] = [];
-        for (const v of visitDetails) {
-          const mem = settings.familyMembers?.find((m) => m.id === v.memberId);
-          if (mem) {
-            visitors.push({
-              ...mem,
-              date: v.firstVisitedDate || v.dateVisited,
-              notes: v.notes,
-            });
-          }
-        }
+        const { stateId, visitors, locationLogs, isVisited, hasWantToVisit } =
+          getFeatureVisitState(feature);
 
         const popupHtml = buildLocationPopupHtml(
           {
@@ -160,7 +200,7 @@ export class MapShadingService {
             isPark: false,
             originalId: stateId,
             visited: isVisited,
-            wantToVisit: isWant,
+            wantToVisit: hasWantToVisit,
             visitedByMembers: visitors,
             visitLogs: locationLogs,
           },

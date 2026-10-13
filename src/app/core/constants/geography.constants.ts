@@ -7,6 +7,8 @@ export interface GeoLocation {
   country?: string;
   capital?: string;
   isCountryCapital?: boolean;
+  category?: string;
+  regionName?: string;
 }
 
 export const NATIONAL_PARKS: GeoLocation[] = [

@@ -264,4 +264,112 @@ describe('MapMarkerService', () => {
     iconHtml = (layers[0].getIcon().options as L.DivIconOptions).html as string;
     expect(iconHtml).toContain(CA_LEGISLATIVE_BLDG_SVG);
   });
+
+  it('should hide unvisited places when showUnvisitedPlaces is false and show them when true', () => {
+    const layerGroup = createLayerGroupMock();
+    const locations: LocationPoint[] = [
+      {
+        id: 'city-chicago',
+        name: 'Chicago',
+        region: 'US-IL',
+        lat: 41.8781,
+        lng: -87.6298,
+        visited: true,
+        visitedBy: ['1'],
+        category: 'city',
+      },
+      {
+        id: 'city-springfield-il',
+        name: 'Springfield',
+        region: 'US-IL',
+        lat: 39.7817,
+        lng: -89.6501,
+        visited: false,
+        visitedBy: [],
+        isCapital: true,
+        category: 'city',
+      },
+    ];
+
+    service.renderMarkers({
+      layerGroup,
+      locations,
+      searchTerm: '',
+      mapMode: 'places',
+      currentTheme: defaultTheme,
+      familyMembers: [],
+      showUnvisitedPlaces: false,
+    });
+    let layers = (layerGroup as unknown as { getLayers: () => L.Marker[] }).getLayers();
+    expect(layers.length).toBe(1);
+
+    service.renderMarkers({
+      layerGroup,
+      locations,
+      searchTerm: '',
+      mapMode: 'places',
+      currentTheme: defaultTheme,
+      familyMembers: [],
+      showUnvisitedPlaces: true,
+    });
+    layers = (layerGroup as unknown as { getLayers: () => L.Marker[] }).getLayers();
+    expect(layers.length).toBe(2);
+  });
+
+  it('should filter cities and capitals independently using placesFilters', () => {
+    const layerGroup = createLayerGroupMock();
+    const locations: LocationPoint[] = [
+      {
+        id: 'city-chicago',
+        name: 'Chicago',
+        region: 'US-IL',
+        lat: 41.8781,
+        lng: -87.6298,
+        visited: true,
+        visitedBy: ['1'],
+        category: 'city',
+      },
+      {
+        id: 'city-springfield-il',
+        name: 'Springfield',
+        region: 'US-IL',
+        lat: 39.7817,
+        lng: -89.6501,
+        visited: true,
+        visitedBy: ['1'],
+        isCapital: true,
+        category: 'city',
+      },
+    ];
+
+    // Only cities (no capitals)
+    service.renderMarkers({
+      layerGroup,
+      locations,
+      searchTerm: '',
+      mapMode: 'places',
+      currentTheme: defaultTheme,
+      familyMembers: [],
+      placesFilters: ['cities'],
+    });
+    let layers = (layerGroup as unknown as { getLayers: () => L.Marker[] }).getLayers();
+    expect(layers.length).toBe(1);
+    let iconHtml = (layers[0].getIcon().options as L.DivIconOptions).html as string;
+    expect(iconHtml).toContain('🏙️');
+
+    // Only capitals (no regular cities)
+    service.renderMarkers({
+      layerGroup,
+      locations,
+      searchTerm: '',
+      mapMode: 'places',
+      currentTheme: defaultTheme,
+      familyMembers: [],
+      placesFilters: ['capitals'],
+    });
+    layers = (layerGroup as unknown as { getLayers: () => L.Marker[] }).getLayers();
+    expect(layers.length).toBe(1);
+    iconHtml = (layers[0].getIcon().options as L.DivIconOptions).html as string;
+    expect(iconHtml).toContain(US_CAPITOL_DOME_SVG);
+  });
 });

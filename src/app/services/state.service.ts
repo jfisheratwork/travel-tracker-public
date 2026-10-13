@@ -4,6 +4,10 @@ import { AppSettings, DEFAULT_SETTINGS, Hometown } from '../models/settings.mode
 import { RouteObject } from '../models/route.model';
 import { ColorThemeId, DEFAULT_THEME_ID } from '../core/constants/theme.constants';
 import { MapMode } from '../models/location.model';
+import { COUNTRIES_MAP } from '../core/constants/countries.constants';
+import { REGIONS, REGIONS_MAP } from '../core/constants/regions.constants';
+import { NATIONAL_PARKS, STATES, STATE_CODE_TO_NAME } from '../core/constants/geography.constants';
+import { STATIC_PLACES_CATALOG } from '../core/constants/curated-places.constants';
 
 export type PlaceFilterCategory =
   | 'states'
@@ -12,6 +16,7 @@ export type PlaceFilterCategory =
   | 'landmarks'
   | 'theme_parks'
   | 'cities'
+  | 'capitals'
   | 'custom';
 
 export const ALL_PLACE_FILTER_CATEGORIES: PlaceFilterCategory[] = [
@@ -21,6 +26,7 @@ export const ALL_PLACE_FILTER_CATEGORIES: PlaceFilterCategory[] = [
   'landmarks',
   'theme_parks',
   'cities',
+  'capitals',
   'custom',
 ];
 
@@ -38,6 +44,9 @@ export class StateService {
     ...ALL_PLACE_FILTER_CATEGORIES,
   ]);
   public placesFilters$ = this.placesFiltersSubject.asObservable();
+
+  private showUnvisitedPlacesSubject = new BehaviorSubject<boolean>(false);
+  public showUnvisitedPlaces$ = this.showUnvisitedPlacesSubject.asObservable();
 
   private selectedRouteIdsSubject = new BehaviorSubject<string[] | null>(null);
   public selectedRouteIds$ = this.selectedRouteIdsSubject.asObservable();
@@ -96,6 +105,18 @@ export class StateService {
 
   clearAllPlacesFilters(): void {
     this.setPlacesFilters([]);
+  }
+
+  getShowUnvisitedPlaces(): boolean {
+    return this.showUnvisitedPlacesSubject.getValue();
+  }
+
+  setShowUnvisitedPlaces(show: boolean): void {
+    this.showUnvisitedPlacesSubject.next(show);
+  }
+
+  toggleShowUnvisitedPlaces(): void {
+    this.showUnvisitedPlacesSubject.next(!this.showUnvisitedPlacesSubject.getValue());
   }
 
   getSelectedRouteIds(): string[] | null {
@@ -189,13 +210,18 @@ export class StateService {
     const settings = this.getSettings();
     const visited = mode === 'parks' ? settings.visitedParks : settings.visitedStates;
     const want = mode === 'parks' ? settings.wantToVisitParks : settings.wantToVisitStates;
+    const v4Visits = settings.placeVisits?.[locationId] || [];
 
     if (memberId) {
+      const v4 = v4Visits.find((v) => v.memberId === memberId);
+      if (v4) return v4.status === 'want_to_visit' ? 'want' : 'visited';
       if (visited?.[locationId]?.some((v) => v.memberId === memberId)) return 'visited';
       if (want?.[locationId]?.some((v) => v.memberId === memberId)) return 'want';
       return 'unvisited';
     }
 
+    if (v4Visits.some((v) => v.status === 'visited')) return 'visited';
+    if (v4Visits.some((v) => v.status === 'want_to_visit')) return 'want';
     if (visited?.[locationId] && visited[locationId].length > 0) return 'visited';
     if (want?.[locationId] && want[locationId].length > 0) return 'want';
     return 'unvisited';
@@ -207,14 +233,12 @@ export class StateService {
     status: 'visited' | 'want' | 'unvisited',
     memberId?: string,
   ): void {
-    const settings = JSON.parse(JSON.stringify(this.getSettings()));
+    const settings = JSON.parse(JSON.stringify(this.getSettings())) as AppSettings;
     if (!settings.visitedParks) settings.visitedParks = {};
     if (!settings.visitedStates) settings.visitedStates = {};
     if (!settings.wantToVisitParks) settings.wantToVisitParks = {};
     if (!settings.wantToVisitStates) settings.wantToVisitStates = {};
-
-    const visitedMap = mode === 'parks' ? settings.visitedParks : settings.visitedStates;
-    const wantMap = mode === 'parks' ? settings.wantToVisitParks : settings.wantToVisitStates;
+    if (!settings.placeVisits) settings.placeVisits = {};
 
     const allMembers = settings.familyMembers || [];
     const targetMemberIds = memberId
@@ -223,44 +247,115 @@ export class StateService {
         ? allMembers.map((m: { id: string }) => m.id)
         : ['default'];
 
+    const applyToMaps = (
+      targetId: string,
+      isParkTarget: boolean,
+      targetStatus: 'visited' | 'want' | 'unvisited',
+    ) => {
+      const vMap = isParkTarget ? settings.visitedParks! : settings.visitedStates!;
+      const wMap = isParkTarget ? settings.wantToVisitParks! : settings.wantToVisitStates!;
+
+      if (!settings.placeVisits[targetId]) {
+        settings.placeVisits[targetId] = [];
+      }
+      settings.placeVisits[targetId] = settings.placeVisits[targetId].filter(
+        (v) => !targetMemberIds.includes(v.memberId),
+      );
+      if (targetStatus === 'visited') {
+        for (const mId of targetMemberIds) {
+          settings.placeVisits[targetId].push({
+            placeId: targetId,
+            memberId: mId,
+            status: 'visited',
+            dateVisited: new Date().toISOString().split('T')[0],
+          });
+        }
+      } else if (targetStatus === 'want') {
+        for (const mId of targetMemberIds) {
+          settings.placeVisits[targetId].push({
+            placeId: targetId,
+            memberId: mId,
+            status: 'want_to_visit',
+          });
+        }
+      }
+      if (settings.placeVisits[targetId].length === 0) {
+        delete settings.placeVisits[targetId];
+      }
+
+      if (targetStatus === 'visited') {
+        if (!vMap[targetId]) vMap[targetId] = [];
+        for (const mId of targetMemberIds) {
+          if (!vMap[targetId].some((v) => v.memberId === mId)) {
+            vMap[targetId].push({ memberId: mId });
+          }
+        }
+        if (wMap[targetId]) {
+          wMap[targetId] = wMap[targetId].filter((v) => !targetMemberIds.includes(v.memberId));
+          if (wMap[targetId].length === 0) delete wMap[targetId];
+        }
+      } else if (targetStatus === 'want') {
+        if (!wMap[targetId]) wMap[targetId] = [];
+        for (const mId of targetMemberIds) {
+          if (!wMap[targetId].some((v) => v.memberId === mId)) {
+            wMap[targetId].push({ memberId: mId });
+          }
+        }
+        if (vMap[targetId]) {
+          vMap[targetId] = vMap[targetId].filter((v) => !targetMemberIds.includes(v.memberId));
+          if (vMap[targetId].length === 0) delete vMap[targetId];
+        }
+      } else {
+        if (vMap[targetId]) {
+          vMap[targetId] = vMap[targetId].filter((v) => !targetMemberIds.includes(v.memberId));
+          if (vMap[targetId].length === 0) delete vMap[targetId];
+        }
+        if (wMap[targetId]) {
+          wMap[targetId] = wMap[targetId].filter((v) => !targetMemberIds.includes(v.memberId));
+          if (wMap[targetId].length === 0) delete wMap[targetId];
+        }
+      }
+    };
+
+    const isPark = mode === 'parks';
+    applyToMaps(locationId, isPark, status);
+
+    // Auto-log parent region & country when status === 'visited'
     if (status === 'visited') {
-      if (!visitedMap[locationId]) visitedMap[locationId] = [];
-      for (const mId of targetMemberIds) {
-        if (!visitedMap[locationId].some((v: { memberId: string }) => v.memberId === mId)) {
-          visitedMap[locationId].push({ memberId: mId });
+      const curated =
+        STATIC_PLACES_CATALOG.find((p) => p.id === locationId) ||
+        (settings.customPlaces || []).find((p) => p.id === locationId);
+      const park = NATIONAL_PARKS.find((p) => p.id === locationId);
+      const stateObj = STATES.find((s) => s.id === locationId || s.name === locationId);
+      const regionObj = REGIONS.find((r) => r.name === locationId || r.id === locationId);
+
+      if (curated) {
+        if (curated.regionId) {
+          const rName = REGIONS_MAP.get(curated.regionId)?.name;
+          if (rName) applyToMaps(rName, false, 'visited');
         }
-      }
-      if (wantMap[locationId]) {
-        wantMap[locationId] = wantMap[locationId].filter(
-          (v: { memberId: string }) => !targetMemberIds.includes(v.memberId),
-        );
-        if (wantMap[locationId].length === 0) delete wantMap[locationId];
-      }
-    } else if (status === 'want') {
-      if (!wantMap[locationId]) wantMap[locationId] = [];
-      for (const mId of targetMemberIds) {
-        if (!wantMap[locationId].some((v: { memberId: string }) => v.memberId === mId)) {
-          wantMap[locationId].push({ memberId: mId });
+        const cName =
+          COUNTRIES_MAP.get(curated.countryId)?.name ||
+          (curated.countryId === 'US'
+            ? 'United States'
+            : curated.countryId === 'CA'
+              ? 'Canada'
+              : '');
+        if (cName) applyToMaps(cName, false, 'visited');
+      } else if (park) {
+        if (park.sub) {
+          const primaryCode = park.sub.split('/')[0];
+          const rName = STATE_CODE_TO_NAME[primaryCode];
+          if (rName) applyToMaps(rName, false, 'visited');
         }
-      }
-      if (visitedMap[locationId]) {
-        visitedMap[locationId] = visitedMap[locationId].filter(
-          (v: { memberId: string }) => !targetMemberIds.includes(v.memberId),
-        );
-        if (visitedMap[locationId].length === 0) delete visitedMap[locationId];
-      }
-    } else {
-      if (visitedMap[locationId]) {
-        visitedMap[locationId] = visitedMap[locationId].filter(
-          (v: { memberId: string }) => !targetMemberIds.includes(v.memberId),
-        );
-        if (visitedMap[locationId].length === 0) delete visitedMap[locationId];
-      }
-      if (wantMap[locationId]) {
-        wantMap[locationId] = wantMap[locationId].filter(
-          (v: { memberId: string }) => !targetMemberIds.includes(v.memberId),
-        );
-        if (wantMap[locationId].length === 0) delete wantMap[locationId];
+        const cName = park.country === 'Canada' ? 'Canada' : 'United States';
+        applyToMaps(cName, false, 'visited');
+      } else if (stateObj || regionObj) {
+        const isCan =
+          stateObj?.country === 'Canada' ||
+          stateObj?.sub === 'Canada' ||
+          regionObj?.countryId === 'CA';
+        applyToMaps(isCan ? 'Canada' : 'United States', false, 'visited');
       }
     }
 

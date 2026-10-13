@@ -7,6 +7,7 @@ import {
   TOTAL_US_PARKS,
   TOTAL_CA_PARKS,
 } from '../../../../core/constants/geography.constants';
+import { TOTAL_GLOBAL_COUNTRIES } from '../../../../core/constants/countries.constants';
 
 /**
  * Presentational overlay component displaying visited statistics counters
@@ -25,9 +26,11 @@ export class MapStatsLegendComponent {
   @Input() visitedCAProvincesCount = 0;
   @Input() visitedUSParksCount = 0;
   @Input() visitedCAParksCount = 0;
+  @Input() visitedCountriesCount = 0;
 
   readonly TOTAL_US_STATES = TOTAL_US_STATES;
   readonly TOTAL_CA_PROVINCES = TOTAL_CA_PROVINCES;
   readonly TOTAL_US_PARKS = TOTAL_US_PARKS;
   readonly TOTAL_CA_PARKS = TOTAL_CA_PARKS;
+  readonly TOTAL_GLOBAL_COUNTRIES = TOTAL_GLOBAL_COUNTRIES;
 }

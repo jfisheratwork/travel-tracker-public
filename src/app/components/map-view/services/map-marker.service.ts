@@ -23,6 +23,7 @@ export interface RenderMarkersOptions {
   currentTheme: ColorThemeDefinition;
   familyMembers: FamilyMember[];
   placesFilters?: PlaceFilterCategory[];
+  showUnvisitedPlaces?: boolean;
   map?: L.Map;
 }
 
@@ -42,6 +43,7 @@ export class MapMarkerService {
       currentTheme,
       familyMembers,
       placesFilters,
+      showUnvisitedPlaces,
     } = options;
 
     if (!layerGroup) return;
@@ -58,12 +60,32 @@ export class MapMarkerService {
       // Filter by map mode
       if (mapMode === 'roads') return false;
       if (mapMode === 'parks' && !m.id.includes('park')) return false;
-      if (mapMode === 'states' && !m.id.includes('state')) return false;
+      if (mapMode === 'states' && !m.id.includes('state') && !m.isCapital && !m.isCountryCapital) {
+        return false;
+      }
+
+      // Filter out unvisited places unless showUnvisitedPlaces is enabled
+      const isWantToVisit = Boolean(
+        m.wantToVisit ||
+        (m as { isWantToVisit?: boolean }).isWantToVisit ||
+        (m as { status?: string }).status === 'want' ||
+        (m as { status?: string }).status === 'wantToVisit',
+      );
+      const isVisitedOrPartial = Boolean(
+        m.visited ||
+        (m as { isAllVisited?: boolean }).isAllVisited ||
+        (m as { isPartiallyVisited?: boolean }).isPartiallyVisited,
+      );
+      if (showUnvisitedPlaces === false && !isVisitedOrPartial && !isWantToVisit) {
+        return false;
+      }
 
       // Filter by placesFilters if provided
       if (placesFilters && placesFilters.length >= 0) {
         let cat: PlaceFilterCategory;
-        if (m.category === 'state' || m.id.startsWith('state-')) {
+        if (m.isCapital || m.isCountryCapital) {
+          cat = 'capitals';
+        } else if (m.category === 'state' || m.id.startsWith('state-')) {
           cat = 'states';
         } else if (
           m.category === 'national_park' ||
@@ -265,7 +287,15 @@ export class MapMarkerService {
       } else {
         const isCanada = m.country === 'Canada' || m.sub === 'Canada';
         let iconChar: string;
-        if (m.category === 'state_park') {
+        if (m.isCountryCapital) {
+          iconChar = isCanada
+            ? MAP_MARKER_THEME.STATE.ICON_COUNTRY_CAPITAL_CA
+            : MAP_MARKER_THEME.STATE.ICON_COUNTRY_CAPITAL_US;
+        } else if (m.isCapital) {
+          iconChar = isCanada
+            ? MAP_MARKER_THEME.STATE.ICON_CHAR_CA
+            : MAP_MARKER_THEME.STATE.ICON_CHAR_US;
+        } else if (m.category === 'state_park') {
           iconChar = '🌲';
         } else if (m.category === 'landmark') {
           iconChar = '🗽';
@@ -279,10 +309,6 @@ export class MapMarkerService {
           iconChar = isCanada
             ? MAP_MARKER_THEME.PARK.ICON_CHAR_CA
             : MAP_MARKER_THEME.PARK.ICON_CHAR_US;
-        } else if (m.isCountryCapital) {
-          iconChar = isCanada
-            ? MAP_MARKER_THEME.STATE.ICON_COUNTRY_CAPITAL_CA
-            : MAP_MARKER_THEME.STATE.ICON_COUNTRY_CAPITAL_US;
         } else {
           iconChar = isCanada
             ? MAP_MARKER_THEME.STATE.ICON_CHAR_CA

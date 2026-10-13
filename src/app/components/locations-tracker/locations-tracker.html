@@ -279,15 +279,30 @@
               (click)="toggleDisclose(item.location.id)"
             >
               <span
-                *ngIf="mode === 'places'"
+                *ngIf="mode === 'places' || item.location.category === 'country'"
                 class="px-1.5 py-0.5 rounded text-[10px] font-bold border"
-                [ngClass]="
-                  item.isPark
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                    : 'bg-amber-50 text-amber-800 border-amber-200'
-                "
+                [ngClass]="{
+                  'bg-emerald-50 text-emerald-700 border-emerald-200': item.isPark,
+                  'bg-amber-50 text-amber-800 border-amber-200':
+                    !item.isPark &&
+                    (!item.location.category || item.location.category === 'region'),
+                  'bg-teal-50 text-teal-700 border-teal-200': item.location.category === 'country',
+                  'bg-sky-50 text-sky-700 border-sky-200': item.location.category === 'city',
+                  'bg-purple-50 text-purple-700 border-purple-200':
+                    item.location.category === 'landmark',
+                }"
               >
-                {{ item.isPark ? '⛰️ Park' : '🏛️ Region' }}
+                {{
+                  item.isPark
+                    ? '⛰️ Park'
+                    : item.location.category === 'country'
+                      ? '🌍 Country'
+                      : item.location.category === 'city'
+                        ? '🏙️ City'
+                        : item.location.category === 'landmark'
+                          ? '🗽 Landmark'
+                          : '🏛️ Region'
+                }}
               </span>
               <strong
                 class="text-stone-800 text-sm font-semibold hover:text-emerald-700 transition"

@@ -150,10 +150,47 @@ describe('ParksStatesModal', () => {
     expect(component.mode).toBe('parks');
     expect(component.locations.every((l) => l.category === 'national_park')).toBe(true);
 
-    // Switch to States mode
+    // Switch to States (Regions & Countries) mode
     component.switchModalMode('states');
     expect(component.mode).toBe('states');
-    expect(component.locations.every((l) => l.category === 'region')).toBe(true);
+    expect(
+      component.locations.every((l) => l.category === 'region' || l.category === 'country'),
+    ).toBe(true);
+    expect(component.locations.some((l) => l.id === 'France' && l.category === 'country')).toBe(
+      true,
+    );
+  });
+
+  it('should include countries (e.g., France) in places mode and filter by country category chip', () => {
+    expect(component.locations.some((l) => l.id === 'France' && l.category === 'country')).toBe(
+      true,
+    );
+
+    component.selectedCategories = new Set(['country']);
+    const countries = component.filteredLocations;
+    expect(countries.length).toBe(193);
+    expect(countries.every((c) => c.category === 'country')).toBe(true);
+    expect(countries.some((c) => c.name === 'France')).toBe(true);
+  });
+
+  it('should automatically log parent country (France) when marking Paris as visited, and parent region + country when marking Chicago as visited', () => {
+    expect(component.getMemberStatus('city-paris', 'm-1')).toBe('unvisited');
+    expect(component.getMemberStatus('France', 'm-1')).toBe('unvisited');
+
+    // Mark Paris as visited for Traveler 1
+    component.setMemberStatus('city-paris', 'm-1', 'visited');
+
+    expect(component.getMemberStatus('city-paris', 'm-1')).toBe('visited');
+    expect(component.getMemberStatus('France', 'm-1')).toBe('visited');
+    expect(component.viewModel?.visitedStates?.['France']?.some((v) => v.memberId === 'm-1')).toBe(
+      true,
+    );
+
+    // Mark Chicago as visited for Traveler 2 -> should auto-log Illinois and United States
+    component.setMemberStatus('city-chicago', 'm-2', 'visited');
+    expect(component.getMemberStatus('city-chicago', 'm-2')).toBe('visited');
+    expect(component.getMemberStatus('Illinois', 'm-2')).toBe('visited');
+    expect(component.getMemberStatus('United States', 'm-2')).toBe('visited');
   });
 
   it('should support secondary fallback OpenStreetMap search and track custom places', () => {

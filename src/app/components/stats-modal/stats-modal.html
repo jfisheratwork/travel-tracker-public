@@ -10,10 +10,10 @@
     <div
       class="px-6 py-4 border-b border-stone-200 bg-white flex flex-wrap items-center justify-between gap-3 flex-shrink-0"
     >
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 flex-wrap">
         <button
           (click)="activeTab = 'parks'"
-          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs cursor-pointer"
           [class.bg-green-700]="activeTab === 'parks'"
           [class.text-white]="activeTab === 'parks'"
           [class.text-stone-600]="activeTab !== 'parks'"
@@ -23,7 +23,7 @@
         </button>
         <button
           (click)="activeTab = 'states'"
-          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs cursor-pointer"
           [class.bg-indigo-600]="activeTab === 'states'"
           [class.text-white]="activeTab === 'states'"
           [class.text-stone-600]="activeTab !== 'states'"
@@ -32,8 +32,18 @@
           States & Provinces
         </button>
         <button
+          (click)="activeTab = 'countries'"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs cursor-pointer"
+          [class.bg-teal-600]="activeTab === 'countries'"
+          [class.text-white]="activeTab === 'countries'"
+          [class.text-stone-600]="activeTab !== 'countries'"
+          [class.hover:bg-stone-100]="activeTab !== 'countries'"
+        >
+          Countries
+        </button>
+        <button
           (click)="activeTab = 'roads'"
-          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition shadow-xs cursor-pointer"
           [class.bg-blue-600]="activeTab === 'roads'"
           [class.text-white]="activeTab === 'roads'"
           [class.text-stone-600]="activeTab !== 'roads'"
@@ -45,7 +55,7 @@
 
       <button
         (click)="close.emit()"
-        class="px-4 py-2 bg-white border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition shadow-sm flex items-center gap-1.5"
+        class="px-4 py-2 bg-white border border-stone-200 rounded-xl text-sm font-bold text-stone-700 hover:bg-stone-50 transition shadow-sm flex items-center gap-1.5 cursor-pointer"
       >
         <span>📊</span>
         <span>Hide Statistics</span>
@@ -65,6 +75,7 @@
               <span class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">
                 <ng-container *ngIf="activeTab === 'parks'">Parks Visited</ng-container>
                 <ng-container *ngIf="activeTab === 'states'">States & Prov. Visited</ng-container>
+                <ng-container *ngIf="activeTab === 'countries'">Countries Visited</ng-container>
                 <ng-container *ngIf="activeTab === 'roads'">Road Trips Completed</ng-container>
               </span>
 
@@ -73,6 +84,9 @@
               </span>
               <span *ngIf="activeTab === 'states'" class="text-3xl font-extrabold text-indigo-700">
                 {{ totalStatesVisited }} / {{ TOTAL_STATES }}
+              </span>
+              <span *ngIf="activeTab === 'countries'" class="text-3xl font-extrabold text-teal-700">
+                {{ visitedCountriesCount }} / {{ TOTAL_COUNTRIES }}
               </span>
               <span *ngIf="activeTab === 'roads'" class="text-3xl font-extrabold text-blue-700">
                 {{ completedRoutesCount }} completed
@@ -141,6 +155,22 @@
                 </div>
               </ng-container>
 
+              <!-- Countries Split -->
+              <ng-container *ngIf="activeTab === 'countries'">
+                <div class="space-y-1">
+                  <div class="flex justify-between text-[11px] uppercase font-bold text-stone-600">
+                    <span>World Coverage</span>
+                    <span>{{ visitedCountriesCount }}/{{ TOTAL_COUNTRIES }}</span>
+                  </div>
+                  <div class="w-full bg-stone-200 rounded-full h-2 overflow-hidden">
+                    <div
+                      class="bg-teal-600 h-full rounded-full transition-all duration-500"
+                      [style.width.%]="totalCountriesPct"
+                    ></div>
+                  </div>
+                </div>
+              </ng-container>
+
               <!-- Roads Sub-metrics -->
               <ng-container *ngIf="activeTab === 'roads'">
                 <div class="space-y-1">
@@ -175,6 +205,9 @@
               <span class="text-3xl font-extrabold text-stone-500">
                 <ng-container *ngIf="activeTab === 'parks'">{{ remainingParks }}</ng-container>
                 <ng-container *ngIf="activeTab === 'states'">{{ remainingStates }}</ng-container>
+                <ng-container *ngIf="activeTab === 'countries'">{{
+                  remainingCountries
+                }}</ng-container>
                 <ng-container *ngIf="activeTab === 'roads'">{{ plannedRoutesCount }}</ng-container>
               </span>
             </div>
@@ -193,6 +226,9 @@
                 <span class="text-sm font-bold text-stone-700">
                   <ng-container *ngIf="activeTab === 'parks'">{{ totalParksPct }}%</ng-container>
                   <ng-container *ngIf="activeTab === 'states'">{{ totalStatesPct }}%</ng-container>
+                  <ng-container *ngIf="activeTab === 'countries'"
+                    >{{ totalCountriesPct }}%</ng-container
+                  >
                   <ng-container *ngIf="activeTab === 'roads'"
                     >{{ completedRoutesCount }}/{{ totalRoutesCount }} ({{
                       routesCompletionPct
@@ -210,6 +246,11 @@
                   *ngIf="activeTab === 'states'"
                   class="bg-indigo-600 h-full rounded-full transition-all duration-700"
                   [style.width.%]="totalStatesPct"
+                ></div>
+                <div
+                  *ngIf="activeTab === 'countries'"
+                  class="bg-teal-600 h-full rounded-full transition-all duration-700"
+                  [style.width.%]="totalCountriesPct"
                 ></div>
                 <div
                   *ngIf="activeTab === 'roads'"
@@ -242,6 +283,9 @@
                     >
                     <ng-container *ngIf="activeTab === 'states'"
                       >{{ stat.statesTotal }}/{{ TOTAL_STATES }}</ng-container
+                    >
+                    <ng-container *ngIf="activeTab === 'countries'"
+                      >{{ stat.countriesTotal }}/{{ TOTAL_COUNTRIES }}</ng-container
                     >
                     <ng-container *ngIf="activeTab === 'roads'"
                       >{{ stat.routesCount }} trips</ng-container
@@ -318,6 +362,26 @@
                       <div
                         class="bg-red-500 h-full rounded-full transition-all"
                         [style.width.%]="stat.caStatesPct"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Countries Breakout -->
+                <div *ngIf="activeTab === 'countries'" class="space-y-2 mt-3">
+                  <div class="flex flex-col gap-1">
+                    <div
+                      class="flex justify-between text-[10px] uppercase font-bold text-stone-400"
+                    >
+                      <span>World Nations</span>
+                      <span>{{ stat.countriesTotal }}/{{ TOTAL_COUNTRIES }}</span>
+                    </div>
+                    <div
+                      class="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden border border-stone-200/50"
+                    >
+                      <div
+                        class="bg-teal-600 h-full rounded-full transition-all"
+                        [style.width.%]="stat.countriesPct"
                       ></div>
                     </div>
                   </div>

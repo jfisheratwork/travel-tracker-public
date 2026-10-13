@@ -2,7 +2,8 @@
 import { Component, OnInit, OnDestroy, ElementRef, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../services/state.service';
-import { Subject, Observable, takeUntil, combineLatest } from 'rxjs';
+// DOCS: https://rxjs.dev/api/index/function/of
+import { Subject, Observable, takeUntil, combineLatest, of } from 'rxjs';
 // DOCS: https://leafletjs.com/reference.html
 import * as L from 'leaflet';
 import { RouteObject } from '../../models/route.model';
@@ -26,6 +27,7 @@ import {
   TOTAL_US_PARKS,
   TOTAL_CA_PARKS,
 } from '../../core/constants/geography.constants';
+import { GLOBAL_COUNTRIES, COUNTRIES_MAP } from '../../core/constants/countries.constants';
 import { AppSettings, FamilyMember } from '../../models/settings.model';
 import {
   MAP_THEME,
@@ -115,6 +117,46 @@ export class MapViewComponent implements OnInit, OnDestroy {
     }).length;
   }
 
+  get visitedCountriesCount(): number {
+    if (!this.currentSettings) return 0;
+    const visitedCountryCodes = new Set<string>();
+    const visitedStates = this.currentSettings.visitedStates || {};
+    const placeVisits = this.currentSettings.placeVisits || {};
+
+    // 1. Directly visited countries
+    for (const c of GLOBAL_COUNTRIES) {
+      const hasLegacy =
+        (visitedStates[c.name] && visitedStates[c.name].length > 0) ||
+        (visitedStates[c.id] && visitedStates[c.id].length > 0);
+      const hasV4 =
+        placeVisits[c.name]?.some((v) => v.status === 'visited') ||
+        placeVisits[c.id]?.some((v) => v.status === 'visited');
+      if (hasLegacy || hasV4) {
+        visitedCountryCodes.add(c.id);
+      }
+    }
+
+    // 2. Inferred from US/CA states or parks
+    if (this.visitedUSStatesCount > 0 || this.visitedUSParksCount > 0) {
+      visitedCountryCodes.add('US');
+    }
+    if (this.visitedCAProvincesCount > 0 || this.visitedCAParksCount > 0) {
+      visitedCountryCodes.add('CA');
+    }
+
+    // 3. Inferred from any visited curated or custom place
+    const allPlaces = [...STATIC_PLACES_CATALOG, ...(this.currentSettings.customPlaces || [])];
+    for (const p of allPlaces) {
+      if (placeVisits[p.id]?.some((v) => v.status === 'visited')) {
+        if (COUNTRIES_MAP.has(p.countryId)) {
+          visitedCountryCodes.add(p.countryId);
+        }
+      }
+    }
+
+    return visitedCountryCodes.size;
+  }
+
   openParksModal(): void {
     this.parksStatesModalMode = 'parks';
     this.showParksStatesModal = true;
@@ -157,6 +199,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
   private initialZoomApplied = false;
   private selectedRoute: RouteObject | null = null;
   placesFilters: PlaceFilterCategory[] = [];
+  showUnvisitedPlaces = false;
   selectedRouteIds: string[] | null = null;
 
   constructor(
@@ -180,9 +223,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
       this.stateService.mapMode$,
       this.stateService.selectedRoute$,
       this.stateService.placesFilters$,
+      this.stateService.showUnvisitedPlaces$ || of(false),
       this.stateService.selectedRouteIds$,
       this.locationDataService.parks$,
-      this.locationDataService.states$,
       this.locationDataService.statesGeoJson$,
       this.stateService.colorTheme$,
     ])
@@ -194,9 +237,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
           mapMode,
           selectedRoute,
           placesFilters,
+          showUnvisitedPlaces,
           selectedRouteIds,
           parks,
-          states,
           statesGeoJson,
           themeId,
         ]) => {
@@ -207,6 +250,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
           this.mapMode = mapMode;
           this.familyMembers = settings.familyMembers;
           this.placesFilters = placesFilters;
+          this.showUnvisitedPlaces = showUnvisitedPlaces;
           this.selectedRouteIds = selectedRouteIds;
 
           const hometowns: LocationPoint[] = settings.hometowns.map(
@@ -263,45 +307,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
             };
           });
 
-          const mergedStates = states.map((s) => {
-            const originalId = s.id.replace('state-', '');
-            const visitDetails = settings.visitedStates?.[originalId] || [];
-            const wantDetails = settings.wantToVisitStates?.[originalId] || [];
-            const visitors = visitDetails
-              .map((v) => {
-                const mem = settings.familyMembers.find((m) => m.id === v.memberId);
-                if (!mem) return null;
-                return {
-                  ...mem,
-                  date: v.firstVisitedDate || v.dateVisited,
-                  notes: v.notes,
-                };
-              })
-              .filter(Boolean);
-            const locationLogs = settings.locationVisits?.[originalId] || [];
-            const totalFamily = settings.familyMembers?.length || 0;
-            const isAllVisited =
-              totalFamily > 0
-                ? visitors.length === totalFamily
-                : visitDetails.length > 0 || locationLogs.length > 0;
-            const isPartiallyVisited =
-              totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily;
-            const isVisited = visitDetails.length > 0 || locationLogs.length > 0;
-            const wantToVisit = !isVisited && wantDetails.length > 0;
-            return {
-              ...s,
-              country: s.country || (s.sub === 'Canada' ? 'Canada' : 'USA'),
-              visited: isVisited,
-              wantToVisit,
-              isAllVisited,
-              isPartiallyVisited,
-              visitedByMembers: visitors,
-              visitLogs: locationLogs,
-              category: 'state' as const,
-            };
-          });
-
-          // Curated places (State parks, landmarks, theme parks, cities)
+          // Curated places (State parks, landmarks, theme parks, cities, and capitals)
           const curatedLocations: LocationPoint[] = STATIC_PLACES_CATALOG.filter(
             (p) => p.category !== 'national_park',
           ).map((p) => {
@@ -326,8 +332,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
               lat: p.lat,
               lng: p.lng,
               region: p.regionId || '',
-              country: p.countryId === 'CA' ? 'Canada' : 'USA',
-              sub: p.regionId ? p.regionId.split('-')[1] : '',
+              country:
+                p.countryId === 'CA'
+                  ? 'Canada'
+                  : p.countryId === 'US'
+                    ? 'USA'
+                    : COUNTRIES_MAP.get(p.countryId)?.name || p.countryId,
+              sub: p.regionId ? p.regionId.split('-')[1] : p.countryId,
               visited: isVisited,
               visitedBy: visitors.map((v) => v.name),
               wantToVisit: isWant,
@@ -336,6 +347,11 @@ export class MapViewComponent implements OnInit, OnDestroy {
                 totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily,
               visitedByMembers: visitors,
               visitLogs: locationLogs,
+              isCapital: !!p.isCapital,
+              isCountryCapital:
+                p.id === 'city-washington-dc' ||
+                p.id === 'city-ottawa' ||
+                (!p.regionId && !!p.isCapital),
               category: p.category,
             } as LocationPoint;
           });
@@ -363,8 +379,13 @@ export class MapViewComponent implements OnInit, OnDestroy {
               lat: p.lat,
               lng: p.lng,
               region: p.regionId || '',
-              country: p.countryId === 'CA' ? 'Canada' : 'USA',
-              sub: p.regionId ? p.regionId.split('-')[1] : '',
+              country:
+                p.countryId === 'CA'
+                  ? 'Canada'
+                  : p.countryId === 'US'
+                    ? 'USA'
+                    : COUNTRIES_MAP.get(p.countryId)?.name || p.countryId,
+              sub: p.regionId ? p.regionId.split('-')[1] : p.countryId,
               visited: isVisited,
               visitedBy: visitors.map((v) => v.name),
               wantToVisit: isWant,
@@ -379,7 +400,6 @@ export class MapViewComponent implements OnInit, OnDestroy {
 
           this.allLocations = [
             ...mergedParks,
-            ...mergedStates,
             ...curatedLocations,
             ...customLocations,
             ...hometowns,
@@ -583,6 +603,8 @@ export class MapViewComponent implements OnInit, OnDestroy {
       mapMode: this.mapMode,
       currentTheme: this.currentTheme,
       familyMembers: this.familyMembers,
+      placesFilters: this.placesFilters,
+      showUnvisitedPlaces: this.showUnvisitedPlaces,
       map: this.map,
     });
   }

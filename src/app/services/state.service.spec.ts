@@ -86,4 +86,23 @@ describe('StateService', () => {
     });
     expect(service.getActiveHometown()?.name).toBe('Austin, TX');
   });
+
+  it('should automatically log parent country and parent state when marking a place as visited', () => {
+    service.setLocationStatus('city-paris', 'states', 'visited', 'member-1');
+    expect(service.getLocationStatus('city-paris', 'states', 'member-1')).toBe('visited');
+    expect(service.getLocationStatus('France', 'states', 'member-1')).toBe('visited');
+
+    service.setLocationStatus('city-chicago', 'states', 'visited', 'member-2');
+    expect(service.getLocationStatus('city-chicago', 'states', 'member-2')).toBe('visited');
+    expect(service.getLocationStatus('Illinois', 'states', 'member-2')).toBe('visited');
+    expect(service.getLocationStatus('United States', 'states', 'member-2')).toBe('visited');
+  });
+
+  it('should default showUnvisitedPlaces to false and allow toggling', () => {
+    expect(service.getShowUnvisitedPlaces()).toBe(false);
+    service.toggleShowUnvisitedPlaces();
+    expect(service.getShowUnvisitedPlaces()).toBe(true);
+    service.setShowUnvisitedPlaces(false);
+    expect(service.getShowUnvisitedPlaces()).toBe(false);
+  });
 });

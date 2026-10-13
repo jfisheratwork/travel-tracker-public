@@ -5,6 +5,12 @@ import { StateService } from '../../services/state.service';
 import { AppSettings, FamilyMember } from '../../models/settings.model';
 import { Subscription } from 'rxjs';
 import { NATIONAL_PARKS, STATES } from '../../core/constants/geography.constants';
+import {
+  GLOBAL_COUNTRIES,
+  COUNTRIES_MAP,
+  TOTAL_GLOBAL_COUNTRIES,
+} from '../../core/constants/countries.constants';
+import { STATIC_PLACES_CATALOG } from '../../core/constants/curated-places.constants';
 
 export interface MemberStat {
   member: FamilyMember;
@@ -23,6 +29,10 @@ export interface MemberStat {
   usStatesPct: number;
   caStates: number;
   caStatesPct: number;
+
+  // Countries
+  countriesTotal: number;
+  countriesPct: number;
 
   // Roads
   routesCount: number;
@@ -50,7 +60,7 @@ export class StatsModal implements OnInit, OnDestroy {
     }
   }
 
-  activeTab: 'parks' | 'states' | 'roads' = 'parks';
+  activeTab: 'parks' | 'states' | 'countries' | 'roads' = 'parks';
 
   settings: AppSettings | null = null;
   private sub?: Subscription;
@@ -59,6 +69,7 @@ export class StatsModal implements OnInit, OnDestroy {
   readonly TOTAL_US_STATES = 50;
   readonly TOTAL_CA_PROVINCES = 13;
   readonly TOTAL_STATES = STATES.length;
+  readonly TOTAL_COUNTRIES = TOTAL_GLOBAL_COUNTRIES;
 
   readonly TOTAL_US_PARKS = NATIONAL_PARKS.filter((p) => p.country !== 'Canada').length;
   readonly TOTAL_CA_PARKS = NATIONAL_PARKS.filter((p) => p.country === 'Canada').length;
@@ -74,6 +85,52 @@ export class StatsModal implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (this.sub) this.sub.unsubscribe();
+  }
+
+  // --- Countries Metrics ---
+  get visitedCountriesCount(): number {
+    if (!this.settings) return 0;
+    const visitedCountryCodes = new Set<string>();
+    const visitedStates = this.settings.visitedStates || {};
+    const placeVisits = this.settings.placeVisits || {};
+
+    for (const c of GLOBAL_COUNTRIES) {
+      const hasLegacy =
+        (visitedStates[c.name] && visitedStates[c.name].length > 0) ||
+        (visitedStates[c.id] && visitedStates[c.id].length > 0);
+      const hasV4 =
+        placeVisits[c.name]?.some((v) => v.status === 'visited') ||
+        placeVisits[c.id]?.some((v) => v.status === 'visited');
+      if (hasLegacy || hasV4) {
+        visitedCountryCodes.add(c.id);
+      }
+    }
+
+    if (this.visitedUSStatesCount > 0 || this.visitedUSParksCount > 0) {
+      visitedCountryCodes.add('US');
+    }
+    if (this.visitedCAProvincesCount > 0 || this.visitedCAParksCount > 0) {
+      visitedCountryCodes.add('CA');
+    }
+
+    const allPlaces = [...STATIC_PLACES_CATALOG, ...(this.settings.customPlaces || [])];
+    for (const p of allPlaces) {
+      if (placeVisits[p.id]?.some((v) => v.status === 'visited')) {
+        if (COUNTRIES_MAP.has(p.countryId)) {
+          visitedCountryCodes.add(p.countryId);
+        }
+      }
+    }
+
+    return visitedCountryCodes.size;
+  }
+
+  get totalCountriesPct(): number {
+    return Math.round((this.visitedCountriesCount / this.TOTAL_COUNTRIES) * 100);
+  }
+
+  get remainingCountries(): number {
+    return Math.max(0, this.TOTAL_COUNTRIES - this.visitedCountriesCount);
   }
 
   // --- States Metrics ---
@@ -199,6 +256,8 @@ export class StatsModal implements OnInit, OnDestroy {
     );
     const usStateIds = new Set(STATES.filter((s) => s.sub !== 'Canada').map((s) => s.id));
     const caStateIds = new Set(STATES.filter((s) => s.sub === 'Canada').map((s) => s.id));
+    const allPlaces = [...STATIC_PLACES_CATALOG, ...(this.settings.customPlaces || [])];
+    const placeVisits = this.settings.placeVisits || {};
 
     return this.settings.familyMembers.map((member) => {
       // Parks breakdown
@@ -226,6 +285,31 @@ export class StatsModal implements OnInit, OnDestroy {
         }
       }
       const statesTotal = usStates + caStates;
+
+      // Countries breakdown
+      const memberCountryCodes = new Set<string>();
+      for (const c of GLOBAL_COUNTRIES) {
+        const hasLegacy =
+          this.settings?.visitedStates?.[c.name]?.some((v) => v.memberId === member.id) ||
+          this.settings?.visitedStates?.[c.id]?.some((v) => v.memberId === member.id);
+        const hasV4 =
+          placeVisits[c.name]?.some((v) => v.memberId === member.id && v.status === 'visited') ||
+          placeVisits[c.id]?.some((v) => v.memberId === member.id && v.status === 'visited');
+        if (hasLegacy || hasV4) {
+          memberCountryCodes.add(c.id);
+        }
+      }
+      if (usStates > 0 || usParks > 0) memberCountryCodes.add('US');
+      if (caStates > 0 || caParks > 0) memberCountryCodes.add('CA');
+
+      for (const p of allPlaces) {
+        if (placeVisits[p.id]?.some((v) => v.memberId === member.id && v.status === 'visited')) {
+          if (COUNTRIES_MAP.has(p.countryId)) {
+            memberCountryCodes.add(p.countryId);
+          }
+        }
+      }
+      const countriesTotal = memberCountryCodes.size;
 
       // Routes breakdown
       let routesCount = 0;
@@ -258,6 +342,9 @@ export class StatsModal implements OnInit, OnDestroy {
         usStatesPct: Math.round((usStates / this.TOTAL_US_STATES) * 100),
         caStates,
         caStatesPct: Math.round((caStates / this.TOTAL_CA_PROVINCES) * 100),
+
+        countriesTotal,
+        countriesPct: Math.round((countriesTotal / this.TOTAL_COUNTRIES) * 100),
 
         routesCount,
         routesMiles: Math.round(routesMeters / METERS_PER_MILE),

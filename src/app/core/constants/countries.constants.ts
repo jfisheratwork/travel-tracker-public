@@ -202,4 +202,10 @@ export const GLOBAL_COUNTRIES: Country[] = [
   { id: 'ZW', code: 'ZW', name: 'Zimbabwe' },
 ];
 
+export const TOTAL_GLOBAL_COUNTRIES = GLOBAL_COUNTRIES.length;
+
 export const COUNTRIES_MAP = new Map<string, Country>(GLOBAL_COUNTRIES.map((c) => [c.id, c]));
+
+export const COUNTRIES_BY_NAME_MAP = new Map<string, Country>(
+  GLOBAL_COUNTRIES.map((c) => [c.name.toLowerCase(), c]),
+);

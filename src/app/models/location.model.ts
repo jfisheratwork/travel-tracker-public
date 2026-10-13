@@ -19,6 +19,7 @@ export type PlaceCategory =
   | 'city'
   | 'landmark'
   | 'theme_park'
+  | 'country'
   | 'custom';
 
 export interface Place {
@@ -63,6 +64,7 @@ export interface LocationPoint {
   wantToVisit?: boolean;
   country?: string;
   sub?: string;
+  isCapital?: boolean;
   isCountryCapital?: boolean;
   category?: PlaceCategory | 'state' | 'hometown';
 }

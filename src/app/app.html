@@ -286,6 +286,26 @@
                 </div>
               </div>
 
+              <!-- Show Places Not Visited Toggle (Off by default) -->
+              <div
+                class="px-3.5 py-2 border-b"
+                [style.borderBottomColor]="currentTheme.cardBorder"
+              >
+                <label
+                  class="flex items-center gap-2.5 cursor-pointer text-xs font-semibold transition select-none"
+                  [style.color]="currentTheme.textColor"
+                >
+                  <input
+                    type="checkbox"
+                    [checked]="isShowUnvisitedPlaces()"
+                    (change)="toggleShowUnvisitedPlaces()"
+                    class="rounded text-green-600 focus:ring-green-500 h-4 w-4 border-stone-300 cursor-pointer"
+                  />
+                  <span class="text-sm">⚪</span>
+                  <span class="flex-1">Show places not visited</span>
+                </label>
+              </div>
+
               <!-- Category Checkboxes -->
               <div class="py-1 max-h-72 overflow-y-auto">
                 <label

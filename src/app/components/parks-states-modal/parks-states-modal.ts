@@ -65,6 +65,7 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     'provincial_park',
     'city',
     'landmark',
+    'country',
     'custom',
   ]);
   capitalsOnly = false;
@@ -205,12 +206,26 @@ export class ParksStatesModal implements OnInit, OnDestroy {
       tags: ['region', 'state'],
     }));
 
+    const allCountries: ModalLocationItem[] = GLOBAL_COUNTRIES.map((c) => ({
+      id: c.name,
+      name: c.name,
+      category: 'country',
+      countryId: c.id,
+      countryName: c.name,
+      sub: c.code,
+      lat: 0,
+      lng: 0,
+      source: 'static',
+      isCurated: true,
+      tags: ['country', 'nation', c.code.toLowerCase()],
+    }));
+
     if (this.mode === 'parks') {
       this.locations = allPlaces.filter((p) => p.category === 'national_park');
     } else if (this.mode === 'states') {
-      this.locations = allRegions;
+      this.locations = [...allRegions, ...allCountries];
     } else {
-      this.locations = allPlaces;
+      this.locations = [...allPlaces, ...allCountries];
     }
   }
 
@@ -313,6 +328,14 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     }
   }
 
+  private getLegacyKeyAndMode(locationId: string): { key: string; isPark: boolean } {
+    const loc = this.locations.find((l) => l.id === locationId);
+    if (loc?.category === 'national_park' || locationId.startsWith('np-')) {
+      return { key: loc ? loc.name.replace(/ National Park$/, '') : locationId, isPark: true };
+    }
+    return { key: locationId, isPark: false };
+  }
+
   getMemberStatus(locationId: string, memberId: string): 'visited' | 'want' | 'unvisited' {
     if (!this.viewModel) return 'unvisited';
 
@@ -324,15 +347,76 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     }
 
     // 2. Check legacy visited/want collections
+    const { key, isPark } = this.getLegacyKeyAndMode(locationId);
     const legacyVisits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+      isPark || this.mode === 'parks'
+        ? this.viewModel.visitedParks!
+        : this.viewModel.visitedStates!;
     const legacyWants =
-      this.mode === 'parks' ? this.viewModel.wantToVisitParks! : this.viewModel.wantToVisitStates!;
+      isPark || this.mode === 'parks'
+        ? this.viewModel.wantToVisitParks!
+        : this.viewModel.wantToVisitStates!;
 
-    if (legacyVisits[locationId]?.some((v) => v.memberId === memberId)) return 'visited';
-    if (legacyWants[locationId]?.some((w) => w.memberId === memberId)) return 'want';
+    if (legacyVisits?.[locationId]?.some((v) => v.memberId === memberId)) return 'visited';
+    if (legacyVisits?.[key]?.some((v) => v.memberId === memberId)) return 'visited';
+    if (legacyWants?.[locationId]?.some((w) => w.memberId === memberId)) return 'want';
+    if (legacyWants?.[key]?.some((w) => w.memberId === memberId)) return 'want';
 
     return 'unvisited';
+  }
+
+  private applyStatusToId(
+    targetId: string,
+    memberId: string,
+    status: 'visited' | 'want' | 'unvisited',
+    isPark: boolean,
+  ): void {
+    if (!this.viewModel) return;
+
+    if (!this.viewModel.placeVisits) {
+      this.viewModel.placeVisits = {};
+    }
+    if (!this.viewModel.placeVisits[targetId]) {
+      this.viewModel.placeVisits[targetId] = [];
+    }
+
+    this.viewModel.placeVisits[targetId] = this.viewModel.placeVisits[targetId].filter(
+      (v) => v.memberId !== memberId,
+    );
+
+    if (status === 'visited') {
+      this.viewModel.placeVisits[targetId].push({
+        placeId: targetId,
+        memberId,
+        status: 'visited',
+        dateVisited: new Date().toISOString().split('T')[0],
+      });
+    } else if (status === 'want') {
+      this.viewModel.placeVisits[targetId].push({
+        placeId: targetId,
+        memberId,
+        status: 'want_to_visit',
+      });
+    }
+
+    const legacyVisits = isPark ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
+    const legacyWants = isPark
+      ? this.viewModel.wantToVisitParks!
+      : this.viewModel.wantToVisitStates!;
+
+    if (legacyVisits && legacyWants) {
+      if (!legacyVisits[targetId]) legacyVisits[targetId] = [];
+      if (!legacyWants[targetId]) legacyWants[targetId] = [];
+
+      legacyVisits[targetId] = legacyVisits[targetId].filter((v) => v.memberId !== memberId);
+      legacyWants[targetId] = legacyWants[targetId].filter((w) => w.memberId !== memberId);
+
+      if (status === 'visited') {
+        legacyVisits[targetId].push({ memberId });
+      } else if (status === 'want') {
+        legacyWants[targetId].push({ memberId });
+      }
+    }
   }
 
   setMemberStatus(
@@ -342,50 +426,41 @@ export class ParksStatesModal implements OnInit, OnDestroy {
   ): void {
     if (!this.viewModel) return;
 
-    // 1. Update V4 placeVisits
-    if (!this.viewModel.placeVisits) {
-      this.viewModel.placeVisits = {};
-    }
-    if (!this.viewModel.placeVisits[locationId]) {
-      this.viewModel.placeVisits[locationId] = [];
-    }
+    const loc = this.locations.find((l) => l.id === locationId);
+    const isPark =
+      loc?.category === 'national_park' || this.mode === 'parks' || locationId.startsWith('np-');
 
-    this.viewModel.placeVisits[locationId] = this.viewModel.placeVisits[locationId].filter(
-      (v) => v.memberId !== memberId,
-    );
+    this.applyStatusToId(locationId, memberId, status, isPark);
 
-    if (status === 'visited') {
-      this.viewModel.placeVisits[locationId].push({
-        placeId: locationId,
-        memberId,
-        status: 'visited',
-        dateVisited: new Date().toISOString().split('T')[0],
-      });
-    } else if (status === 'want') {
-      this.viewModel.placeVisits[locationId].push({
-        placeId: locationId,
-        memberId,
-        status: 'want_to_visit',
-      });
+    // If it's a national park in 'places' mode (e.g., 'np-acadia'), also sync legacy name key ('Acadia')
+    if (isPark && loc && loc.id.startsWith('np-')) {
+      const legacyParkName = loc.name.replace(/ National Park$/, '');
+      if (legacyParkName !== locationId) {
+        this.applyStatusToId(legacyParkName, memberId, status, true);
+      }
     }
 
-    // 2. Keep legacy visitedParks/visitedStates in sync
-    const legacyVisits =
-      this.mode === 'parks' ? this.viewModel.visitedParks! : this.viewModel.visitedStates!;
-    const legacyWants =
-      this.mode === 'parks' ? this.viewModel.wantToVisitParks! : this.viewModel.wantToVisitStates!;
+    // Automatically log parent State/Province and Country when a place/region is marked 'visited'
+    if (status === 'visited' && loc) {
+      // 1. Auto-log parent US State or Canadian Province if applicable
+      if (loc.category !== 'region' && loc.category !== 'country' && loc.regionName) {
+        if (this.getMemberStatus(loc.regionName, memberId) !== 'visited') {
+          this.applyStatusToId(loc.regionName, memberId, 'visited', false);
+        }
+      }
 
-    if (legacyVisits && legacyWants) {
-      if (!legacyVisits[locationId]) legacyVisits[locationId] = [];
-      if (!legacyWants[locationId]) legacyWants[locationId] = [];
-
-      legacyVisits[locationId] = legacyVisits[locationId].filter((v) => v.memberId !== memberId);
-      legacyWants[locationId] = legacyWants[locationId].filter((w) => w.memberId !== memberId);
-
-      if (status === 'visited') {
-        legacyVisits[locationId].push({ memberId });
-      } else if (status === 'want') {
-        legacyWants[locationId].push({ memberId });
+      // 2. Auto-log parent Country (e.g., Paris -> France, Chicago -> United States)
+      if (loc.category !== 'country' && loc.countryName) {
+        const parentCountry =
+          COUNTRIES_MAP.get(loc.countryId)?.name ||
+          (loc.countryId === 'US'
+            ? 'United States'
+            : loc.countryId === 'CA'
+              ? 'Canada'
+              : loc.countryName);
+        if (parentCountry && this.getMemberStatus(parentCountry, memberId) !== 'visited') {
+          this.applyStatusToId(parentCountry, memberId, 'visited', false);
+        }
       }
     }
   }
@@ -403,13 +478,16 @@ export class ParksStatesModal implements OnInit, OnDestroy {
 
   getVisitCount(locationId: string): number {
     if (!this.viewModel) return 0;
+    const { key, isPark } = this.getLegacyKeyAndMode(locationId);
     const v4Visits = (this.viewModel.placeVisits?.[locationId] || []).filter(
       (v) => v.status === 'visited',
     );
-    const legacyVisits =
-      (this.mode === 'parks'
-        ? this.viewModel.visitedParks?.[locationId]
-        : this.viewModel.visitedStates?.[locationId]) || [];
+    const legacyMap =
+      isPark || this.mode === 'parks' ? this.viewModel.visitedParks : this.viewModel.visitedStates;
+    const legacyVisits = [
+      ...(legacyMap?.[locationId] || []),
+      ...(key !== locationId ? legacyMap?.[key] || [] : []),
+    ];
 
     const activeIds = this.viewModel.familyMembers.map((m) => m.id);
     const visitedMemberIds = new Set<string>();
@@ -429,13 +507,18 @@ export class ParksStatesModal implements OnInit, OnDestroy {
 
   getWantCount(locationId: string): number {
     if (!this.viewModel) return 0;
+    const { key, isPark } = this.getLegacyKeyAndMode(locationId);
     const v4Wants = (this.viewModel.placeVisits?.[locationId] || []).filter(
       (v) => v.status === 'want_to_visit',
     );
-    const legacyWants =
-      (this.mode === 'parks'
-        ? this.viewModel.wantToVisitParks?.[locationId]
-        : this.viewModel.wantToVisitStates?.[locationId]) || [];
+    const legacyMap =
+      isPark || this.mode === 'parks'
+        ? this.viewModel.wantToVisitParks
+        : this.viewModel.wantToVisitStates;
+    const legacyWants = [
+      ...(legacyMap?.[locationId] || []),
+      ...(key !== locationId ? legacyMap?.[key] || [] : []),
+    ];
 
     const activeIds = this.viewModel.familyMembers.map((m) => m.id);
     const wantMemberIds = new Set<string>();
