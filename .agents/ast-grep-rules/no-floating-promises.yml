@@ -1,0 +1,6 @@
+id: no-floating-promises
+message: 'Uncaught or unawaited promise executor function. Ensure promises or observables are properly handled.'
+severity: warning
+language: typescript
+rule:
+  pattern: 'new Promise(($RESOLVE, $REJECT) => { $$$BODY })'

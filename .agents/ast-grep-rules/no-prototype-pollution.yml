@@ -1,0 +1,9 @@
+id: no-prototype-pollution
+message: 'Direct prototype modification detected. Guard against prototype pollution.'
+severity: error
+language: typescript
+rule:
+  any:
+    - pattern: '$OBJ.__proto__ = $VAL'
+    - pattern: "$OBJ['__proto__'] = $VAL"
+    - pattern: '$OBJ.prototype = $VAL'

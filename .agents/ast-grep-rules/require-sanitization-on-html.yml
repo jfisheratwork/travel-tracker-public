@@ -1,0 +1,8 @@
+id: require-sanitization-on-html
+message: 'Unsafe direct HTML insertion detected. Sanitize input via escapeHtml or use Angular template bindings.'
+severity: warning
+language: typescript
+rule:
+  any:
+    - pattern: '$EL.insertAdjacentHTML($POS, $HTML)'
+    - pattern: '$EL.outerHTML = $HTML'

@@ -1,0 +1,15 @@
+id: no-eval-or-innerhtml
+message: 'Avoid using eval() or direct innerHTML assignment; prefer Angular templates, DomSanitizer, or textContent.'
+severity: warning
+language: typescript
+ignores:
+  - 'src/**/*.spec.ts'
+rule:
+  any:
+    - pattern: eval($$$ARGS)
+    - all:
+        - pattern: $OBJ.innerHTML = $VAL
+        - not:
+            any:
+              - pattern: $OBJ.innerHTML = ''
+              - pattern: $OBJ.innerHTML = ""

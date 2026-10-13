@@ -45,6 +45,7 @@ graph TD
 ## 2. Specialized Layer Services
 
 ### A. [MapShadingService](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/services/map-shading.service.ts)
+
 - **Role**: Manages GeoJSON multi-polygon vector layers for US States and Canadian Provinces.
 - **Dedicated Pane**: Renders into `stateShadingPane` (z-index 350), ensuring polygons sit below interactive markers while remaining fully clickable.
 - **Dynamic Shading Rules**:
@@ -54,6 +55,7 @@ graph TD
 - **Interactivity**: Attaches `mouseover` (opacity boost) and `mouseout` listeners, and binds popups via `buildLocationPopupHtml`.
 
 ### B. [MapMarkerService](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/services/map-marker.service.ts)
+
 - **Role**: Clears and draws location markers onto the Leaflet `LayerGroup`.
 - **Marker Icon Generation**: Creates CSS-styled circular badges via `L.divIcon`:
   - ⛰️ US Parks / 🏔️ Canadian Parks.
@@ -62,6 +64,7 @@ graph TD
 - **Filtering**: Automatically filters locations by search term and active `mapMode` (`'parks' | 'states' | 'roads'`).
 
 ### C. [MapRouteService](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/services/map-route.service.ts)
+
 - **Role**: Manages road trip polyline rendering, directional arrows, and route bounding box calculations.
 - **Route Coordinates Caching**: Caches geometry arrays in-memory to prevent repeated OSRM/Mapbox network calls.
 - **Auto-Fit Bounds**: Fits the map viewport to single selected routes or extends the bounding box across all saved routes.
@@ -71,12 +74,16 @@ graph TD
 ## 3. Pure Algorithmic & Template Utilities
 
 ### A. [geo.utils.ts](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/core/utils/geo.utils.ts)
+
 Contains pure mathematical GIS algorithms.
+
 - `reduceCoordinates(route: [number, number][], routeReduction: number): [number, number][]`:
   Decimates dense route GPS arrays based on user tolerance while guaranteeing the exact origin and destination coordinates are preserved.
 
 ### B. [map-popup.util.ts](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/utils/map-popup.util.ts)
+
 Decouples HTML string generation from the Leaflet component:
+
 - `buildLocationPopupHtml(params, familyMembers)`:
   Constructs sanitize-safe HTML string including:
   - Location title and national park / state badge.

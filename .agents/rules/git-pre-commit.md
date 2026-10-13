@@ -1,7 +1,7 @@
 ---
 name: Git Pre-Commit Hook Guidelines
 description: Requirements and steps for agentic pre-commit checks to ensure code quality, compliance with best practices, dependency updates, and automated test suite verification.
-globs: "*"
+globs: '*'
 ---
 
 # Agentic Pre-Commit Hook Guidelines
@@ -11,21 +11,26 @@ Any agentic pre-commit workflows or scripts must implement checks to ensure code
 ## Required Pre-Commit Checklist
 
 ### 1. Modern Best Practices
-- Scan for modern HTML, CSS, and JS practices.
+
+- Scan for modern Angular, TypeScript, HTML, and CSS practices.
 - Ensure styling uses clean CSS variables, grid, and flex layouts, avoiding outdated styling structures.
-- Enforce the rules in `javascript-conventions.md`.
+- Enforce the rules in `javascript-conventions.md` and `typescript-js.md`.
 
 ### 2. Dependency Version Check
-- Scan CDN links (in `index.html`) and package dependencies for minor or patch version updates.
-- If a new minor or patch version of Leaflet or SheetJS is available, flag it or propose an upgrade to the developer.
 
-### 3. Automated Test Verification
-- Always execute the full test suite before staging or committing changes:
+- Scan `package.json` dependencies for minor or patch version updates.
+- If a new minor or patch version of Angular, Leaflet, or RxJS is available (released for at least 5 days), flag it or propose an upgrade to the developer.
+
+### 3. Automated Pre-Commit & Pre-Push Verification
+
+- Always execute the fast staged-file pre-commit validation gates before committing changes, and run unit tests before pushing:
   ```bash
-  node --test tests/*.test.js
+  make pre-commit
+  make test
   ```
-- Block commits if any test suite fails.
+- Block commits if Prettier, ESLint, `ast-grep` rules (`make lint-rules`), or skill safety checks (`make lint-skills`) fail.
 
-### 4. Security & Secure Coding Skills
-- Verify security rule integrations (such as Firebase Security Rules if relevant, or client-side sanitization).
-- Ensure all inputs rendered to the page are passed through safe escaping (like `escapeHTML`) to prevent XSS.
+### 4. Security & Storage Sanitization
+
+- Verify that all `localStorage` writes flow through `LocalStorageService` (`src/app/services/local-storage.service.ts`).
+- Ensure all user-supplied strings rendered into Leaflet popups (`map-popup.util.ts`) are passed through safe escaping (`escapeHtml`) to prevent XSS.

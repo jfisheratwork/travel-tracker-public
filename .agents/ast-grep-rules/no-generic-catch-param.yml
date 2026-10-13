@@ -1,0 +1,24 @@
+id: no-generic-catch-param
+message: 'Avoid generic catch parameter names (e, err, error); use descriptive domain error names like parseDataError or loadSettingsError per javascript-conventions.md.'
+severity: info
+language: typescript
+rule:
+  any:
+    - pattern: |
+        try {
+          $$$TRY
+        } catch (e) {
+          $$$CATCH
+        }
+    - pattern: |
+        try {
+          $$$TRY
+        } catch (err) {
+          $$$CATCH
+        }
+    - pattern: |
+        try {
+          $$$TRY
+        } catch (error) {
+          $$$CATCH
+        }

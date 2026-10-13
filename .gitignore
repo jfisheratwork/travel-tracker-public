@@ -8,6 +8,7 @@
 
 # Node
 /node_modules
+node_modules/
 npm-debug.log
 yarn-error.log
 
@@ -29,35 +30,60 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
-# Miscellaneous
+# Miscellaneous & Build Caches
 /.angular/cache
 .sass-cache/
 /connect.lock
 /coverage
+coverage/
 /libpeerconnection.log
 testem.log
 /typings
 __screenshots__/
 
+# Server & Logs
+.server.pid
+server.log
+*.log
+
 # System files
 .DS_Store
 Thumbs.db
 
-# Project specific
-scratch
+# Environment
 .env
+.env.*
+!.env.example
 src/environments/environment*.ts
 !src/environments/environment.example.ts
 
-# Playwright
-node_modules/
+# Playwright & Test Reports
 /test-results/
+test-results/
 /playwright-report/
+playwright-report/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
 
+# Internal Planning Docs & Visual Verification Artifacts
+specs/
+evaluations/
+UserWalkthrough.md
+scratch
+scratch/
+screenshots/
+
+# Vale styles cache
+.vale/
+
+# Local-only backups, private data, legacy specs & personal profiles
+local_only/
 localstuff.md
+sample.json
+*.local
+personal*.json
+*.tmp
 my_sessions/
 my_sessions/**
 sessions/

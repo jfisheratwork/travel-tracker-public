@@ -1,4 +1,4 @@
-# 07. AI Agent Fast-Navigation Playbook
+# 07. AI Agent Fast-Navigation Playbook & Spec-Driven Workflow
 
 ## 1. Golden Rules for AI Navigation
 
@@ -8,33 +8,35 @@ Follow this benchmarked, high-speed sequence:
 
 ```mermaid
 graph TD
-    Start["New Feature / Bug Task"] --> QSymbol{"Know the symbol name?"}
-    
+    Start["New Feature / Bug Task"] --> Spec["0. Draft / Review Spec in ./specs/SPEC-NNN-*.md"]
+    Spec --> QSymbol{"Know the symbol name?"}
+
     QSymbol -- Yes --> FindSymbol["1. Call lsp_find_symbol(name: '...')<br/>(0.1s, returns definition + references)"]
     QSymbol -- No --> Outline["2. Run ast-grep outline --view expanded <file><br/>(0.05s, 40-line digest with line numbers)"]
-    
+
     FindSymbol --> Slice["3. Inspect Surgical Slice via view_file<br/>(e.g. Lines 120-150 only)"]
     Outline --> Slice
-    
+
     Slice --> Impact["4. Check Callers via lsp_call_hierarchy or lsp_find_references<br/>(Target exact identifier, avoid decorators!)"]
-    
-    Impact --> Edit["5. Perform Atomic Edits (replace_file_content)"]
-    
-    Edit --> Verify["6. Fast Verification:<br/>a. lsp_diagnostics(file_path) [0.2s]<br/>b. make lint [0.5s]<br/>c. make test [1.4s]"]
+
+    Impact --> Edit["5. Perform Atomic Edits (replace_file_content)<br/>Auto-triggers scripts/post-tool-quality.js"]
+
+    Edit --> Verify["6. Fast Verification & Architecture Sync:<br/>a. lsp_diagnostics(file_path) [0.2s]<br/>b. make lint && make lint-rules [0.5s]<br/>c. make test [4.5s]<br/>d. Update architecture/*.md"]
 ```
 
 ---
 
 ## 2. Fast Navigation Cheat Sheet
 
-| Task | Tool Call | Command / Parameters | Expected Latency | Token Footprint |
-| :--- | :--- | :--- | :--- | :--- |
-| **Locate Symbol Definition & Usages** | `lsp_find_symbol` (MCP) | `name: "MapViewComponent"` | **0.1s** | ~25 lines |
-| **Inspect File Structure & Line Numbers** | `run_command` | `ast-grep outline --view expanded <file>` | **0.05s** | ~40 lines (**95% savings**) |
-| **Inspect Dependencies / Imports** | `lsp_file_imports` (MCP) | `file_path: "..."` | **0.2s** | ~20 lines |
-| **Trace Function Call Hierarchy** | `lsp_call_hierarchy` (MCP) | `file_path: "...", line: 120, column: 3` | **0.2s** | ~30 lines |
-| **Type Check After Edits** | `lsp_diagnostics` (MCP) | `file_path: "..."` | **0.2s** | ~10 lines |
-| **Full Project Type & Syntax Check** | `run_command` | `make lint` | **0.5s** | Terminal output |
+| Task                                      | Tool Call                  | Command / Parameters                      | Expected Latency | Token Footprint             |
+| :---------------------------------------- | :------------------------- | :---------------------------------------- | :--------------- | :-------------------------- |
+| **Locate Symbol Definition & Usages**     | `lsp_find_symbol` (MCP)    | `name: "MapViewComponent"`                | **0.1s**         | ~25 lines                   |
+| **Inspect File Structure & Line Numbers** | `run_command`              | `ast-grep outline --view expanded <file>` | **0.05s**        | ~40 lines (**95% savings**) |
+| **Inspect Dependencies / Imports**        | `lsp_file_imports` (MCP)   | `file_path: "..."`                        | **0.2s**         | ~20 lines                   |
+| **Trace Function Call Hierarchy**         | `lsp_call_hierarchy` (MCP) | `file_path: "...", line: 120, column: 3`  | **0.2s**         | ~30 lines                   |
+| **Type Check After Edits**                | `lsp_diagnostics` (MCP)    | `file_path: "..."`                        | **0.2s**         | ~10 lines                   |
+| **Structural AST & SAST Check**           | `run_command`              | `make lint-rules`                         | **0.2s**         | Terminal output             |
+| **Full Project Type & Syntax Check**      | `run_command`              | `make lint`                               | **0.5s**         | Terminal output             |
 
 ---
 
@@ -48,8 +50,12 @@ graph TD
 
 ---
 
-## 4. Token Efficiency Directives
+## 4. Spec-Driven Lifecycle & Specialist Subagents
 
-1. **Surgical `view_file` slices**: Never call `view_file` on a whole 400+ line file. First run `ast-grep outline` to get exact line numbers, then view only the relevant 20–40 line slice.
-2. **Decomposition Over Monoliths**: When adding new functionality, create a new sub-component or utility file instead of appending hundreds of lines to an existing file.
-3. **Atomic Refactoring**: Refactor definition, update call sites identified by LSP, and immediately verify with `lsp_diagnostics` and `make lint`.
+1. **Specs First (`./specs/SPEC-NNN-<Title>.md`)**: Follow `.agents/skills/spec-authoring/SKILL.md` to draft proposals before authoring an `implementation_plan.md`.
+2. **Quarantine Pattern (`local_only/`)**: Keep personal profile exports, legacy planning docs (`local_only/openspec/`, `local_only/future_ideas/`), and `local_only/todo.md` inside `local_only/` (ignored by git).
+3. **Specialist Subagent Personas (`.agents/agents/` & `.agents/skills/subagent-catalog/SKILL.md`)**:
+   - `gis-state-auditor`: Audits Leaflet layer services, coordinate math, parent region/country roll-up, and Schema V4 migrations.
+   - `visual-auditor`: Verifies Angular UI layout, Leaflet map canvas, modals, and zero console errors via `chrome-devtools-mcp` on `http://localhost:4200`.
+   - `security-sanitizer`: Audits `LocalStorageService` schema protection, `escapeHtml()` popup sanitization, and `ast-grep`/skill safety rules.
+   - `spec-architect`: Drafts `specs/SPEC-NNN-*.md` and synchronizes living architecture in `architecture/*.md`.

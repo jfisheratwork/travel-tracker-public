@@ -21,7 +21,10 @@ if (fs.existsSync(envPath)) {
       const key = trimmed.slice(0, eqIdx).trim();
       let val = trimmed.slice(eqIdx + 1).trim();
       // Remove surrounding quotes if present
-      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
         val = val.slice(1, -1);
       }
       if (key === 'MAPBOX_API_KEY') {
@@ -54,4 +57,6 @@ ${formatField('cartoKey', cartoKey)}
 `;
 
 fs.writeFileSync(targetFile, fileContent, 'utf8');
-console.log(`[generate-env] Generated src/environments/environment.ts (mapboxKey: ${mapboxKey ? 'configured' : 'none'}, cartoKey: ${cartoKey ? 'configured' : 'none'})`);
+console.log(
+  `[generate-env] Generated src/environments/environment.ts (mapboxKey: ${mapboxKey ? 'configured' : 'none'}, cartoKey: ${cartoKey ? 'configured' : 'none'})`,
+);

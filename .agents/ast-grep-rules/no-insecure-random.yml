@@ -1,0 +1,8 @@
+id: no-insecure-random
+message: 'Math.random() is cryptographically insecure. Use crypto.getRandomValues() or crypto.randomUUID() for tokens, secrets, or IDs.'
+severity: warning
+language: typescript
+ignores:
+  - 'src/**/*.spec.ts'
+rule:
+  pattern: Math.random()

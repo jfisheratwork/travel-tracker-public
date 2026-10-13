@@ -1,0 +1,12 @@
+id: no-disabled-tests
+message: 'Do not commit focused or skipped tests (.only or .skip).'
+severity: error
+language: typescript
+rule:
+  any:
+    - pattern: test.only($$$ARGS)
+    - pattern: test.skip($$$ARGS)
+    - pattern: describe.only($$$ARGS)
+    - pattern: describe.skip($$$ARGS)
+    - pattern: it.only($$$ARGS)
+    - pattern: it.skip($$$ARGS)

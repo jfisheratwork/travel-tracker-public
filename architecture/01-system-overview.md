@@ -2,17 +2,17 @@
 
 ## 1. Technology Stack
 
-| Layer | Technology / Library | Version | Purpose |
-| :--- | :--- | :--- | :--- |
-| **Framework** | Angular | `21.2.x` | Modern reactive UI framework utilizing Standalone Components. |
-| **Build Toolchain** | `@angular/build` (esbuild + Vite) | `21.2.x` | High-speed production bundling and instant dev server rebuilds. |
-| **Language** | TypeScript | `^5.9.2` | Strict type safety and AST intelligence. |
-| **Reactivity** | RxJS | `7.8.0` | Reactive state streams (`BehaviorSubject`, `Observable`, operators). |
-| **Mapping Engine** | Leaflet | `1.9.4` | Interactive mapping, vector layers, and tile rendering. |
-| **Styling** | Tailwind CSS | JIT / CDN tokens | Utility-first styling with dynamic color theme tokens. |
-| **Testing** | Vitest | `4.1.11` | Instant unit test execution via Angular Vitest runner. |
-| **End-to-End** | Playwright | `^1.61.1` | Headless cross-browser regression testing. |
-| **Linter & Formatter** | ESLint + Prettier | `10.4.x` / `3.8.x` | Code quality enforcement and automated style formatting. |
+| Layer                  | Technology / Library              | Version            | Purpose                                                              |
+| :--------------------- | :-------------------------------- | :----------------- | :------------------------------------------------------------------- |
+| **Framework**          | Angular                           | `21.2.x`           | Modern reactive UI framework utilizing Standalone Components.        |
+| **Build Toolchain**    | `@angular/build` (esbuild + Vite) | `21.2.x`           | High-speed production bundling and instant dev server rebuilds.      |
+| **Language**           | TypeScript                        | `^5.9.2`           | Strict type safety and AST intelligence.                             |
+| **Reactivity**         | RxJS                              | `7.8.0`            | Reactive state streams (`BehaviorSubject`, `Observable`, operators). |
+| **Mapping Engine**     | Leaflet                           | `1.9.4`            | Interactive mapping, vector layers, and tile rendering.              |
+| **Styling**            | Tailwind CSS                      | JIT / CDN tokens   | Utility-first styling with dynamic color theme tokens.               |
+| **Testing**            | Vitest                            | `4.1.11`           | Instant unit test execution via Angular Vitest runner.               |
+| **End-to-End**         | Playwright                        | `^1.61.1`          | Headless cross-browser regression testing.                           |
+| **Linter & Formatter** | ESLint + Prettier                 | `10.4.x` / `3.8.x` | Code quality enforcement and automated style formatting.             |
 
 ---
 

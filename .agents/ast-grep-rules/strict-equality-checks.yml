@@ -1,0 +1,10 @@
+id: strict-equality-checks
+message: 'Use strict equality (=== or !==) instead of loose equality (== or !=).'
+severity: warning
+language: typescript
+rule:
+  any:
+    - pattern: '$A == null'
+    - pattern: '$A != null'
+    - pattern: '$A == undefined'
+    - pattern: '$A != undefined'

@@ -1,0 +1,11 @@
+id: no-direct-localstorage-write
+message: 'Prefer LocalStorageService or StateService instead of direct localStorage.setItem() to preserve schema V4 validation and migration invariants.'
+severity: info
+language: typescript
+files:
+  - 'src/**/*.ts'
+ignores:
+  - 'src/app/services/local-storage.service.ts'
+  - 'src/**/*.spec.ts'
+rule:
+  pattern: localStorage.setItem($$$ARGS)
