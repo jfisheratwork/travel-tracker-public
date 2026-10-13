@@ -143,3 +143,6 @@ export const CLUSTER_BOUNDS_BUFFER_RATIO = 0.35;
 
 /** Maximum zoom level used when clicking "Zoom In to Separate". */
 export const CLUSTER_SEPARATE_MAX_ZOOM = 10;
+
+/** Minimum zoom level required to render unvisited secondary places (state parks, smaller cities) when showUnvisitedPlaces is toggled on. */
+export const UNVISITED_SECONDARY_PLACES_MIN_ZOOM = 7;

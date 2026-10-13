@@ -7,6 +7,7 @@ import {
   MAP_THEME,
   MAP_MARKER_THEME,
   WANT_TO_VISIT_STAR_PIP_HTML,
+  UNVISITED_SECONDARY_PLACES_MIN_ZOOM,
 } from '../../../core/constants/map.constants';
 import { LocationPoint, MapMode } from '../../../models/location.model';
 import { FamilyMember } from '../../../models/settings.model';
@@ -78,6 +79,26 @@ export class MapMarkerService {
       );
       if (showUnvisitedPlaces === false && !isVisitedOrPartial && !isWantToVisit) {
         return false;
+      }
+
+      // Safeguard: When showing unvisited places, filter secondary places (state parks and non-capital cities)
+      // at low zoom or outside viewport to avoid clustering/rendering bottlenecks with 1,500+ markers.
+      if (showUnvisitedPlaces === true && !isVisitedOrPartial && !isWantToVisit) {
+        const isSecondaryPlace =
+          m.category === 'state_park' ||
+          m.id.startsWith('sp-') ||
+          (m.category === 'city' && !m.isCapital && !m.isCountryCapital);
+
+        if (isSecondaryPlace && options.map) {
+          const currentZoom = options.map.getZoom();
+          if (currentZoom < UNVISITED_SECONDARY_PLACES_MIN_ZOOM) {
+            return false;
+          }
+          const bounds = options.map.getBounds();
+          if (bounds && !bounds.contains([m.lat, m.lng])) {
+            return false;
+          }
+        }
       }
 
       // Filter by placesFilters if provided

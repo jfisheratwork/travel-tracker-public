@@ -3,12 +3,15 @@ import { HttpClient } from '@angular/common/http';
 // DOCS: https://rxjs.dev/api/index/class/BehaviorSubject
 // DOCS: https://rxjs.dev/api/index/function/of
 // DOCS: https://rxjs.dev/api/index/function/combineLatest
-import { BehaviorSubject, combineLatest, of } from 'rxjs';
+// DOCS: https://rxjs.dev/api/index/class/Observable
+import { BehaviorSubject, combineLatest, Observable, of } from 'rxjs';
 // DOCS: https://rxjs.dev/api/operators/catchError
-import { catchError } from 'rxjs/operators';
-import { LocationPoint } from '../models/location.model';
+// DOCS: https://rxjs.dev/api/operators/tap
+import { catchError, tap } from 'rxjs/operators';
+import { LocationPoint, Place } from '../models/location.model';
 import { LoggerService } from '../core/services/logger.service';
 import { COUNTRY_CAPITALS, NATIONAL_PARKS, STATES } from '../core/constants/geography.constants';
+import { STATIC_PLACES_MAP } from '../core/constants/curated-places.constants';
 
 @Injectable({
   providedIn: 'root',
@@ -25,6 +28,10 @@ export class LocationDataService {
 
   private statesGeoJsonSubject = new BehaviorSubject<GeoJSON.FeatureCollection | null>(null);
   public readonly statesGeoJson$ = this.statesGeoJsonSubject.asObservable();
+
+  private extendedPlacesSubject = new BehaviorSubject<Place[]>([]);
+  public readonly extendedPlaces$ = this.extendedPlacesSubject.asObservable();
+  private extendedPlacesLoaded = false;
 
   constructor() {
     this.loadData();
@@ -102,5 +109,33 @@ export class LocationDataService {
         features: combinedFeatures,
       });
     });
+  }
+
+  /**
+   * Lazily loads extended places (cities >= 60k population, state & provincial parks)
+   * from static JSON asset, populating the extendedPlaces$ stream and static lookup map.
+   */
+  public loadExtendedPlaces(): Observable<Place[]> {
+    if (this.extendedPlacesLoaded) {
+      return of(this.extendedPlacesSubject.value);
+    }
+
+    return this.http.get<Place[]>('assets/data/extended-places.json').pipe(
+      tap((places) => {
+        for (const place of places) {
+          STATIC_PLACES_MAP.set(place.id, place);
+          const nameKey = place.name.toLowerCase().trim();
+          if (!STATIC_PLACES_MAP.has(nameKey)) {
+            STATIC_PLACES_MAP.set(nameKey, place);
+          }
+        }
+        this.extendedPlacesLoaded = true;
+        this.extendedPlacesSubject.next(places);
+      }),
+      catchError((err) => {
+        this.logger.error('Failed to load extended places data', err);
+        return of([]);
+      }),
+    );
   }
 }

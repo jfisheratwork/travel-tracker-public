@@ -3,10 +3,12 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ParksStatesModal } from './parks-states-modal';
 import { StateService } from '../../services/state.service';
+import { LocationDataService } from '../../services/location-data.service';
 import { GeocodingService } from '../../services/routing/geocoding.service';
 import { ToastService } from '../../core/services/toast.service';
 import { BehaviorSubject, of } from 'rxjs';
 import { AppSettings, DEFAULT_SETTINGS } from '../../models/settings.model';
+import { Place } from '../../models/location.model';
 import { vi, describe, beforeEach, it, expect } from 'vitest';
 
 describe('ParksStatesModal', () => {
@@ -287,5 +289,49 @@ describe('ParksStatesModal', () => {
     const summaryCell = firstRow?.querySelector('td:last-child');
     expect(summaryCell?.textContent).toContain('✅');
     expect(summaryCell?.textContent).not.toContain('🌲');
+  });
+
+  it('should window displayedLocations to displayLimit and expand with loadMore and loadAll', () => {
+    expect(component.filteredLocations.length).toBeGreaterThan(50);
+    expect(component.displayLimit).toBe(50);
+    expect(component.displayedLocations.length).toBe(50);
+
+    component.loadMore(25);
+    expect(component.displayLimit).toBe(75);
+    expect(component.displayedLocations.length).toBe(75);
+
+    component.loadAll();
+    expect(component.displayedLocations.length).toBe(component.filteredLocations.length);
+
+    // Filter change resets displayLimit
+    component.searchQuery = 'test';
+    component.resetDisplayLimit();
+    expect(component.displayLimit).toBe(50);
+  });
+
+  it('should integrate extended places from LocationDataService into search', () => {
+    const locService = TestBed.inject(LocationDataService);
+    // Simulate extended places stream emitting an extended city >= 60k
+    const extendedCity: Place = {
+      id: 'city-us-naperville-il',
+      name: 'Naperville',
+      category: 'city',
+      countryId: 'US',
+      regionId: 'US-IL',
+      lat: 41.7508,
+      lng: -88.1535,
+      source: 'static',
+      isCurated: true,
+      tags: ['city', 'usa', 'united states', 'illinois', 'il', 'naperville'],
+    };
+
+    // Emit to stream
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (locService as any).extendedPlacesSubject.next([extendedCity]);
+    component.searchQuery = 'Naperville';
+
+    const match = component.filteredLocations.find((l) => l.name === 'Naperville');
+    expect(match).toBeTruthy();
+    expect(match?.regionId).toBe('US-IL');
   });
 });

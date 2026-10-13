@@ -12,6 +12,7 @@ import { AppErrorType } from '../../core/models/app-error.model';
 import { GLOBAL_COUNTRIES, COUNTRIES_MAP } from '../../core/constants/countries.constants';
 import { REGIONS, REGIONS_MAP, getRegionsByCountry } from '../../core/constants/regions.constants';
 import { STATIC_PLACES_CATALOG } from '../../core/constants/curated-places.constants';
+import { LocationDataService } from '../../services/location-data.service';
 
 export type SortColumn = 'name' | 'category' | 'country' | 'state' | string; // string for family member IDs
 export type CustomPlaceCategory = 'landmark' | 'state_park' | 'city';
@@ -83,10 +84,17 @@ export class ParksStatesModal implements OnInit, OnDestroy {
   osmResults: Waypoint[] = [];
   selectedOsmCategories: Record<number, CustomPlaceCategory | ''> = {};
 
+  // Progressive DOM Windowing (Prevents UI lockup with 1,500+ items)
+  readonly pageSize = 50;
+  displayLimit = 50;
+
   private sub?: Subscription;
+  private extendedPlacesSub?: Subscription;
   private stateService = inject(StateService);
+  private locationDataService = inject(LocationDataService);
   private geocodingService = inject(GeocodingService);
   private toastService = inject(ToastService);
+  private extendedPlaces: Place[] = [];
 
   ngOnInit(): void {
     this.updateAvailableRegions();
@@ -101,10 +109,31 @@ export class ParksStatesModal implements OnInit, OnDestroy {
 
       this.updateLocations();
     });
+
+    this.extendedPlacesSub = this.locationDataService.extendedPlaces$.subscribe((places) => {
+      this.extendedPlaces = places || [];
+      this.updateLocations();
+    });
+
+    // Asynchronously trigger fetch if not already loaded
+    this.locationDataService.loadExtendedPlaces().subscribe();
   }
 
   ngOnDestroy(): void {
     if (this.sub) this.sub.unsubscribe();
+    if (this.extendedPlacesSub) this.extendedPlacesSub.unsubscribe();
+  }
+
+  loadMore(count = this.pageSize): void {
+    this.displayLimit += count;
+  }
+
+  loadAll(): void {
+    this.displayLimit = this.filteredLocations.length;
+  }
+
+  resetDisplayLimit(): void {
+    this.displayLimit = this.pageSize;
   }
 
   switchModalMode(newMode: 'parks' | 'states' | 'places'): void {
@@ -112,6 +141,7 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     this.stateFilter = 'all';
     this.searchQuery = '';
     this.osmResults = [];
+    this.resetDisplayLimit();
     this.updateAvailableRegions();
     this.updateLocations();
   }
@@ -126,11 +156,13 @@ export class ParksStatesModal implements OnInit, OnDestroy {
 
   onCountryChange(): void {
     this.stateFilter = 'all';
+    this.resetDisplayLimit();
     this.updateAvailableRegions();
     this.updateLocations();
   }
 
   toggleCategoryFilter(category: string): void {
+    this.resetDisplayLimit();
     if (this.selectedCategories.has(category)) {
       if (this.selectedCategories.size > 1) {
         this.selectedCategories.delete(category);
@@ -141,6 +173,7 @@ export class ParksStatesModal implements OnInit, OnDestroy {
   }
 
   toggleCapitalsOnly(): void {
+    this.resetDisplayLimit();
     this.capitalsOnly = !this.capitalsOnly;
   }
 
@@ -148,6 +181,28 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     const customPlaces = this.viewModel?.customPlaces || [];
     const allPlaces: ModalLocationItem[] = [
       ...STATIC_PLACES_CATALOG.map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        countryId: p.countryId,
+        countryName:
+          p.countryId === 'CA'
+            ? 'Canada'
+            : p.countryId === 'US'
+              ? 'United States'
+              : COUNTRIES_MAP.get(p.countryId)?.name || p.countryId,
+        regionId: p.regionId,
+        regionName: p.regionId ? REGIONS_MAP.get(p.regionId)?.name : undefined,
+        sub: p.regionId ? REGIONS_MAP.get(p.regionId)?.code : undefined,
+        lat: p.lat,
+        lng: p.lng,
+        source: p.source,
+        isCurated: p.isCurated,
+        isCapital: p.isCapital,
+        isMajorCity: p.isMajorCity,
+        tags: p.tags,
+      })),
+      ...this.extendedPlaces.map((p) => ({
         id: p.id,
         name: p.name,
         category: p.category,
@@ -320,6 +375,10 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     });
 
     return result;
+  }
+
+  get displayedLocations(): ModalLocationItem[] {
+    return this.filteredLocations.slice(0, this.displayLimit);
   }
 
   setSort(column: SortColumn): void {
