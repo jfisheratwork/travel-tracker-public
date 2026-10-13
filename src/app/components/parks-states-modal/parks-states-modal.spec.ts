@@ -193,19 +193,75 @@ describe('ParksStatesModal', () => {
     expect(component.getMemberStatus('United States', 'm-2')).toBe('visited');
   });
 
-  it('should support secondary fallback OpenStreetMap search and track custom places', () => {
+  it('should require a category (landmark, state_park, city) when tracking custom places from OpenStreetMap', () => {
     component.searchQuery = 'Starved Rock';
     component.searchOsm();
 
     expect(geocodingServiceMock.searchLocations).toHaveBeenCalledWith('Starved Rock', 5);
     expect(component.osmResults.length).toBe(1);
 
-    const toastSpy = vi.spyOn(toastService, 'showSuccess');
-    component.addCustomPlaceFromOsm(component.osmResults[0]);
+    const errorSpy = vi.spyOn(toastService, 'showError');
+    const successSpy = vi.spyOn(toastService, 'showSuccess');
 
-    expect(toastSpy).toHaveBeenCalledWith(expect.stringContaining('Added'));
+    // Attempt to add without selecting a category -> should error and not add
+    component.addCustomPlaceFromOsm(component.osmResults[0], undefined, 0);
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining('Please select Landmark, State Park, or City'),
+      }),
+    );
+    expect(component.viewModel?.customPlaces?.length).toBe(0);
+
+    // Select 'state_park' category and add
+    component.setOsmCategory(0, 'state_park');
+    component.addCustomPlaceFromOsm(component.osmResults[0], undefined, 0);
+
+    expect(successSpy).toHaveBeenCalledWith(expect.stringContaining('State Park'));
     expect(component.osmResults.length).toBe(0);
     expect(component.viewModel?.customPlaces?.length).toBe(1);
     expect(component.viewModel?.customPlaces?.[0].name).toContain('Starved Rock');
+    expect(component.viewModel?.customPlaces?.[0].category).toBe('state_park');
+    expect(component.viewModel?.customPlaces?.[0].regionId).toBe('US-IL');
+    expect(component.viewModel?.customPlaces?.[0].countryId).toBe('US');
+
+    // Verify custom place appears when filtering by state_park
+    component.selectedCategories = new Set(['state_park']);
+    component.searchQuery = 'Starved Rock';
+    expect(
+      component.filteredLocations.some(
+        (l) => l.name.includes('Starved Rock') && l.category === 'state_park',
+      ),
+    ).toBe(true);
+  });
+
+  it('should bulk mark all unvisited national parks as want while preserving visited parks', () => {
+    // np-yosemite is already visited by m-1 in mockSettings
+    expect(component.getMemberStatus('np-yosemite', 'm-1')).toBe('visited');
+    expect(component.getMemberStatus('np-yellowstone', 'm-1')).toBe('unvisited');
+
+    component.countryFilter = 'US';
+    component.markAllNationalParksWant();
+
+    // Unvisited US national park becomes 'want'
+    expect(component.getMemberStatus('np-yellowstone', 'm-1')).toBe('want');
+    expect(component.getMemberStatus('np-yellowstone', 'm-2')).toBe('want');
+    // Already visited park stays 'visited' for m-1
+    expect(component.getMemberStatus('np-yosemite', 'm-1')).toBe('visited');
+  });
+
+  it('should bulk mark all unvisited state parks for a specific state as want', () => {
+    const ilStatePark = component.locations.find(
+      (l) => l.category === 'state_park' && l.regionId === 'US-IL',
+    );
+    const caStatePark = component.locations.find(
+      (l) => l.category === 'state_park' && l.regionId === 'US-CA',
+    );
+    expect(ilStatePark).toBeTruthy();
+    expect(caStatePark).toBeTruthy();
+
+    component.markAllStateParksWant('US-IL');
+
+    expect(component.getMemberStatus(ilStatePark!.id, 'm-1')).toBe('want');
+    expect(component.getMemberStatus(caStatePark!.id, 'm-1')).toBe('unvisited');
   });
 });

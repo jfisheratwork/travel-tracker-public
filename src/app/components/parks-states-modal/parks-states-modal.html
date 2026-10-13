@@ -195,6 +195,18 @@
         </button>
         <button
           type="button"
+          (click)="toggleCategoryFilter('landmark')"
+          class="px-2.5 py-1 rounded-full border transition-all cursor-pointer"
+          [ngClass]="
+            selectedCategories.has('landmark') && !capitalsOnly
+              ? 'bg-amber-100 text-amber-800 border-amber-300 font-bold'
+              : 'bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100'
+          "
+        >
+          🗽 Landmarks
+        </button>
+        <button
+          type="button"
           (click)="toggleCategoryFilter('city')"
           class="px-2.5 py-1 rounded-full border transition-all cursor-pointer"
           [ngClass]="
@@ -229,6 +241,57 @@
         >
           ⭐ Capitals Only
         </button>
+      </div>
+
+      <!-- Quick Wishlist Actions Bar (National Parks & State Parks) -->
+      <div
+        *ngIf="mode === 'places' || mode === 'parks'"
+        class="flex items-center gap-2 flex-wrap pt-1.5 border-t border-stone-100 text-xs"
+      >
+        <span class="text-stone-500 font-semibold mr-1">Quick Wishlist:</span>
+        <button
+          type="button"
+          (click)="markAllNationalParksWant()"
+          class="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+          title="Mark all unvisited National Parks as Want to Visit"
+        >
+          <span>💜</span>
+          <span>
+            Want to Visit All National Parks{{
+              selectedRegionOrCountryLabel ? ' (' + selectedRegionOrCountryLabel + ')' : ''
+            }}
+          </span>
+        </button>
+
+        <div
+          *ngIf="mode === 'places'"
+          class="inline-flex items-center gap-1 bg-purple-50/60 p-0.5 pl-2 rounded-lg border border-purple-200"
+        >
+          <span class="text-purple-800 font-semibold text-[11px]">State Parks for:</span>
+          <select
+            [(ngModel)]="wishlistStateTarget"
+            class="bg-white border border-purple-200 rounded px-1.5 py-0.5 text-xs text-stone-700 font-medium focus:outline-none focus:border-purple-500"
+            title="Select state or province for State Parks wishlist"
+          >
+            <option value="all">
+              {{ stateFilter !== 'all' ? selectedStateLabel : 'All States & Provinces' }}
+            </option>
+            <option *ngFor="let r of availableRegions" [value]="r.id">
+              {{ r.name }} ({{ r.code }})
+            </option>
+          </select>
+          <button
+            type="button"
+            (click)="markAllStateParksWant()"
+            class="px-2.5 py-1 rounded-md bg-purple-600 hover:bg-purple-700 text-white font-bold transition cursor-pointer flex items-center gap-1 shadow-2xs"
+            title="Mark all unvisited State Parks for the selected state as Want to Visit"
+          >
+            <span>💜</span>
+            <span>
+              Want All State Parks{{ selectedStateLabel ? ' (' + selectedStateLabel + ')' : '' }}
+            </span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -399,6 +462,12 @@
                 🌲 SP
               </span>
               <span
+                *ngIf="loc.category === 'landmark'"
+                class="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-md border border-amber-200"
+              >
+                🗽 Landmark
+              </span>
+              <span
                 *ngIf="loc.category === 'city'"
                 class="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs font-semibold rounded-md border border-blue-200"
               >
@@ -534,14 +603,17 @@
         <!-- OpenStreetMap Results Cards -->
         <div *ngIf="osmResults.length > 0" class="mt-2 space-y-2">
           <div class="text-xs font-bold text-stone-600 flex items-center gap-1.5">
-            <span>OpenStreetMap Results ({{ osmResults.length }}):</span>
+            <span>OpenStreetMap Results ({{ osmResults.length }}) —</span>
+            <span class="text-amber-700 font-semibold">
+              Select a category (Landmark, State Park, or City) to add:
+            </span>
           </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
             <div
-              *ngFor="let res of osmResults"
-              class="p-2.5 bg-white rounded-xl border border-stone-200 shadow-xs flex items-center justify-between gap-2 text-xs"
+              *ngFor="let res of osmResults; let i = index"
+              class="p-3 bg-white rounded-xl border border-stone-200 shadow-xs flex flex-col gap-2 text-xs"
             >
-              <div class="min-w-0 flex-1">
+              <div class="min-w-0">
                 <p class="font-semibold text-stone-800 truncate" [title]="res.name">
                   {{ res.name }}
                 </p>
@@ -549,13 +621,60 @@
                   {{ res.lat.toFixed(4) }}, {{ res.lng.toFixed(4) }}
                 </p>
               </div>
-              <button
-                type="button"
-                (click)="addCustomPlaceFromOsm(res)"
-                class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 rounded-lg text-xs font-bold transition cursor-pointer flex-shrink-0"
-              >
-                + Track Place
-              </button>
+              <div class="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-stone-100">
+                <div class="flex items-center gap-1 flex-wrap">
+                  <span class="text-[10px] font-bold text-stone-500 uppercase mr-0.5">Type:</span>
+                  <button
+                    type="button"
+                    (click)="setOsmCategory(i, 'landmark')"
+                    class="px-2 py-1 rounded-md border text-[11px] font-bold transition cursor-pointer"
+                    [ngClass]="
+                      selectedOsmCategories[i] === 'landmark'
+                        ? 'bg-amber-100 text-amber-900 border-amber-400 shadow-2xs'
+                        : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+                    "
+                  >
+                    🗽 Landmark
+                  </button>
+                  <button
+                    type="button"
+                    (click)="setOsmCategory(i, 'state_park')"
+                    class="px-2 py-1 rounded-md border text-[11px] font-bold transition cursor-pointer"
+                    [ngClass]="
+                      selectedOsmCategories[i] === 'state_park'
+                        ? 'bg-teal-100 text-teal-900 border-teal-400 shadow-2xs'
+                        : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+                    "
+                  >
+                    🌲 State Park
+                  </button>
+                  <button
+                    type="button"
+                    (click)="setOsmCategory(i, 'city')"
+                    class="px-2 py-1 rounded-md border text-[11px] font-bold transition cursor-pointer"
+                    [ngClass]="
+                      selectedOsmCategories[i] === 'city'
+                        ? 'bg-blue-100 text-blue-900 border-blue-400 shadow-2xs'
+                        : 'bg-stone-50 text-stone-600 border-stone-200 hover:bg-stone-100'
+                    "
+                  >
+                    🏙️ City
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  [disabled]="!selectedOsmCategories[i]"
+                  (click)="addCustomPlaceFromOsm(res, undefined, i)"
+                  class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-stone-200 disabled:text-stone-400 text-white rounded-lg text-xs font-bold transition cursor-pointer disabled:cursor-not-allowed flex-shrink-0"
+                  [title]="
+                    selectedOsmCategories[i]
+                      ? 'Add this place to your catalog'
+                      : 'Select Landmark, State Park, or City first'
+                  "
+                >
+                  + Track Place
+                </button>
+              </div>
             </div>
           </div>
         </div>

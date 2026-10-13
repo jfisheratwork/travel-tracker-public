@@ -394,7 +394,7 @@ export class MapViewComponent implements OnInit, OnDestroy {
                 totalFamily > 1 && visitors.length > 0 && visitors.length < totalFamily,
               visitedByMembers: visitors,
               visitLogs: locationLogs,
-              category: 'custom',
+              category: p.category || 'custom',
             } as LocationPoint;
           });
 

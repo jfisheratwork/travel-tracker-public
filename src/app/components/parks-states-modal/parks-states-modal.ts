@@ -14,6 +14,7 @@ import { REGIONS, REGIONS_MAP, getRegionsByCountry } from '../../core/constants/
 import { STATIC_PLACES_CATALOG } from '../../core/constants/curated-places.constants';
 
 export type SortColumn = 'name' | 'category' | 'country' | 'state' | string; // string for family member IDs
+export type CustomPlaceCategory = 'landmark' | 'state_park' | 'city';
 
 export interface ModalLocationItem {
   id: string;
@@ -57,6 +58,7 @@ export class ParksStatesModal implements OnInit, OnDestroy {
   stateFilter = 'all'; // 'all' or regionId
   memberFilter = 'all'; // 'all' or member ID
   visibilityFilter = 'all'; // 'all', 'visited', 'want', 'unvisited'
+  wishlistStateTarget = 'all'; // 'all' or regionId for quick state park wishlist
 
   // Granular Category Chips
   selectedCategories = new Set<string>([
@@ -79,6 +81,7 @@ export class ParksStatesModal implements OnInit, OnDestroy {
   // OpenStreetMap Fallback Search
   isSearchingOsm = false;
   osmResults: Waypoint[] = [];
+  selectedOsmCategories: Record<number, CustomPlaceCategory | ''> = {};
 
   private sub?: Subscription;
   private stateService = inject(StateService);
@@ -599,6 +602,125 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     this.stateService.setEditingLocation({ id: locationId, mode: editMode });
   }
 
+  // --- Quick Bulk Wishlist Actions ---
+  get selectedStateLabel(): string {
+    const targetId = this.stateFilter !== 'all' ? this.stateFilter : this.wishlistStateTarget;
+    if (targetId === 'all') return '';
+    return REGIONS_MAP.get(targetId)?.name || targetId;
+  }
+
+  get selectedRegionOrCountryLabel(): string {
+    if (this.stateFilter !== 'all') {
+      return REGIONS_MAP.get(this.stateFilter)?.name || this.stateFilter;
+    }
+    if (this.countryFilter !== 'all') {
+      return COUNTRIES_MAP.get(this.countryFilter)?.name || this.countryFilter;
+    }
+    return '';
+  }
+
+  private getTargetMembers(): { id: string; name: string }[] {
+    if (!this.viewModel || !this.viewModel.familyMembers.length) return [];
+    if (this.memberFilter !== 'all') {
+      return this.viewModel.familyMembers.filter((m) => m.id === this.memberFilter);
+    }
+    return this.viewModel.familyMembers;
+  }
+
+  markAllNationalParksWant(): void {
+    const members = this.getTargetMembers();
+    if (members.length === 0) return;
+
+    const parks = this.locations.filter((loc) => {
+      if (loc.category !== 'national_park') return false;
+      if (this.countryFilter !== 'all' && loc.countryId !== this.countryFilter) return false;
+      if (
+        this.stateFilter !== 'all' &&
+        loc.regionId !== this.stateFilter &&
+        loc.regionName !== this.stateFilter
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    let updatedCount = 0;
+    for (const park of parks) {
+      let parkMarked = false;
+      for (const m of members) {
+        if (this.getMemberStatus(park.id, m.id) === 'unvisited') {
+          this.setMemberStatus(park.id, m.id, 'want');
+          parkMarked = true;
+        }
+      }
+      if (parkMarked) updatedCount++;
+    }
+
+    if (this.viewModel) {
+      this.stateService.updateSettings(this.viewModel);
+    }
+    const scopeLabel = this.selectedRegionOrCountryLabel
+      ? ` in ${this.selectedRegionOrCountryLabel}`
+      : '';
+    this.toastService.showSuccess(
+      updatedCount > 0
+        ? `Marked ${updatedCount} unvisited National Parks${scopeLabel} as Want to Visit!`
+        : `All matching National Parks${scopeLabel} are already Visited or on your Want to Visit list.`,
+    );
+  }
+
+  markAllStateParksWant(overrideRegionId?: string): void {
+    const members = this.getTargetMembers();
+    if (members.length === 0) return;
+
+    const targetRegion =
+      overrideRegionId ||
+      (this.stateFilter !== 'all' ? this.stateFilter : this.wishlistStateTarget);
+
+    const allPossiblePlaces = [
+      ...STATIC_PLACES_CATALOG,
+      ...(this.viewModel?.customPlaces || []),
+    ].filter((p) => p.category === 'state_park' || p.category === 'provincial_park');
+
+    const matchingStateParks = allPossiblePlaces.filter((p) => {
+      if (targetRegion !== 'all') {
+        const reg = REGIONS_MAP.get(targetRegion);
+        return (
+          p.regionId === targetRegion ||
+          (reg && (p.regionId === reg.id || p.regionId === `${reg.countryId}-${reg.code}`))
+        );
+      }
+      if (this.countryFilter !== 'all') {
+        return p.countryId === this.countryFilter;
+      }
+      return true;
+    });
+
+    let updatedCount = 0;
+    for (const sp of matchingStateParks) {
+      let spMarked = false;
+      for (const m of members) {
+        if (this.getMemberStatus(sp.id, m.id) === 'unvisited') {
+          this.setMemberStatus(sp.id, m.id, 'want');
+          spMarked = true;
+        }
+      }
+      if (spMarked) updatedCount++;
+    }
+
+    if (this.viewModel) {
+      this.stateService.updateSettings(this.viewModel);
+    }
+    const regionLabel =
+      targetRegion !== 'all' ? REGIONS_MAP.get(targetRegion)?.name || targetRegion : '';
+    const scopeLabel = regionLabel ? ` for ${regionLabel}` : '';
+    this.toastService.showSuccess(
+      updatedCount > 0
+        ? `Marked ${updatedCount} unvisited State Parks${scopeLabel} as Want to Visit!`
+        : `All matching State Parks${scopeLabel} are already Visited or on your Want to Visit list.`,
+    );
+  }
+
   // --- Fallback OpenStreetMap / Nominatim Search ---
   searchOsm(): void {
     if (!this.searchQuery || this.searchQuery.trim().length < 2) {
@@ -610,6 +732,7 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     }
 
     this.isSearchingOsm = true;
+    this.selectedOsmCategories = {};
     this.geocodingService.searchLocations(this.searchQuery.trim(), 5).subscribe({
       next: (results) => {
         this.isSearchingOsm = false;
@@ -628,19 +751,77 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     });
   }
 
-  addCustomPlaceFromOsm(osm: Waypoint): void {
+  setOsmCategory(index: number, category: CustomPlaceCategory): void {
+    this.selectedOsmCategories[index] = category;
+  }
+
+  private inferCountryAndRegionFromOsm(displayName: string): {
+    countryId: string;
+    regionId?: string;
+  } {
+    let countryId = this.countryFilter !== 'all' ? this.countryFilter : 'US';
+    let regionId = this.stateFilter !== 'all' ? this.stateFilter : undefined;
+
+    if (displayName) {
+      const lower = displayName.toLowerCase();
+      // Match country from display name segments
+      const parts = displayName.split(',').map((s) => s.trim().toLowerCase());
+      for (const c of GLOBAL_COUNTRIES) {
+        if (parts.includes(c.name.toLowerCase()) || lower.endsWith(c.name.toLowerCase())) {
+          countryId = c.id;
+          break;
+        }
+      }
+      if (parts.includes('united states') || parts.includes('usa')) {
+        countryId = 'US';
+      } else if (parts.includes('canada')) {
+        countryId = 'CA';
+      }
+
+      // Match US state or CA province from display name segments
+      if (!regionId && (countryId === 'US' || countryId === 'CA')) {
+        for (const r of REGIONS) {
+          if (
+            r.countryId === countryId &&
+            (parts.includes(r.name.toLowerCase()) || parts.includes(r.code.toLowerCase()))
+          ) {
+            regionId = r.id;
+            break;
+          }
+        }
+      }
+    }
+
+    return { countryId, regionId };
+  }
+
+  addCustomPlaceFromOsm(osm: Waypoint, category?: CustomPlaceCategory, index?: number): void {
     if (!this.viewModel) return;
+
+    const chosenCategory: CustomPlaceCategory | '' =
+      category || (index !== undefined ? this.selectedOsmCategories[index] || '' : '');
+
+    if (!chosenCategory) {
+      this.toastService.showError({
+        type: AppErrorType.VALIDATION_ERROR,
+        message: 'Please select Landmark, State Park, or City before adding this place.',
+      });
+      return;
+    }
+
+    const { countryId, regionId } = this.inferCountryAndRegionFromOsm(osm.name || '');
 
     const newPlace: Place = {
       id: `custom-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       name: osm.name || 'Unnamed Spot',
-      category: 'custom',
-      countryId: this.countryFilter !== 'all' ? this.countryFilter : 'US',
+      category: chosenCategory,
+      countryId,
+      regionId,
       lat: osm.lat,
       lng: osm.lng,
       source: 'osm',
       isCurated: false,
-      tags: ['custom'],
+      tags: [chosenCategory, 'custom'],
     };
 
     if (!this.viewModel.customPlaces) {
@@ -648,14 +829,24 @@ export class ParksStatesModal implements OnInit, OnDestroy {
     }
     this.viewModel.customPlaces.push(newPlace);
 
+    // Ensure the chosen category chip is active so the newly added place is visible in context
+    this.selectedCategories.add(chosenCategory);
+
     // If a member filter is active, track visit for them directly
     if (this.memberFilter !== 'all') {
       this.setMemberStatus(newPlace.id, this.memberFilter, 'visited');
     }
 
     this.stateService.updateSettings(this.viewModel);
-    this.toastService.showSuccess(`Added "${newPlace.name}" to custom places!`);
+    const catLabel =
+      chosenCategory === 'state_park'
+        ? 'State Park'
+        : chosenCategory === 'landmark'
+          ? 'Landmark'
+          : 'City';
+    this.toastService.showSuccess(`Added "${newPlace.name}" as a ${catLabel}!`);
     this.osmResults = [];
+    this.selectedOsmCategories = {};
     this.updateLocations();
   }
 
