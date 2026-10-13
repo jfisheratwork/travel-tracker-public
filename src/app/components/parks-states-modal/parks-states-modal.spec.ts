@@ -264,4 +264,28 @@ describe('ParksStatesModal', () => {
     expect(component.getMemberStatus(ilStatePark!.id, 'm-1')).toBe('want');
     expect(component.getMemberStatus(caStatePark!.id, 'm-1')).toBe('unvisited');
   });
+
+  it('should render green check (✅) rather than tree (🌲) for visited status in DOM', () => {
+    const testPlaceId = component.filteredLocations[0].id;
+    component.setMemberStatus(testPlaceId, 'm-1', 'visited');
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const firstRow = compiled.querySelector('tbody tr');
+    expect(firstRow).toBeTruthy();
+
+    const markAllVisitedBtn = firstRow?.querySelector('button[title="Mark all as Visited"]');
+    expect(markAllVisitedBtn?.textContent?.trim()).toBe('✅');
+
+    const memberButtons = firstRow?.querySelectorAll('td button');
+    const visitedMemberBtn = Array.from(memberButtons || []).find((b) =>
+      b.getAttribute('title')?.includes(': Visited'),
+    );
+    expect(visitedMemberBtn).toBeTruthy();
+    expect(visitedMemberBtn?.textContent?.trim()).toBe('✅');
+
+    const summaryCell = firstRow?.querySelector('td:last-child');
+    expect(summaryCell?.textContent).toContain('✅');
+    expect(summaryCell?.textContent).not.toContain('🌲');
+  });
 });

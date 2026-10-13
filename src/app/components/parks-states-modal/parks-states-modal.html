@@ -371,7 +371,7 @@
                   "
                   title="Mark all as Visited"
                 >
-                  🌲
+                  ✅
                 </button>
                 <button
                   type="button"
@@ -535,7 +535,7 @@
                   ' (click to cycle)'
                 "
               >
-                <span *ngIf="getMemberStatus(loc.id, member.id) === 'visited'">🌲</span>
+                <span *ngIf="getMemberStatus(loc.id, member.id) === 'visited'">✅</span>
                 <span *ngIf="getMemberStatus(loc.id, member.id) === 'want'">💜</span>
                 <span *ngIf="getMemberStatus(loc.id, member.id) === 'unvisited'">⚪</span>
               </button>
@@ -551,7 +551,7 @@
                   class="text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200"
                   title="Visited count"
                 >
-                  🌲 {{ getVisitCount(loc.id) }}/{{ viewModel?.familyMembers?.length }}
+                  ✅ {{ getVisitCount(loc.id) }}/{{ viewModel?.familyMembers?.length }}
                 </span>
                 <span
                   *ngIf="getWantCount(loc.id) > 0"

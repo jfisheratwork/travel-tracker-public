@@ -85,7 +85,7 @@ export function buildLocationPopupHtml(
       <!-- Quick 1A Tri-State Status Pill -->
       <div style="margin-top: 6px; padding: 2px; background: #f5f5f4; border-radius: 8px; border: 1px solid #e7e5e4; display: flex; gap: 2px; font-size: 11px;">
         <button class="status-toggle-btn" data-id="${params.originalId}" data-mode="${params.isPark ? 'parks' : 'states'}" data-status="visited" style="flex: 1; text-align: center; padding: 3px 4px; border-radius: 6px; font-weight: ${isVisited ? 'bold' : 'normal'}; background: ${isVisited ? '#16a34a' : 'transparent'}; color: ${isVisited ? '#ffffff' : '#57534e'}; border: none; cursor: pointer;" title="Mark Visited">
-          🌲 Visited
+          ✅ Visited
         </button>
         <button class="status-toggle-btn" data-id="${params.originalId}" data-mode="${params.isPark ? 'parks' : 'states'}" data-status="want" style="flex: 1; text-align: center; padding: 3px 4px; border-radius: 6px; font-weight: ${isWant ? 'bold' : 'normal'}; background: ${isWant ? '#9333ea' : 'transparent'}; color: ${isWant ? '#ffffff' : '#57534e'}; border: none; cursor: pointer;" title="Mark Want to Visit">
           💜 Want
