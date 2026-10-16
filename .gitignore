@@ -75,7 +75,8 @@ scratch/
 screenshots/
 
 # Vale styles cache
-.vale/
+.vale/styles/ai-tells/
+.vale/styles/config/
 
 # Local-only backups, private data, legacy specs & personal profiles
 local_only/

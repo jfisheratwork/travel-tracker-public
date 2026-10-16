@@ -23,73 +23,8 @@ if [ -z "$STAGED_FILES" ]; then
   exit 0
 fi
 
-STAGED_JS=$(echo "$STAGED_FILES" | grep -E '\.(js|mjs|cjs)$' || true)
-STAGED_SRC=$(echo "$STAGED_FILES" | grep -E '^src/.*\.(ts|html)$' || true)
-STAGED_AST=$(echo "$STAGED_FILES" | grep -E '^src/.*\.ts$' || true)
-STAGED_MD=$(echo "$STAGED_FILES" | grep -E '\.md$' || true)
-STAGED_AGENTS=$(echo "$STAGED_FILES" | grep -E '^(\.agents/|specs/|AGENTS\.md$)' || true)
-STAGED_PKG=$(echo "$STAGED_FILES" | grep -E '^package(-lock)?\.json$' || true)
+echo "🔍 Running repository checks (make repchecks)..."
+make repchecks
 
-echo "🔍 Running pre-commit validation gates on staged files..."
-
-# 1. Prettier Format Verification
-PRETTIER_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|js|mjs|cjs|json|ya?ml|md|css|html)$' | grep -v -E '^(\.vale/|node_modules/|dist/|docs/|package-lock\.json|local_only/|my_sessions/)' || true)
-if [ -n "$PRETTIER_FILES" ]; then
-  echo "  ▶ [1/6] Prettier format check..."
-  echo "$PRETTIER_FILES" | xargs npx prettier --check > /dev/null 2>&1 || {
-    echo "❌ Prettier check failed. Run 'make format' to fix."
-    exit 1
-  }
-fi
-
-# 2. Syntax & ESLint
-if [ -n "$STAGED_JS" ]; then
-  echo "  ▶ [2/6] JavaScript syntax check (node -c)..."
-  for file in $STAGED_JS; do
-    node -c "$file" || exit 1
-  done
-fi
-if [ -n "$STAGED_SRC" ]; then
-  echo "  ▶ [2/6] ESLint check on staged src/ files..."
-  npx eslint $STAGED_SRC || exit 1
-fi
-
-# 3. ast-grep Structural Rules
-if [ -n "$STAGED_AST" ]; then
-  echo "  ▶ [3/6] ast-grep structural coding rules..."
-  if command -v ast-grep >/dev/null 2>&1; then
-    ast-grep scan --min-severity error $STAGED_AST || exit 1
-  fi
-fi
-
-# 4. Agent Specification & Skill Safety
-if [ -n "$STAGED_AGENTS" ]; then
-  echo "  ▶ [4/6] Agent spec validation (agnix) & skill safety..."
-  if command -v agnix >/dev/null 2>&1; then
-    agnix validate .agents/ > /dev/null 2>&1 || {
-      echo "⚠️ agnix detected warnings or errors in .agents/"
-    }
-  fi
-  node scripts/scan-skills-safety.js $STAGED_AGENTS || exit 1
-fi
-
-# 5. Vale AI Prose & Tells Linter
-if [ -n "$STAGED_MD" ]; then
-  echo "  ▶ [5/6] Vale prose & AI tells check..."
-  if command -v vale >/dev/null 2>&1 && [ -d .vale/styles ]; then
-    vale --minAlertLevel error $STAGED_MD || {
-      echo "⚠️ Vale detected AI prose issues in staged markdown files."
-    }
-  fi
-fi
-
-# 6. Dependency Vulnerability Check
-if [ -n "$STAGED_PKG" ]; then
-  echo "  ▶ [6/6] npm audit vulnerability check..."
-  npm audit --audit-level=high || {
-    echo "⚠️ npm audit reported vulnerabilities or registry was unreachable."
-  }
-fi
-
-echo "✅ All pre-commit gates passed cleanly!"
+echo "✅ All repository checks passed cleanly!"
 exit 0

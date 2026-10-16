@@ -1,0 +1,12 @@
+id: no-unvetted-http-client
+message: 'Direct fetch() calls are forbidden. Use Angular HttpClient with NetworkInterceptor.'
+severity: error
+language: typescript
+files:
+  - 'src/**/*.ts'
+ignores:
+  - 'src/**/*.spec.ts'
+rule:
+  any:
+    - pattern: fetch($$$ARGS)
+    - pattern: window.fetch($$$ARGS)

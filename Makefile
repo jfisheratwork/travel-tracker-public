@@ -1,10 +1,11 @@
-.PHONY: help install dev build build-local build-action test test-e2e lint lint-skills lint-rules lint-prose format format-check audit pre-commit pre-push clean run-old run-new generate-env
+.PHONY: help install dev build build-local build-action test test-e2e lint lint-skills lint-rules lint-prose format format-check audit pre-commit pre-push clean run-old run-new generate-env repchecks repo-checks check check-deps check-links
 
 -include .env
 export
 
 help:
 	@echo "Available commands:"
+	@echo "  make repchecks    - Run all repository checks (format, lint, rules, skills, deps, tests)"
 	@echo "  make install      - Install npm dependencies"
 	@echo "  make dev          - Start Angular development server on http://localhost:4200"
 	@echo "  make build        - Build Angular application for production"
@@ -18,7 +19,7 @@ help:
 	@echo "  make format       - Format code and docs using Prettier"
 	@echo "  make format-check - Check formatting using Prettier without writing"
 	@echo "  make audit        - Run npm audit vulnerability check"
-	@echo "  make pre-commit   - Execute staged pre-commit validation gates"
+	@echo "  make pre-commit   - Execute pre-commit validation gates (runs repchecks)"
 	@echo "  make pre-push     - Execute Vitest pre-push verification gate"
 	@echo "  make clean        - Clean dist/ and .angular/cache/"
 
@@ -94,7 +95,23 @@ format-check:
 audit:
 	npm audit --audit-level=high
 
-# Execute pre-commit hook manually
+# Run all repository checks: formatting, linting, ast-grep rules, skills, pinned dependencies, project-relative links, and unit tests
+repchecks: format-check lint lint-rules lint-skills check-deps check-links test
+repo-checks: repchecks
+check: repchecks
+
+# Check that dependencies in package.json do not use unpinned "latest" or "*"
+check-deps:
+	@if grep -E ':\s*"(latest|\*)"' package.json > /dev/null; then \
+		echo "❌ Unpinned dependency detected in package.json ('latest' or '*'). Pin exact versions per AGENTS.md Rule 6."; \
+		exit 1; \
+	fi
+
+# Validate that all Markdown links are project-relative and not machine-relative
+check-links:
+	node scripts/check-markdown-links.js
+
+# Execute pre-commit hook manually (runs repchecks)
 pre-commit:
 	bash .husky/pre-commit
 

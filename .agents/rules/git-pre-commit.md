@@ -23,12 +23,11 @@ Any agentic pre-commit workflows or scripts must implement checks to ensure code
 
 ### 3. Automated Pre-Commit & Pre-Push Verification
 
-- Always execute the fast staged-file pre-commit validation gates before committing changes, and run unit tests before pushing:
+- Always execute the full repository checks before committing changes or pushing:
   ```bash
-  make pre-commit
-  make test
+  make repchecks
   ```
-- Block commits if Prettier, ESLint, `ast-grep` rules (`make lint-rules`), or skill safety checks (`make lint-skills`) fail.
+- Pre-commit (`.husky/pre-commit`) and the agent verification workflow both invoke `make repchecks`, blocking commits if formatting, ESLint, `ast-grep` rules, skill safety, dependency pinning, or unit tests fail.
 
 ### 4. Security & Storage Sanitization
 

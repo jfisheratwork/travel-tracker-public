@@ -2,7 +2,7 @@
 
 ## 1. Network Interceptor & Resilience (`NetworkInterceptor`)
 
-All outgoing HTTP requests from Angular's `HttpClient` are intercepted by [network.interceptor.ts](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/core/interceptors/network.interceptor.ts). This ensures zero silent failures, automated timeout prevention, and resilient retry behavior.
+All outgoing HTTP requests from Angular's `HttpClient` are intercepted by [network.interceptor.ts](../src/app/core/interceptors/network.interceptor.ts). This ensures zero silent failures, automated timeout prevention, and resilient retry behavior.
 
 ```mermaid
 sequenceDiagram
@@ -46,14 +46,14 @@ sequenceDiagram
 
 - **Endpoint**: `https://nominatim.openstreetmap.org/search`
 - **Purpose**: Real-time address and city autocomplete for hometowns and road trip waypoints.
-- **Service**: [geocoding.service.ts](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/services/routing/geocoding.service.ts)
+- **Service**: [geocoding.service.ts](../src/app/services/routing/geocoding.service.ts)
 - **Parameters**: `format=json&limit=5&q={query}`.
 
 ### B. Routing Engine: OSRM (Open Source Routing Machine)
 
 - **Endpoint**: `https://router.project-osrm.org/route/v1/driving/`
 - **Purpose**: Default free routing provider calculating turn-by-turn road coordinates, total mileage, and drive times.
-- **Service**: [routing.service.ts](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/services/routing/routing.service.ts)
+- **Service**: [routing.service.ts](../src/app/services/routing/routing.service.ts)
 - **Parameters**: `overview=full&geometries=geojson`.
 
 ### C. Routing Engine: Mapbox Directions API

@@ -6,7 +6,7 @@ A serverless static web application to track visits to National Parks, States/Pr
 
 ## 📖 Architecture & Design
 
-For a detailed technical breakdown of the components, data flows, and test environment design, see [architecture.md](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture.md).
+For a detailed technical breakdown of the components, data flows, and test environment design, see [architecture.md](architecture.md).
 
 ---
 
@@ -14,13 +14,13 @@ For a detailed technical breakdown of the components, data flows, and test envir
 
 The project has been modularized into separate frontend script files to enable easy concurrent development and cleaner code boundaries:
 
-- **[docs/index.html](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/index.html)**: Main HTML structure, Tailwind CSS loading, and Leaflet map container.
-- **[docs/css/style.css](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/css/style.css)**: Custom interface layout overrides, print settings, and animation stylesheets.
-- **[docs/js/helpers.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/helpers.js)**: Pure functional utilities (e.g. coordinates distance calculators, HTML sanitizers, list groupers, and JSON schema migrations).
-- **[docs/js/state.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/state.js)**: State definition variables, color palettes, and LocalStorage load/save syncing.
-- **[docs/js/map.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/map.js)**: Leaflet map controller, markers formatting, popup templates, and driving polylines.
-- **[docs/js/ui.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/ui.js)**: DOM render engines, data table sorters, settings checklists, and modal controllers.
-- **[docs/js/app.js](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/docs/js/app.js)**: Main orchestrator (event listeners, backup restoration, OSRM/Mapbox routing requests).
+- **[docs/index.html](docs/index.html)**: Main HTML structure, Tailwind CSS loading, and Leaflet map container.
+- **[docs/css/style.css](docs/css/style.css)**: Custom interface layout overrides, print settings, and animation stylesheets.
+- **[docs/js/helpers.js](docs/js/helpers.js)**: Pure functional utilities (e.g. coordinates distance calculators, HTML sanitizers, list groupers, and JSON schema migrations).
+- **[docs/js/state.js](docs/js/state.js)**: State definition variables, color palettes, and LocalStorage load/save syncing.
+- **[docs/js/map.js](docs/js/map.js)**: Leaflet map controller, markers formatting, popup templates, and driving polylines.
+- **[docs/js/ui.js](docs/js/ui.js)**: DOM render engines, data table sorters, settings checklists, and modal controllers.
+- **[docs/js/app.js](docs/js/app.js)**: Main orchestrator (event listeners, backup restoration, OSRM/Mapbox routing requests).
 
 ---
 

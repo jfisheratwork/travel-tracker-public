@@ -502,8 +502,9 @@ export class MapViewComponent implements OnInit, OnDestroy {
         zoomDelta: 0.5,
         minZoom: 3.5,
       }).setView(NORTH_AMERICA_CENTER, NORTH_AMERICA_ZOOM);
-    } catch {
+    } catch (initMapError) {
       // Guard against container re-initialization in headless test environments
+      this.logger.debug('Map container already initialized or failed to initialize:', initMapError);
     }
 
     if (!this.map || typeof this.map.getPane !== 'function') return;

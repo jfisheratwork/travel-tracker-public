@@ -30,7 +30,5 @@ Use this skill when modifying or auditing `StateService`, `LocalStorageService`,
 ## 3. Verification Commands
 
 ```bash
-make lint
-make lint-rules
-make test
+make repchecks
 ```

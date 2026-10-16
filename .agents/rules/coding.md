@@ -17,7 +17,7 @@ These principles apply universally across the entire codebase and must be follow
 ## 2. Quality Assurance & Tooling
 
 - Always run linters and code formatters (e.g., ESLint, Prettier) before finalizing code changes.
-- Agent Workflow: After modifying any source code, you MUST execute make lint and fix all warnings before presenting the work to the user.
+- Agent Workflow: After modifying any source code, you MUST execute `make repchecks` and fix all warnings before presenting the work to the user.
 - Ensure all automated tests (unit, integration, and feature tests) pass locally.
 - Write tests alongside new feature development.
 
@@ -42,3 +42,4 @@ These principles apply universally across the entire codebase and must be follow
 - **CRITICAL:** The first time a specific Angular API, third-party library function, or new HTML element is used in a file, you **MUST** place a comment linking directly to its official documentation above it.
 - Furthermore, organize and comment imports to explain their semantic purpose in complex files (e.g., `app.config.ts`).
 - Avoid using `console.log`, `console.warn`, or `console.error`. Use the `LoggerService` abstraction instead.
+- **Markdown Links Must Be Project-Relative:** In all documentation and Markdown files, link targets must be project-relative, never machine-relative (`file:///`, `/Users/`, `/home/`).

@@ -1,0 +1,7 @@
+extends: existence
+message: "Machine-relative link detected: '%s'. Markdown links must be project-relative."
+level: error
+scope: raw
+tokens:
+  - "(?:\\]\\(|href=[\"'])(?:file:///[^\\s)\"']+|/(?:Users|home)/[^\\s)\"']+)"
+  - "file:///[^\\s)\"']+"

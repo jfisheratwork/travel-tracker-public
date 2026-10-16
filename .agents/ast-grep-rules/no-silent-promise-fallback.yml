@@ -1,0 +1,11 @@
+id: no-silent-promise-fallback
+message: 'Avoid silent fallback promises (.catch(() => null) or .catch(() => ({}))) that mask failures. Handle or propagate errors explicitly.'
+severity: warning
+language: typescript
+files:
+  - 'src/app/services/**/*.ts'
+rule:
+  any:
+    - pattern: '$PROMISE.catch(() => null)'
+    - pattern: '$PROMISE.catch(() => ({}))'
+    - pattern: '$PROMISE.catch(() => false)'

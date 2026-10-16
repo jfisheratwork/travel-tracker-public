@@ -13,6 +13,10 @@ export class LoggerService {
     console.warn(message, ...optionalParams);
   }
 
+  debug(message: string, ...optionalParams: unknown[]) {
+    console.debug(message, ...optionalParams);
+  }
+
   error(message: string, ...optionalParams: unknown[]) {
     console.error(message, ...optionalParams);
   }

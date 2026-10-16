@@ -1,74 +1,59 @@
 # AI Agent Rules & Governance
 
-This document outlines the global rules for contributing to the Travel Tracker project, specifically for AI assistance.
+Mandatory operational rules and architectural constraints for AI agents working on Travel Tracker.
 
 ## 1. Strict Approval & External Command Security
 
-- **Explicit Plan Permission Required:** Agents MUST pause execution and wait for the user's manual explicit approval before beginning implementation after presenting an `implementation_plan.md`. Do not proceed based on implicit permission.
-- **External Command Approval Required:** Never execute a NON-READONLY command that interacts with external services (e.g., GitHub, Hosting Platforms) without explicit user review and approval.
-- **Scope:** This includes `git push`, creating pull requests, deploying to external servers, or any API write operations.
-- **Process:** Always propose the exact command first, explain its impact, and wait for user confirmation.
+- **Explicit Plan Approval:** Pause execution after presenting an `implementation_plan.md` and wait for explicit user approval before writing implementation code.
+- **External Command Approval:** Never execute non-readonly external commands (`git push`, PR creation, deployments, external API writes) without explicit user approval. Propose the exact command, state its impact, and wait for confirmation.
 
-## 2. Attribution & Documentation Hygiene
+## 2. Attribution, Code & Documentation Hygiene
 
-- **Commit Messages & Pull Requests:** All commit messages and PR descriptions created with AI assistance must include the following footer:
+- **Commit & PR Attribution:** Append this footer to all AI-assisted commit messages and PR descriptions:
   > Written with the assistance of Google Gemini
-- **UserWalkthrough.md:** Periodically update `UserWalkthrough.md` in the root workspace (ignored by git) with recent screenshots to verify features visually.
-- **local_only/ Hygiene:** Personal profile backups, legacy specs (`local_only/openspec/`, `local_only/future_ideas/`), and scratch notes (`local_only/todo.md`) reside strictly in `local_only/`. Keep `local_only/todo.md` focused on remaining work; remove completed items once reflected in the living architecture.
+- **UserWalkthrough.md:** Update `UserWalkthrough.md` in the workspace root (git-ignored) with verification screenshots when UI features change.
+- **local_only/ Quarantine:** Store personal backups, legacy specs (`local_only/openspec/`, `local_only/future_ideas/`), and scratch notes (`local_only/todo.md`) strictly inside `local_only/`. Remove completed items from `local_only/todo.md` once documented in `architecture/`.
+- **Code Hygiene & YAGNI:** Before completing a task, strip unrequested helper functions, speculative abstractions, and dead code from touched files. Replace loose types (`any`, generic `object`) with domain interfaces, and place official documentation links above newly introduced APIs.
+- **Project-Relative Markdown Links:** All Markdown links to repository files and documentation must be project-relative, never machine-relative (`file:///`, `/Users/`, `/home/`).
 
 ## 3. Session Management
 
-- **Session Directories:** At the start of every new coding session, a session directory tracking the session details must be created in the `my_sessions/` directory (which is `.gitignore`d to prevent local/personal session summaries and logs from being committed to GitHub).
-- **Naming Convention:** `my_sessions/YYYY-MM-DD-Session-{n}/` where `{n}` is an incrementing integer starting at 1 for the first session of that day (e.g. `my_sessions/2026-05-23-Session-1/`, `my_sessions/2026-05-23-Session-2/`).
-- **New Session Trigger:** A new session folder MUST be created when starting work on a new feature branch, or when wrapping up previous work after a merged PR (ensuring that subsequent tasks are isolated and their history/plans are not overwritten).
-- **Session Directory Contents & Update Frequency:**
-  Each session directory MUST contain a `session_summary.md` markdown file, which should only be updated when committing or pushing to optimize token usage:
-  1. `session_summary.md`: The main summary of the session. It must follow this structured layout:
-     - **Executive Summary:** A concise overview of the session, goals, and results at the top.
-     - **Outcomes:** The specific results, updates, and milestones achieved.
-     - **Fine-grained Details:** In-depth technical breakdown of tasks completed (`Tasks Done`) and tasks remaining or postponed (`Tasks Not Done`).
-     - **Prompt Log:** A list of high-level prompt summaries detailing each interaction/request during the session at the very bottom.
+- **Session Directories:** Create `my_sessions/YYYY-MM-DD-Session-{n}/` (incrementing `{n}` from 1 per day) at the start of every session, new feature branch, or post-PR task.
+- **session_summary.md:** Maintain `my_sessions/YYYY-MM-DD-Session-{n}/session_summary.md` and update it only when committing or pushing. Required sections:
+  1. **Executive Summary:** Goals and results overview.
+  2. **Outcomes:** Specific milestones and deliverables achieved.
+  3. **Fine-grained Details:** Technical breakdown of `Tasks Done` and `Tasks Not Done`.
+  4. **Prompt Log:** Chronological summary of user prompts and requests.
+- **Harness Retrospective:** At session wrap-up or PR preparation, inspect transcripts and git diffs to:
+  1. Propose `Makefile` targets for multi-step commands executed 3+ times.
+  2. Author `ast-grep` rules in `.agents/ast-grep-rules/` for recurring syntax or structural errors.
+  3. Record new architectural invariants in `architecture/*.md`.
 
 ## 4. File System Boundaries & Tooling Hooks
 
-- **Workspace Confinement:** Never modify files outside of the project's root workspace.
-- **Git Directory:** Do not modify files inside the `.git` directory unless running a specific git command approved by the user.
-- **System Files:** Do not touch system configuration files or user home directory files outside the repo.
-- **Automated PostToolUse Hook (`scripts/post-tool-quality.js`):** Every file edit via `write_to_file` or `replace_file_content` automatically runs syntax/ESLint checks and `ast-grep scan` via `.agents/hooks.json`. When the hook reports clean status, agents do not need to duplicate manual single-file `npx eslint` calls.
-- **Task Completion & Makefile Workflow:** Always run `make lint` and `make lint-rules` once a logical feature or multi-file change is complete, or immediately if the PostToolUse hook surfaces any diagnostic warnings.
+- **Workspace Confinement:** Never modify files outside the repository root, inside `.git/` (unless running an approved git command), or in user home/system directories.
+- **PostToolUse Hook (`scripts/post-tool-quality.js`):** Runs syntax, ESLint, and `ast-grep` checks automatically on every `write_to_file` or `replace_file_content` edit via `.agents/hooks.json`. Do not run redundant single-file `npx eslint` commands when the hook passes.
+- **Task Completion Gate:** Run `make repchecks` when a feature or multi-file change is complete, or immediately if the PostToolUse hook reports warnings.
 
 ## 5. Tri-Tier Code Navigation: LSP, AST Analysis (`ast-grep`), and Fast Search
 
-### Fast Navigation Playbook (Benchmarked Protocols)
-
-Follow this high-speed, token-efficient navigation sequence:
-
-1. **Tier 1 — LSP Bridge (`lsp-bridge` MCP) for Module & Symbol Semantics**:
-   - Call `lsp_find_symbol(name: "...")`, `lsp_goto_definition`, `lsp_find_references`, `lsp_file_exports`, and `lsp_file_imports` to resolve TypeScript/Angular symbols in <0.2s without grepping or loading full files.
-   - _CRITICAL Decorator Trap Warning_: NEVER call `lsp_find_references` on framework decorator lines (e.g., `@Injectable`, `@Component`, `@Output`). This forces the language server to scan thousands of framework files in `node_modules` and causes multi-minute hangs. Always target the actual class/method identifier.
-2. **Tier 2 — Semantic AST Search (`ast-grep`) for Structural Patterns & File Outlines**:
-   - Run `ast-grep outline --view expanded <path>` on unfamiliar files to emit a 40-line structural digest with exact line numbers (~95% token savings vs reading the full file).
-   - Use `ast-grep` (`find_code` MCP, `sg run -p '<pattern>'`, or `make lint-rules`) for locating method signatures, class members, or structural code patterns.
-3. **Tier 3 — Fast Regex Pairing (`ripgrep` / `rg`) for Unstructured Text**:
-   - Reserve `rg` for quick literal string searches, CSS selectors, HTML element IDs, and Markdown documentation; escalate to `ast-grep` or `lsp-bridge` when AST context or call hierarchy matters.
-4. **Instant Type Verification**:
-   - Call `lsp_diagnostics(file_path)` for 0.2s in-memory compilation checks before running `make lint`.
-
-### Deterministic Refactoring & Compiler-First Feedback
-
-- **Tooling-Driven Refactoring**: Prefer AST/LSP refactoring operations (`lsp_rename`, `ast-grep --rewrite`, `npx eslint --fix`, or Prettier) over blind find-and-replace to prevent collateral substitutions.
-- **Step-by-Step Refactor Validation**:
-  1. Locate target AST nodes and map all callsites using `lsp_find_references` or `sg run -p '<symbol>($$$)'`.
-  2. Apply changes modularly.
-  3. Validate with `lsp_diagnostics`, `make lint`, and `make lint-rules` before declaring the refactor complete.
+1. **Tier 1 — LSP Bridge (`lsp-bridge` MCP)**:
+   - Use `lsp_find_symbol`, `lsp_goto_definition`, `lsp_find_references`, `lsp_file_exports`, and `lsp_file_imports` to resolve TypeScript/Angular symbols before reading full files.
+   - _Decorator Trap Warning_: NEVER call `lsp_find_references` on framework decorators (`@Injectable`, `@Component`, `@Output`). This scans `node_modules` and hangs the language server. Target the class or method identifier line/column.
+2. **Tier 2 — AST Search (`ast-grep`)**:
+   - Run `ast-grep outline --view expanded <path>` on unfamiliar files to get line-numbered structural outlines before calling `view_file`.
+   - Use `find_code` MCP, `sg run -p '<pattern>'`, or `make lint-rules` to locate method signatures, class members, or structural patterns.
+3. **Tier 3 — Text Search (`ripgrep` / `rg`)**:
+   - Use `rg` only for literal strings, CSS selectors, HTML IDs, and Markdown text. Use `ast-grep` or `lsp-bridge` when AST context or call hierarchy is required.
+4. **Refactoring & Type Checks**:
+   - Prefer `lsp_rename`, `ast-grep --rewrite`, `npx eslint --fix`, and Prettier over manual find-and-replace.
+   - Map callsites with `lsp_find_references` or `sg run -p '<symbol>($$$)'`, apply edits modularly, and verify with `lsp_diagnostics(file_path)` and `make repchecks`.
 
 ## 6. External Libraries & Dependency Inventory
 
-When including external libraries (e.g., via CDN or `package.json`), agents MUST adhere to the following rules:
-
-1. **Explicit Versioning**: Always use an explicit, fixed version number. Do not use `@latest` or unversioned links.
-2. **Release Notes Comment**: Every external library inclusion must be accompanied by a code-level comment containing the URL to the release notes or official documentation for that specific version.
-3. **Session Start Updates**: At the start of a new session, check if updated versions of included libraries are available. A library version may only be updated if it has been publicly released for **at least 5 days** (to avoid absorbing zero-day bugs or immediate post-release regressions).
+1. **Explicit Versioning:** Pin exact versions in `package.json` and CDN links. Never use `@latest`, `latest`, or `*` ranges.
+2. **Documentation Link:** Add a code comment with the official release notes or documentation URL above the first usage of any external library or Angular API in a file.
+3. **5-Day Cooldown:** Check for library updates at session start. Only upgrade to versions publicly released at least 5 days prior.
 
 ### Project Dependency Inventory
 
@@ -84,87 +69,80 @@ When including external libraries (e.g., via CDN or `package.json`), agents MUST
 
 ## 7. Token Efficiency & Workflow Management
 
-To optimize AI context window size and maintain high performance, agents MUST follow these workflow rules:
-
-1. **Modular File Structure**: Prefer smaller, focused files over monolithic files. When adding significant new functionality, break it out into a new module, service, or component file rather than appending thousands of lines to a single file.
-2. **Targeted Test Execution**: Do NOT run the full test suite (especially headless browser tests) after every minor tweak. Only run full integration tests when a major logic feature is complete, at the very end of a workflow, or when explicitly requested by the user. Rely on targeted Vitest specs (`npx vitest run <spec-file>`) for small changes.
-3. **Encourage Batched Requests**: If the user begins making many small, rapid-fire iterative requests (e.g., minor CSS tweaks one by one), politely encourage the user to batch their requests into a larger body of work using an `implementation_plan.md` or spec file.
-4. **Mandatory Architecture Reference**: Before designing new features, introducing state, or refactoring components, agents MUST consult [`architecture/README.md`](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/README.md) and the relevant domain document (e.g., `02-state-and-data-flow.md` for state changes, `03-map-and-gis-architecture.md` for mapping, `08-v4-places-and-trips-design.md` for V4 places/trips). Agents must never guess architectural boundaries or read monolithic files blindly.
+1. **Modular Files:** Extract new functionality into focused modules, services, or components rather than growing monolithic files.
+2. **Targeted Tests During Iteration:** Run single spec files during active edits (`npx ng test --include <spec-file> --watch=false`). Reserve full suite runs (`make repchecks`) and Playwright E2E tests for task completion or explicit user requests.
+3. **Batch Small Requests:** When the user makes consecutive small UI/CSS requests, suggest batching them into an `implementation_plan.md` or spec.
+4. **Consult Architecture First:** Read [`architecture/README.md`](architecture/README.md) and the relevant domain doc (`01` through `08`) before designing features, modifying state, or refactoring.
+5. **Offload Large Payloads to Temp Space:** Never print payloads or logs >100 lines to stdout. Write large outputs to `<conversation-id>/scratch/` or `/tmp/`, inspect the schema with `head -n 20` or `jq '.[0]'`, and extract answers using deterministic CLI tools (`jq`, `grep`, `awk`, or Node.js scripts).
 
 ## 8. Strict Verification & Systemic Bug Searching
 
-- **Mandatory Validation Loop:** You CANNOT declare a UI task "done" without explicitly validating both the UI logic and the Developer Console. Use the `visual-verification` skill (`chrome-devtools-mcp` on `http://localhost:4200`) or targeted tests to verify there are zero console errors and that the UI renders as intended.
-- **Systemic Pattern Matching:** If you discover a bug caused by a specific code pattern (e.g., missing parent country roll-up, unescaped popup strings, unvisited marker filtering), you MUST proactively search the ENTIRE codebase for identical patterns using `ast-grep` or `rg`, and fix them globally before reporting back. Never assume a bug is isolated to a single file.
+- **UI & Console Verification:** Before marking any UI task complete, verify both rendered DOM behavior and zero console errors on `http://localhost:4200` using the `visual-verification` skill (`chrome-devtools-mcp`).
+- **Codebase-Wide Bug Sweep:** When fixing a bug caused by a code pattern (e.g., missing parent country roll-up, unescaped popup HTML, unvisited marker filtering), search the entire codebase with `ast-grep` or `rg` and fix all occurrences before reporting back.
+- **Fail Fast & Zero Silent Fallbacks:** Never use empty `catch` blocks or return dummy fallback values (`null`, `[]`, `{}`) in service layers unless required by the spec. Rethrow errors, route them to boundary error handlers, or log via `LoggerService.error()`. Validate external inputs (API responses, LocalStorage payloads, OSRM geometry) at system boundaries.
 
 ## 9. Spec-Driven Lifecycle & Living Architecture Maintenance
 
-- **Specs First (`./specs`):** Any time a new body of work, feature, or refactor is initiated, it must first be drafted and approved as a proposal document under `./specs/SPEC-<id>-<title>.md` (following the `spec-authoring` skill).
-- **Implementation Plan Mandate:** Every `implementation_plan.md` MUST explicitly begin with a review and direct reference to the active approved Spec under `./specs/` (when applicable), and receive explicit user approval before touching code.
-- **Work Decomposition:** The approved Spec must clearly decompose into specific verifiable tasks, state/GIS contracts, and UI checks.
-- **Living Architecture Updates (`architecture.md` & `./architecture/*.md`):** As work is completed, tested, and visually verified, changes are NOT saved only as disconnected changelogs. Instead, the final design, state schemas, and component contracts MUST be reflected directly in:
-  1. Targeted automated unit and integration tests.
-  2. Updates to the master system portal [`architecture.md`](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture.md) and index [`architecture/README.md`](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/README.md).
-  3. Updates to the corresponding domain subfiles under [`architecture/`](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/architecture/) (`01-system-overview.md` through `08-v4-places-and-trips-design.md`).
+- **Specs First (`./specs`):** Draft and obtain user approval on `./specs/SPEC-<id>-<title>.md` (following `spec-authoring`) before starting any new feature or refactor.
+- **Implementation Plan Mandate:** Reference the active `./specs/SPEC-<id>-<title>.md` at the top of `implementation_plan.md` and wait for explicit user approval before modifying code.
+- **Vertical Slices:** Implement specs in sequential checkpoints: (1) Data Models & Contracts, (2) Vitest Unit Tests, (3) Core Services & State, (4) Component UI. Validate each slice with `lsp_diagnostics` or targeted tests before proceeding to the next.
+- **Living Architecture Sync:** Update unit/integration tests, [`architecture.md`](architecture.md), [`architecture/README.md`](architecture/README.md), and affected domain docs (`architecture/01-*.md` through `08-*.md`) whenever contracts or behaviors change.
 
 ## 10. Structured Prompts & Subagent Delegation
 
-- **Structured Prompts Over Free-Form Prose**: When delegating work to subagents, launching multi-agent workflows, or authoring task instructions, prompts MUST be structured rather than loose conversational text.
-- **Mandatory Prompt Anatomy**:
-  1. **Role & Specialist Persona**: Explicitly declare the agent's exact role (e.g., `GIS & Reactive State Auditor`, `Angular UI Component Engineer`, `Security Sanitizer`).
-  2. **Context & Grounding References**: Link specific active specifications (`specs/SPEC-<id>-<title>.md`) and architecture blueprints (`architecture/*.md`).
-  3. **Explicit Scope & Boundaries**: Clearly state what is in scope and what is strictly out of scope to prevent domain drift and file collisions.
-  4. **Task Decomposition**: Break execution down into discrete, numbered steps with precise state contracts, GIS coordinate rules, or DOM selectors.
-  5. **Verifiable Deliverables & Acceptance Criteria**: List exact files to create/modify, test suites to add/update, and execution commands (`make lint`, `make lint-rules`, `make test`).
-  6. **Strict Governance & Constraints**: Enforce project non-negotiables: no magic numbers, documentation linking for external APIs, `LoggerService` instead of `console.*`, 0 lint warnings, and zero console errors.
-- **Structured Handoff Reporting**: When subagents or autonomous agents complete a workflow, the handoff summary must be structured: Changes Applied, Test/Lint Results, Edge Cases Found, and Immediate Next Steps.
+- **Structured Subagent Prompts:** Every subagent delegation prompt must define:
+  1. **Role & Persona:** Exact specialist role.
+  2. **Grounding Links:** Active `specs/SPEC-<id>-<title>.md` and `architecture/*.md` files.
+  3. **Scope Boundaries:** Explicit in-scope and out-of-scope files/domains.
+  4. **Execution Steps:** Numbered steps with state contracts, GIS rules, or DOM selectors.
+  5. **Deliverables & Verification:** Target files to modify, unit tests to add, and `make repchecks`.
+  6. **Constraints:** No magic numbers, official doc links for new APIs, `LoggerService` instead of `console.*`, 0 lint warnings, and 0 console errors.
+- **Structured Handoff Report:** Subagent completion responses must contain: `Changes Applied`, `Test/Lint Results`, `Edge Cases Found`, and `Immediate Next Steps`.
 
 ## 11. Workspace Skills & Purpose-Built Subagent Personas
 
-- **Progressive Workspace Skills (`.agents/skills/`)**:
-  - `gis-and-state-audit`: Leaflet GIS layers, parent region/country roll-up, Option A trip stop classification, and Schema V4 migration verification.
-  - `spec-authoring`: Canonical `SPEC-NNN` authoring and living architecture synchronization.
-  - `visual-verification`: Live Angular DOM, Leaflet map canvas, and developer console inspection via `chrome-devtools-mcp`.
-  - `subagent-catalog`: Ready-to-use `define_subagent` registration blueprints for all specialist personas.
-- **Reusable Subagent Definitions (`.agents/agents/` & `define_subagent`)**:
-  - `gis-state-auditor`: Audits GIS layer services, RxJS state streams, and V4 schema migrations across `src/app/services/` and `src/app/components/map-view/`.
-  - `visual-auditor`: Verifies Angular component layout, modal accessibility, Leaflet map rendering, and zero console errors via `chrome-devtools-mcp`.
-  - `security-sanitizer`: Audits `LocalStorageService` schema protection, XSS escaping (`escapeHtml`), `NetworkInterceptor` resilience, and `ast-grep` security rules.
-  - `spec-architect`: Drafts new `specs/SPEC-NNN-*.md` proposals and updates `architecture/*.md` blueprints.
+- **Workspace Skills (`.agents/skills/`)**:
+  - `gis-and-state-audit`: Leaflet GIS layers, parent region/country roll-up, Option A trip stop classification, and Schema V4 migration checks.
+  - `spec-authoring`: Canonical `SPEC-NNN` authoring and living architecture sync.
+  - `visual-verification`: Live Angular DOM, Leaflet canvas, and console verification via `chrome-devtools-mcp`.
+  - `subagent-catalog`: `define_subagent` registration blueprints for specialist personas.
+- **Subagent Definitions (`.agents/agents/` & `define_subagent`)**:
+  - `gis-state-auditor`: Audits GIS layer services, RxJS state streams, and V4 schema migrations in `src/app/services/` and `src/app/components/map-view/`.
+  - `visual-auditor`: Verifies component layout, modal accessibility, Leaflet rendering, and zero console errors via `chrome-devtools-mcp`.
+  - `security-sanitizer`: Audits `LocalStorageService` schema validation, `escapeHtml` popup escaping, `NetworkInterceptor` resilience, and `ast-grep` rules.
+  - `spec-architect`: Authors `specs/SPEC-NNN-*.md` proposals and updates `architecture/*.md`.
+  - `harness-optimizer`: Inspects session transcripts and diffs to extract `Makefile` targets, `ast-grep` rules, and architecture updates.
 
 ## 12. Zero-Friction Lazy MCP Signatures & Proactive Coaching Triggers
 
-### 12.1 Direct `call_mcp_tool` Signatures (No Schema Lookup Required)
+### 12.1 Direct `call_mcp_tool` Signatures
 
-To eliminate schema-lookup overhead, call these lazy MCP tools directly via `call_mcp_tool`:
+Call lazy MCP tools directly via `call_mcp_tool` using these argument schemas:
 
 - **LSP Symbol Lookup (`lsp-bridge` -> `lsp_find_symbol`)**:
   - `Arguments`: `{ "name": "<symbolName>", "include": ["hover", "definition", "references"] }`
 - **LSP Module Surface (`lsp-bridge` -> `lsp_file_exports`)**:
-  - `Arguments`: `{ "file_path": "/Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/...", "include_signatures": true }`
+  - `Arguments`: `{ "file_path": "src/...", "include_signatures": true }`
 - **AST Structural Search (`ast-grep` -> `find_code`)**:
-  - `Arguments`: `{ "project_folder": "/Users/jacobfisher/coding/traveltracker/travel-tracker-public/src", "language": "typescript", "pattern": "<AST_Pattern>" }`
+  - `Arguments`: `{ "project_folder": "src", "language": "typescript", "pattern": "<AST_Pattern>" }`
 - **Browser Console Audit (`chrome-devtools-mcp` -> `list_pages` & `list_console_messages`)**:
   - `list_pages` `Arguments`: `{}`
   - `list_console_messages` `Arguments`: `{ "pageId": 1, "types": ["error", "warn"] }`
 - **Multi-Step Architectural Reasoning (`sequential-thinking` -> `sequentialthinking`)**:
   - `Arguments`: `{ "thought": "<step analysis>", "thoughtNumber": 1, "totalThoughts": 4, "nextThoughtNeeded": true }`
 
-### 12.2 Proactive User Coaching & Slash Command Recommendations
+### 12.2 Proactive User Coaching & Slash Command Triggers
 
-Agents MUST proactively suggest the following workflows and tools to the user when matching conditions arise:
+Recommend these commands when matching conditions occur:
 
-1. **Ambiguous Requirements or Multi-Option UX/GIS Tradeoffs -> Recommend `/grill-me`**:
-   - _Trigger_: When the user proposes a high-level feature with open UX, trip-routing, or place-categorization edge cases.
-   - _Prompt to User_: _"Tip: You can type `/grill-me` to run a rapid interactive interview to lock down edge cases before we draft the spec."_
-2. **Complex Multi-Layer State & GIS Sync -> Invoke `sequential-thinking` & Inform User**:
-   - _Trigger_: Tasks combining 2+ reactive subsystems (e.g., `TripDeltaService` + `StateService` parent roll-up + `MapShadingService` GeoJSON layers + `LocalStorageService` migrations).
-   - _Action_: Automatically call `sequential-thinking` (`sequentialthinking`) before authoring the plan and highlight the state transitions to the user.
-3. **Large Multi-Spec Refactors or Deep Audits -> Recommend `/goal` or `/boost`**:
+1. **Ambiguous UX/GIS Requirements -> Recommend `/grill-me`**:
+   - _Trigger_: High-level feature requests with open UX, trip-routing, or place-categorization edge cases.
+   - _Prompt_: _"Tip: Type `/grill-me` to run a quick interactive interview to lock down edge cases before drafting the spec."_
+2. **Multi-Subsystem State & GIS Sync -> Call `sequential-thinking`**:
+   - _Trigger_: Tasks touching 2+ reactive subsystems (e.g., `TripDeltaService` + `StateService` roll-up + `MapShadingService` + `LocalStorageService`).
+   - _Action_: Call `sequentialthinking` before authoring the plan and summarize the state transitions for the user.
+3. **Large Multi-Spec Refactors -> Recommend `/goal` or `/boost`**:
    - _Trigger_: Long-running refactors, full-codebase audits, or multi-component overhauls.
-   - _Prompt to User_: _"Tip: For deep multi-perspective verification or autonomous completion across all suites, consider triggering `/boost` or `/goal`."_
-4. **Recurring Health Checks or Timed Reminders -> Recommend `/schedule`**:
+   - _Prompt_: _"Tip: For deep multi-perspective verification or autonomous completion across all suites, consider triggering `/boost` or `/goal`."_
+4. **Recurring Checks or Reminders -> Recommend `/schedule`**:
    - _Trigger_: Dependency release checks, periodic test runs, or follow-up reminders.
-
----
-
-_These rules are to be followed by all contributors and AI assistants._

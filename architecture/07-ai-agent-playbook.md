@@ -21,7 +21,7 @@ graph TD
 
     Impact --> Edit["5. Perform Atomic Edits (replace_file_content)<br/>Auto-triggers scripts/post-tool-quality.js"]
 
-    Edit --> Verify["6. Fast Verification & Architecture Sync:<br/>a. lsp_diagnostics(file_path) [0.2s]<br/>b. make lint && make lint-rules [0.5s]<br/>c. make test [4.5s]<br/>d. Update architecture/*.md"]
+    Edit --> Verify["6. Fast Verification & Architecture Sync:<br/>a. lsp_diagnostics(file_path) [0.2s]<br/>b. make repchecks [7.5s - all gates]<br/>c. Update architecture/*.md"]
 ```
 
 ---
@@ -35,6 +35,7 @@ graph TD
 | **Inspect Dependencies / Imports**        | `lsp_file_imports` (MCP)   | `file_path: "..."`                        | **0.2s**         | ~20 lines                   |
 | **Trace Function Call Hierarchy**         | `lsp_call_hierarchy` (MCP) | `file_path: "...", line: 120, column: 3`  | **0.2s**         | ~30 lines                   |
 | **Type Check After Edits**                | `lsp_diagnostics` (MCP)    | `file_path: "..."`                        | **0.2s**         | ~10 lines                   |
+| **All Repository Checks & Tests**         | `run_command`              | `make repchecks`                          | **7.5s**         | Terminal output             |
 | **Structural AST & SAST Check**           | `run_command`              | `make lint-rules`                         | **0.2s**         | Terminal output             |
 | **Full Project Type & Syntax Check**      | `run_command`              | `make lint`                               | **0.5s**         | Terminal output             |
 
@@ -59,3 +60,16 @@ graph TD
    - `visual-auditor`: Verifies Angular UI layout, Leaflet map canvas, modals, and zero console errors via `chrome-devtools-mcp` on `http://localhost:4200`.
    - `security-sanitizer`: Audits `LocalStorageService` schema protection, `escapeHtml()` popup sanitization, and `ast-grep`/skill safety rules.
    - `spec-architect`: Drafts `specs/SPEC-NNN-*.md` and synchronizes living architecture in `architecture/*.md`.
+   - `harness-optimizer`: Conducts post-session retrospectives, extracts repeated commands into `Makefile` targets, authors `ast-grep` rules, and hardens the agentic harness.
+
+---
+
+## 5. Software Craftsmanship & Agentic Engineering Invariants
+
+Grounded in `software_craftsmanship_engineering_principles.md` and `AGENTS.md`:
+
+1. **Ephemeral Tooling & Temp-Space Processing**: Never dump raw payloads (>100 lines) into context. Stream large JSON datasets, logs, or GeoJSON boundaries to `<conversation-id>/scratch/` or `/tmp/`, peek structure with `head`/`jq`, and compute answers with deterministic CLI scripts.
+2. **Fail Fast & Zero Silent Fallbacks**: Empty catch blocks, swallowed errors, and dummy fallback returns (`null`, `[]`, `{}`) are strictly prohibited in service layers. Errors must be rethrown, handled explicitly, or logged via `LoggerService.error()`.
+3. **Vertical Slices & Tracer Bullets**: Decompose large features into thin, sequential checkpoints: Data Models $\rightarrow$ Vitest Specs $\rightarrow$ Core Services $\rightarrow$ Component UI. Compile and test each slice before expanding.
+4. **The AI Boy Scout Rule & Anti-Slop Discipline**: Leave every file cleaner than you found it. Before submitting work, prune speculative abstractions (YAGNI), tighten loose types, and verify zero leftover debug statements.
+5. **Session Meta-Learning**: At session wrap-up, analyze tool call logs and git diffs to codify repeated workflows into `Makefile` targets or `ast-grep` rules.

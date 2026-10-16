@@ -2,7 +2,7 @@
 
 ## 1. Map Architecture Overview
 
-The map engine is built on **Leaflet 1.9** and coordinated by [MapViewComponent](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/map-view.component.ts). To maintain high token efficiency, readability, and single-responsibility cohesion, the map subsystem is decoupled into dedicated layer services, presentational sub-components, and pure algorithmic utilities:
+The map engine is built on **Leaflet 1.9** and coordinated by [MapViewComponent](../src/app/components/map-view/map-view.component.ts). To maintain high token efficiency, readability, and single-responsibility cohesion, the map subsystem is decoupled into dedicated layer services, presentational sub-components, and pure algorithmic utilities:
 
 ```mermaid
 graph TD
@@ -44,7 +44,7 @@ graph TD
 
 ## 2. Specialized Layer Services
 
-### A. [MapShadingService](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/services/map-shading.service.ts)
+### A. [MapShadingService](../src/app/components/map-view/services/map-shading.service.ts)
 
 - **Role**: Manages GeoJSON multi-polygon vector layers for US States and Canadian Provinces.
 - **Dedicated Pane**: Renders into `stateShadingPane` (z-index 350), ensuring polygons sit below interactive markers while remaining fully clickable.
@@ -54,7 +54,7 @@ graph TD
   - `unvisited`: Fill color token `stateUnvisitedFill`, stroke `stateUnvisitedStroke`.
 - **Interactivity**: Attaches `mouseover` (opacity boost) and `mouseout` listeners, and binds popups via `buildLocationPopupHtml`.
 
-### B. [MapMarkerService](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/services/map-marker.service.ts)
+### B. [MapMarkerService](../src/app/components/map-view/services/map-marker.service.ts)
 
 - **Role**: Clears and draws location markers onto the Leaflet `LayerGroup`.
 - **Marker Icon Generation**: Creates CSS-styled circular badges via `L.divIcon`:
@@ -63,7 +63,7 @@ graph TD
   - 🏠 Active Hometown (blue badge) & Previous Hometowns (gray badges).
 - **Filtering**: Automatically filters locations by search term and active `mapMode` (`'parks' | 'states' | 'roads'`).
 
-### C. [MapRouteService](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/services/map-route.service.ts)
+### C. [MapRouteService](../src/app/components/map-view/services/map-route.service.ts)
 
 - **Role**: Manages road trip polyline rendering, directional arrows, and route bounding box calculations.
 - **Route Coordinates Caching**: Caches geometry arrays in-memory to prevent repeated OSRM/Mapbox network calls.
@@ -73,14 +73,14 @@ graph TD
 
 ## 3. Pure Algorithmic & Template Utilities
 
-### A. [geo.utils.ts](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/core/utils/geo.utils.ts)
+### A. [geo.utils.ts](../src/app/core/utils/geo.utils.ts)
 
 Contains pure mathematical GIS algorithms.
 
 - `reduceCoordinates(route: [number, number][], routeReduction: number): [number, number][]`:
   Decimates dense route GPS arrays based on user tolerance while guaranteeing the exact origin and destination coordinates are preserved.
 
-### B. [map-popup.util.ts](file:///Users/jacobfisher/coding/traveltracker/travel-tracker-public/src/app/components/map-view/utils/map-popup.util.ts)
+### B. [map-popup.util.ts](../src/app/components/map-view/utils/map-popup.util.ts)
 
 Decouples HTML string generation from the Leaflet component:
 

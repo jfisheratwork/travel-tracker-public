@@ -80,7 +80,7 @@ function verifyCodeFile(targetFile) {
 
   if (syntaxOk && eslintOk && astGrepOk) {
     process.stderr.write(
-      `  ✅ [Quality Hook Authoritative Pass] Syntax, ESLint, and AST checks passed. Do NOT duplicate manual single-file eslint runs.\n`,
+      `  ✅ [Quality Hook Authoritative Pass] Syntax, ESLint, and AST checks passed. Run 'make repchecks' upon task completion.\n`,
     );
   }
 }
@@ -93,6 +93,16 @@ async function main() {
   if (targetFile && fs.existsSync(targetFile)) {
     if (targetFile.endsWith('.ts') || targetFile.endsWith('.js') || targetFile.endsWith('.mjs')) {
       verifyCodeFile(targetFile);
+    }
+
+    if (targetFile.endsWith('.md')) {
+      try {
+        execSync('node scripts/check-markdown-links.js', { stdio: 'pipe' });
+        process.stderr.write(`  ✔ Markdown Links Check: Passed (all project-relative)\n`);
+      } catch (linkErr) {
+        const errOut = linkErr.stdout ? linkErr.stdout.toString() : linkErr.message;
+        process.stderr.write(`  ✖ Markdown Links Error:\n${errOut}\n`);
+      }
     }
 
     if (
