@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<!-- 
+  Element: <html> - The root element of an HTML page.
+  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/html
+-->
+<html lang="en">
+
+<head>
+    <!-- 
+      Element: <meta> - Metadata about the HTML document (charset, viewport for mobile scaling).
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/meta
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noimageindex, noarchive, nocache">
+    <meta name="googlebot" content="noindex, nofollow">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Traveled Roads Tracker</title>
+
+    <!-- 
+      LIBRARY: Tailwind CSS
+      Version: 3.4.17
+      Summary: A utility-first CSS framework for rapidly building custom user interfaces.
+      Home: https://tailwindcss.com/
+      Release Notes: https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.4.17
+    -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+    <!-- 
+      LIBRARY: SheetJS (xlsx)
+      Version: 0.20.3
+      Summary: A parser and writer for various spreadsheet formats (Excel, CSV, etc.).
+      Home: https://sheetjs.com/
+      Release Notes: https://docs.sheetjs.com/docs/changelog/
+    -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
+    <!-- 
+      LIBRARY: Leaflet Maps
+      Version: 1.9.4
+      Summary: An open-source JavaScript library for mobile-friendly interactive maps.
+      Home: https://leafletjs.com/
+      Release Notes: https://github.com/Leaflet/Leaflet/releases/tag/v1.9.4
+    -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- 
+      Element: <style> - Contains CSS styling for the document.
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/style
+    -->
+    <link rel="stylesheet" href="css/style.css?v=1.0.1">
+
+</head>
+<!-- 
+  Element: <body> - Contains the content of an HTML document.
+  Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/body
+-->
+
+<body class="bg-stone-50 text-stone-900 font-sans">
+
+    <!-- 
+      Element: <div> - The generic container for flow content.
+      Docs: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/div
+    -->
+    <div class="max-w-6xl mx-auto px-3 py-4 md:px-6 md:py-6 relative">
+        <!-- Welcome / Setup Prompt (replaces simple warning) -->
+        <div id="setup-prompt"
+            class="hidden fixed inset-0 z-[1500] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div
+                class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-in fade-in zoom-in duration-300">
+                <div
+                    class="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M2 12h10" />
+                        <path d="M9 4l3 3-3 3" />
+                        <path d="M13 14h8" />
+                        <path d="M17 19l4-3-4-3" />
+                        <rect x="2" y="3" width="20" height="18" rx="2" ry="2" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-stone-800 mb-2">Welcome to Travel Tracker!</h2>
+                <p class="text-stone-600 mb-8">To get started, please add your family members or load a sample dataset
+                    to explore the features.</p>
+
+                <div class="space-y-3">
+                    <button
+                        onclick="toggleSettingsModal(true); document.getElementById('setup-prompt').classList.add('hidden');"
+                        class="w-full py-3 px-4 bg-green-700 text-white rounded-xl font-bold hover:bg-green-800 transition shadow-lg shadow-green-900/20 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        Configure Family Members
+                    </button>
+                    <button onclick="loadSampleData()"
+                        class="w-full py-3 px-4 bg-white text-stone-600 border border-stone-200 rounded-xl font-bold hover:bg-stone-50 transition flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" x2="12" y1="15" y2="3" />
+                        </svg>
+                        Load Sample Data
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Right Actions: Export & Settings -->
+        <div class="absolute top-4 right-4 md:top-8 md:right-8 flex gap-2 no-print">
+            <button onclick="toggleInfoModal(true)"
+                class="p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all"
+                title="About & Data Privacy">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            </button>
+            <button onclick="toggleExportModal(true)"
+                class="p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all"
+                title="Export / Import Data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" x2="12" y1="15" y2="3" />
+                </svg>
+            </button>
+            <button id="settings-btn" onclick="toggleSettingsModal(true)"
+                class="p-2 rounded-full border-2 border-transparent text-stone-400 hover:text-green-700 transition-all"
+                title="Settings">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.1a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Page Title -->
+        <h1 class="text-4xl font-extrabold text-stone-800 mb-6 tracking-tight">🌎 Traveled Roads Tracker</h1>
+
+        <!-- Actions Bar: Search + Add/Edit Buttons -->
+        <div class="flex flex-wrap items-center gap-3 mb-6 border-b border-stone-200 pb-6 no-print">
+            <div class="relative flex-1 min-w-[200px] max-w-md">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.3-4.3" />
+                    </svg>
+                </span>
+                <input type="text" id="global-search-input" placeholder="Search by name or member..."
+                    oninput="handleSearch(this.value)"
+                    class="w-full pl-10 pr-20 py-2.5 rounded-xl border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm font-medium">
+                <span class="absolute inset-y-0 right-0 flex items-center gap-1.5 pr-3">
+                    <span id="search-result-count" class="text-[11px] font-semibold text-stone-400 hidden"></span>
+                    <button id="search-clear-btn" onclick="clearSearch()"
+                        class="hidden text-stone-300 hover:text-stone-600 transition" title="Clear search">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 6 6 18" />
+                            <path d="m6 6 12 12" />
+                        </svg>
+                    </button>
+                </span>
+            </div>
+            <button onclick="toggleParksModal(true)"
+                class="px-4 py-2.5 bg-green-50 text-green-700 border border-green-200 rounded-xl text-sm font-bold hover:bg-green-100 transition flex items-center gap-1.5 shadow-sm">
+                ⛰️ Add Parks
+            </button>
+            <button onclick="toggleStatesModal(true)"
+                class="px-4 py-2.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl text-sm font-bold hover:bg-blue-100 transition flex items-center gap-1.5 shadow-sm">
+                ⭐ Add States
+            </button>
+        </div>
+
+        <!-- Main Display Container -->
+        <div id="world-map-container">
+            <div class="bg-white p-4 rounded-xl shadow-lg border border-stone-200">
+                <div
+                    class="flex flex-wrap justify-between items-center gap-3 mb-4 border-b border-stone-100 pb-4 no-print">
+                    <div class="flex gap-2" id="map-mode-buttons">
+                        <button onclick="switchTab('parks')" id="btn-map-parks"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">National
+                            Parks</button>
+                        <button onclick="switchTab('states')" id="btn-map-states"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">States
+                            & Provinces</button>
+                        <button onclick="switchTab('roads')" id="btn-map-roads"
+                            class="px-4 py-2 rounded-lg text-sm font-medium transition-all text-stone-600 hover:bg-stone-100">Road
+                            Trips</button>
+                    </div>
+                    <button id="toggle-stats-btn" onclick="toggleStatsWidget()"
+                        class="px-4 py-2 border border-stone-200 hover:bg-stone-50 rounded-lg text-sm font-bold text-stone-600 transition flex items-center gap-1.5 shadow-sm">
+                        📊 Show Statistics
+                    </button>
+                </div>
+
+                <!-- Collapsible Stats Widget -->
+                <div id="stats-widget-container" class="hidden mb-6 bg-stone-50 p-6 rounded-xl border border-stone-200">
+                    <div id="stats" class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                        <div class="lg:col-span-1 space-y-4">
+                            <div class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
+                                <span id="stats-label"
+                                    class="block text-sm text-stone-500 uppercase tracking-wide font-semibold">Parks
+                                    Visited</span>
+                                <span id="total-visited" class="text-3xl font-bold text-green-700">0 / 63</span>
+                            </div>
+                            <div id="regional-stats"
+                                class="hidden space-y-3 bg-white p-4 rounded-xl shadow-sm border border-stone-200">
+                                <div id="us-stat-container" class="space-y-1">
+                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500">
+                                        <span id="us-stat-label">US States</span><span id="us-stat-count">0/50</span>
+                                    </div>
+                                    <div
+                                        class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
+                                        <div id="us-stat-bar" class="bg-blue-600 h-full transition-all duration-500"
+                                            style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <div id="ca-stat-container" class="space-y-1">
+                                    <div class="flex justify-between text-[10px] uppercase font-bold text-stone-500">
+                                        <span id="ca-stat-label">CA Provinces</span><span id="ca-stat-count">0/13</span>
+                                    </div>
+                                    <div
+                                        class="w-full bg-stone-100 rounded-full h-1.5 overflow-hidden border border-stone-200">
+                                        <div id="ca-stat-bar" class="bg-red-600 h-full transition-all duration-500"
+                                            style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="remaining-box"
+                                class="bg-white p-4 rounded-xl shadow-sm border border-stone-200 text-center">
+                                <span id="remaining-label"
+                                    class="block text-sm text-stone-500 uppercase tracking-wide">Remaining</span>
+                                <span id="total-remaining" class="text-3xl font-bold text-stone-400">--</span>
+                            </div>
+                        </div>
+                        <div
+                            class="lg:col-span-3 bg-white p-6 rounded-xl shadow-sm border border-stone-200 flex flex-col justify-between">
+                            <div class="mb-4">
+                                <div class="flex justify-between items-end mb-1">
+                                    <span class="text-sm font-bold text-stone-700 uppercase tracking-wide">Detailed
+                                        Progress</span>
+                                    <span id="group-percent" class="text-xs text-stone-500 font-medium">0%</span>
+                                </div>
+                                <div class="w-full bg-stone-200 rounded-full h-4 overflow-hidden shadow-inner">
+                                    <div id="progress-bar" class="bg-green-600 h-full transition-all duration-700"
+                                        style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div id="family-progress-grid" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="world-map"></div>
+                <div id="map-legend" class="mt-4 flex gap-6 justify-center text-sm">
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-600"></span> All
+                        Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        Partially Visited</div>
+                    <div class="flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-stone-400"></span> Not
+                        Visited</div>
+                </div>
+
+                <!-- Visited Parks List (shown when Parks tab active) -->
+                <div id="parks-visited-ui" class="hidden mt-4 bg-stone-50 border border-stone-200 p-4 rounded-xl">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">Visited Parks</h3>
+                    <div id="visited-parks-list"
+                        class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
+                        <div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No parks
+                            visited yet. Use "Add Parks" to log visits.</div>
+                    </div>
+                </div>
+
+                <!-- Visited States List (shown when States tab active) -->
+                <div id="states-visited-ui" class="hidden mt-4 bg-stone-50 border border-stone-200 p-4 rounded-xl">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">Visited States &
+                        Provinces</h3>
+                    <div id="visited-states-list"
+                        class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
+                        <div class="p-4 bg-white border border-stone-200 rounded-lg text-center text-stone-400">No
+                            states visited yet. Use "Add States" to log visits.</div>
+                    </div>
+                </div>
+
+                <!-- Route Builder UI -->
+                <div id="route-builder-ui" class="hidden mt-4 bg-stone-50 border border-stone-200 p-4 rounded-xl">
+                    <h3 id="route-builder-title" class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-3">
+                        Add New Road Trip</h3>
+                    <div class="flex flex-col gap-2">
+                        <div class="flex gap-2">
+                            <input type="text" id="route-start" placeholder="Start (e.g. Seattle, WA)"
+                                class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
+                            <input type="text" id="route-end" placeholder="Destination (e.g. Portland, OR)"
+                                class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 bg-white">
+                        </div>
+
+                        <!-- Dynamic intermediate stops -->
+                        <div id="route-stops-container" class="flex flex-col gap-2"></div>
+
+                        <div class="flex justify-between items-center mt-1">
+                            <button onclick="addStopInput()"
+                                class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1">
+                                ➕ Add Stop
+                            </button>
+                            <button onclick="requestRoute()"
+                                class="bg-green-700 text-white px-6 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition shadow">Route</button>
+                        </div>
+                        <div class="mt-2 pt-2 border-t border-stone-200/60">
+                            <label class="flex items-center gap-2 cursor-pointer text-xs text-stone-600">
+                                <input type="checkbox" id="route-store-full-coords"
+                                    class="w-4 h-4 rounded accent-green-700">
+                                <span>Store detailed path coordinates locally (faster subsequent loads)</span>
+                            </label>
+                            <p class="text-[10px] text-stone-400 mt-0.5 ml-6">⚠️ Storing full coordinates consumes
+                                significant local storage. Not recommended for long or multiple routes.</p>
+                        </div>
+                    </div>
+
+                    <div id="route-status" class="text-xs text-stone-500 mt-2 font-medium empty:hidden"></div>
+
+                    <!-- Alternative Routes Selector -->
+                    <div id="alt-routes-selector" class="hidden mt-4 border-t border-stone-200 pt-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-2">Select Preferred
+                            Route Option</h4>
+                        <div id="alt-routes-list" class="flex flex-col gap-2"></div>
+                        <div class="flex gap-2 mt-3 justify-end">
+                            <button onclick="cancelAltRouteSelection()"
+                                class="px-3 py-1.5 text-xs text-stone-500 hover:text-stone-855 font-semibold transition">Cancel</button>
+                            <button onclick="saveSelectedRoute()"
+                                class="px-4 py-1.5 text-xs bg-green-700 text-white font-bold rounded-lg hover:bg-green-800 transition">Save
+                                Selected Route</button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center border-t border-stone-200 pt-4 mt-4 mb-3">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400">Saved Trips</h3>
+                        <button id="btn-load-all-routes" onclick="loadAllRoutes()"
+                            class="text-xs font-bold text-green-700 bg-green-50 border border-green-200 px-2.5 py-1.5 rounded-lg hover:bg-green-100 transition flex items-center gap-1">
+                            🚗 Load All Routes on Map
+                        </button>
+                    </div>
+
+                    <!-- Progress Bar Container -->
+                    <div id="routes-loading-progress-container"
+                        class="hidden mb-3 p-3 bg-white border border-stone-200 rounded-lg">
+                        <div class="flex justify-between text-xs font-semibold text-stone-600 mb-1">
+                            <span id="routes-loading-status">Loading routes...</span>
+                            <span id="routes-loading-percent">0%</span>
+                        </div>
+                        <div class="w-full bg-stone-100 rounded-full h-2 overflow-hidden border border-stone-200">
+                            <div id="routes-loading-progress-bar"
+                                class="bg-green-600 h-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="saved-routes-list"
+                        class="flex flex-col gap-2 text-sm text-stone-500 max-h-[50vh] overflow-y-auto">
+                        <!-- Saved routes render here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-12 border-t border-stone-200 pt-6 text-center text-sm text-stone-400 no-print">
+            Made with help of Gemini Pro
+        </footer>
+    </div>
+
+    <!-- Log Parks Modal -->
+    <div id="parks-modal"
+        class="fixed inset-0 z-[1800] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-[85vh] max-h-[85vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    ⛰️ Log National Parks Visits
+                </h2>
+                <button onclick="toggleParksModal(false)" class="text-stone-400 hover:text-stone-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Search & Filters -->
+            <div
+                class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
+                <div class="relative flex-1 min-w-[200px]">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </span>
+                    <input type="text" id="parks-search-input" placeholder="Search parks..."
+                        oninput="handleParksSearch(this.value)"
+                        class="w-full pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm">
+                </div>
+                <div class="flex gap-2">
+                    <select id="parks-member-filter" onchange="updateParksMemberFilter()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Members</option>
+                    </select>
+                    <select id="parks-region-filter" onchange="renderParksTable()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Visible Locations</option>
+                        <option value="USA">USA Parks</option>
+                        <option value="Canada">Canada Parks</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Table View -->
+            <div class="overflow-auto flex-1 bg-white">
+                <table class="w-full text-left border-collapse" id="parks-table">
+                    <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
+                        <tr id="parks-table-header-row"></tr>
+                    </thead>
+                    <tbody id="parks-data-list"></tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-end flex-shrink-0">
+                <button onclick="toggleParksModal(false)"
+                    class="px-6 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-800 transition shadow-sm">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Log States Modal -->
+    <div id="states-modal"
+        class="fixed inset-0 z-[1800] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col h-[85vh] max-h-[85vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    ⭐ Log States & Provinces Visits
+                </h2>
+                <button onclick="toggleStatesModal(false)" class="text-stone-400 hover:text-stone-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Search & Filters -->
+            <div
+                class="p-4 bg-stone-50 border-b border-stone-100 flex flex-wrap gap-3 items-center justify-between flex-shrink-0">
+                <div class="relative flex-1 min-w-[200px]">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-stone-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <path d="m21 21-4.3-4.3" />
+                        </svg>
+                    </span>
+                    <input type="text" id="states-search-input" placeholder="Search states & provinces..."
+                        oninput="handleStatesSearch(this.value)"
+                        class="w-full pl-9 pr-4 py-2 rounded-lg border border-stone-200 text-sm outline-none focus:border-green-600 transition-all bg-white shadow-sm">
+                </div>
+                <div class="flex gap-2">
+                    <select id="states-member-filter" onchange="updateStatesMemberFilter()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Members</option>
+                    </select>
+                    <select id="states-region-filter" onchange="renderStatesTable()"
+                        class="text-sm bg-white border border-stone-200 rounded-lg px-3 py-2 outline-none cursor-pointer hover:border-green-600 transition-colors shadow-sm">
+                        <option value="all">All Visible Locations</option>
+                        <option value="USA">USA States</option>
+                        <option value="Canada">Canada Provinces</option>
+                    </select>
+                </div>
+            </div>
+            <!-- Table View -->
+            <div class="overflow-auto flex-1 bg-white">
+                <table class="w-full text-left border-collapse" id="states-table">
+                    <thead class="bg-stone-100 text-stone-700 sticky top-0 z-10 shadow-sm">
+                        <tr id="states-table-header-row"></tr>
+                    </thead>
+                    <tbody id="states-data-list"></tbody>
+                </table>
+            </div>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-end flex-shrink-0">
+                <button onclick="toggleStatesModal(false)"
+                    class="px-6 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-800 transition shadow-sm">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Metadata Modal -->
+    <div id="edit-modal"
+        class="fixed inset-0 z-[2100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 transform">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="text-blue-600">
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                    Edit Trip Details
+                </h2>
+                <button onclick="toggleEditModal(false)" class="text-stone-400 hover:text-stone-600"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-6 space-y-4">
+                <h3 id="edit-modal-title" class="text-lg font-semibold text-stone-700"></h3>
+
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Date
+                        Visited</label>
+                    <input type="date" id="edit-date"
+                        class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Comments</label>
+                    <textarea id="edit-comment" rows="4" maxlength="500"
+                        class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-blue-500 resize-none"
+                        oninput="updateCharCount(this)"></textarea>
+                    <div class="text-right text-xs text-stone-400 mt-1"><span id="char-count">0</span>/500</div>
+                </div>
+            </div>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-end gap-3">
+                <button onclick="toggleEditModal(false)"
+                    class="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-200 transition">Cancel</button>
+                <button onclick="saveMetaData()"
+                    class="px-6 py-2 rounded-lg text-sm font-bold bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">Save
+                    Details</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Route Edit Choice Modal -->
+    <div id="route-edit-choice-modal"
+        class="fixed inset-0 z-[2050] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print transition-all duration-200">
+        <div
+            class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center animate-in fade-in zoom-in duration-200">
+            <h3 class="text-lg font-bold text-stone-800 mb-2">Edit Road Trip</h3>
+            <p class="text-xs text-stone-500 mb-6">Choose how you want to modify this road trip.</p>
+            <div class="flex flex-col gap-3">
+                <button onclick="handleEditChoice('data')"
+                    class="w-full py-3 bg-white border border-stone-250 hover:border-green-600 rounded-xl text-sm font-semibold text-stone-700 hover:text-green-700 transition flex items-center justify-center gap-2 shadow-sm">
+                    📝 Edit Trip Data (Name, Dates, Notes)
+                </button>
+                <button onclick="handleEditChoice('route')"
+                    class="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl text-sm font-semibold transition flex items-center justify-center gap-2 shadow-sm">
+                    🚗 Edit Trip Route (Stops, Alt Options)
+                </button>
+            </div>
+            <button onclick="toggleRouteEditChoiceModal(false)"
+                class="mt-4 text-xs font-semibold text-stone-400 hover:text-stone-600 transition">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Route Edit Modal -->
+    <div id="route-edit-modal"
+        class="fixed inset-0 z-[2100] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 transform flex flex-col max-h-[85vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="text-green-700">
+                        <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                    Edit Road Trip
+                </h2>
+                <button onclick="toggleRouteEditModal(false)" class="text-stone-400 hover:text-stone-600"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                <!-- Route Details Info (Read-only) -->
+                <div
+                    class="bg-stone-50 p-3 rounded-xl border border-stone-200/60 grid grid-cols-2 gap-2 text-xs text-stone-500">
+                    <div>
+                        <span class="block font-bold text-stone-400 uppercase tracking-wider mb-0.5">Distance</span>
+                        <span id="route-edit-distance" class="text-stone-700 font-semibold text-sm">--</span>
+                    </div>
+                    <div>
+                        <span class="block font-bold text-stone-400 uppercase tracking-wider mb-0.5">Duration</span>
+                        <span id="route-edit-duration" class="text-stone-700 font-semibold text-sm">--</span>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Route
+                        Name</label>
+                    <input type="text" id="route-edit-name"
+                        class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Start
+                            Date</label>
+                        <input type="date" id="route-edit-start-date"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">End Date
+                            <span class="text-stone-400 font-normal">(Opt)</span></label>
+                        <input type="date" id="route-edit-end-date"
+                            class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Trip
+                        Status</label>
+                    <select id="route-edit-status"
+                        class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:border-green-600">
+                        <option value="completed">Completed</option>
+                        <option value="planned">Planned</option>
+                    </select>
+                </div>
+
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider">Who
+                            Participated?</label>
+                        <button type="button" onclick="selectAllRouteMembers()"
+                            class="text-xs font-bold text-green-700 hover:text-green-900 transition bg-transparent border-none p-0 cursor-pointer">Select
+                            All</button>
+                    </div>
+                    <div id="route-edit-members"
+                        class="grid grid-cols-2 gap-2 max-h-[120px] overflow-y-auto p-2 border border-stone-200 rounded-lg bg-stone-50/50">
+                        <!-- Checkboxes dynamically generated by JS -->
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Description /
+                        Log</label>
+                    <textarea id="route-edit-description" rows="3" maxlength="300"
+                        class="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600 resize-none"
+                        oninput="document.getElementById('route-char-count').innerText = this.value.length"></textarea>
+                    <div class="text-right text-xs text-stone-400 mt-0.5"><span id="route-char-count">0</span>/300</div>
+                </div>
+            </div>
+            <div class="p-4 bg-stone-50 border-t border-stone-100 flex justify-between items-center flex-shrink-0">
+                <button onclick="deleteRouteFromEditModal()"
+                    class="text-red-500 hover:text-red-700 text-xs font-bold flex items-center gap-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 6h18" />
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                    </svg>
+                    Delete Route
+                </button>
+                <div class="flex gap-2">
+                    <button onclick="toggleRouteEditModal(false)"
+                        class="px-4 py-2 rounded-lg text-sm font-medium text-stone-600 hover:bg-stone-200 transition">Cancel</button>
+                    <button onclick="saveRouteEditDetails()"
+                        class="px-6 py-2 rounded-lg text-sm font-bold bg-green-700 text-white hover:bg-green-800 transition shadow-sm">Save
+                        Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal Overlay (Updated Height) -->
+    <div id="settings-modal"
+        class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[75vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Settings</h2>
+                <button onclick="toggleSettingsModal(false)" class="text-stone-400 hover:text-stone-600"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-8 space-y-6 overflow-y-auto">
+                <!-- Family Members Section -->
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Manage Family Members
+                    </h3>
+                    <div class="space-y-3 mb-4" id="settings-family-list">
+                        <!-- Dynamic List Generated Here -->
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="new-member-name" placeholder="Enter name"
+                            class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+                            onkeypress="if(event.key === 'Enter') addFamilyMember()">
+                        <button onclick="addFamilyMember()"
+                            class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-green-800 transition">Add</button>
+                    </div>
+                </div>
+
+                <!-- Hometown Section -->
+                <div class="border-t border-stone-100 pt-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Home Town</h3>
+                    <div class="flex gap-2">
+                        <input type="text" id="hometown-input" placeholder="e.g. Seattle, WA"
+                            class="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-green-600"
+                            onkeypress="if(event.key === 'Enter') searchHometown()">
+                        <button onclick="searchHometown()"
+                            class="bg-stone-100 text-stone-700 border border-stone-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-stone-200 transition"
+                            id="hometown-btn">Search</button>
+                    </div>
+                    <div id="hometown-display" class="mt-3 text-xs text-stone-500 flex flex-col gap-2 hidden">
+                    </div>
+                </div>
+
+                <div class="border-t border-stone-100 pt-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Location Visibility</h3>
+                    <div class="space-y-4">
+                        <label
+                            class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input
+                                type="checkbox" id="setting-usa" class="w-5 h-5 rounded accent-green-700"
+                                onchange="updateSetting('showUSA', this.checked)">
+                            <div><span class="block font-semibold text-stone-800">Include USA States</span><span
+                                    class="text-xs text-stone-500">Show all 50 US States.</span></div>
+                        </label>
+                        <label
+                            class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input
+                                type="checkbox" id="setting-canada" class="w-5 h-5 rounded accent-green-700"
+                                onchange="updateSetting('showCanada', this.checked)">
+                            <div><span class="block font-semibold text-stone-800">Include Canadian Provinces</span><span
+                                    class="text-xs text-stone-500">Show 13 Canadian Provinces.</span></div>
+                        </label>
+                        <label
+                            class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input
+                                type="checkbox" id="setting-usa-parks" class="w-5 h-5 rounded accent-green-700"
+                                onchange="updateSetting('showUSAParks', this.checked)">
+                            <div><span class="block font-semibold text-stone-800">Include USA National Parks</span><span
+                                    class="text-xs text-stone-500">Include all 63 US National Parks.</span></div>
+                        </label>
+                        <label
+                            class="flex items-center gap-4 p-3 rounded-xl border border-stone-200 hover:bg-stone-50 cursor-pointer transition-colors"><input
+                                type="checkbox" id="setting-canada-parks" class="w-5 h-5 rounded accent-green-700"
+                                onchange="updateSetting('showCanadianParks', this.checked)">
+                            <div><span class="block font-semibold text-stone-800">Include Canadian National
+                                    Parks</span><span class="text-xs text-stone-500">Include major National Parks of
+                                    Canada.</span></div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Routing Preferences Section -->
+                <div class="border-t border-stone-100 pt-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-stone-400 mb-4">Routing Preferences</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-stone-800 mb-1">Routing Engine</label>
+                            <select id="setting-routing-engine"
+                                onchange="updateSetting('routingEngine', this.value); toggleMapboxSettings();"
+                                class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white">
+                                <option value="osrm">OSRM Public (Free, Throttled)</option>
+                                <option value="mapbox">Mapbox API (Requires Key)</option>
+                            </select>
+                        </div>
+                        <div id="mapbox-settings-container" class="hidden">
+                            <label class="block text-sm font-semibold text-stone-800 mb-1">Mapbox API Key</label>
+                            <input type="text" id="setting-mapbox-key" placeholder="pk.ey..."
+                                onchange="updateSetting('mapboxKey', this.value)"
+                                class="w-full border border-stone-200 rounded-lg p-2 text-sm">
+                            <p class="text-xs text-stone-500 mt-1.5 leading-relaxed">
+                                To use Mapbox routing, sign up for a free account at <a href="https://www.mapbox.com/"
+                                    target="_blank" class="text-blue-600 underline hover:text-blue-800">mapbox.com</a>.
+                                Once signed in, go to your account dashboard, copy your **Default public token** (starts
+                                with 'pk.'), and paste it above. The free plan includes up to **100,000 free driving
+                                direction requests per month**, which easily covers typical routing needs.
+                            </p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-stone-800 mb-1">Point Reduction Level</label>
+                            <select id="setting-route-reduction" onchange="updateSetting('routeReduction', this.value);"
+                                class="w-full border border-stone-200 rounded-lg p-2 text-sm bg-white">
+                                <option value="0">None (Exact Path)</option>
+                                <option value="0.001">Low (Minimal simplification)</option>
+                                <option value="0.01">Medium (Good balance)</option>
+                                <option value="0.05">High (Straighten curves)</option>
+                            </select>
+                            <p class="text-xs text-stone-500 mt-1">Higher reduction drastically lowers storage usage but
+                                smooths out tight curves.</p>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Reset Data Section -->
+                <div class="border-t border-stone-100 pt-6">
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-red-500 mb-4">Danger Zone</h3>
+                    <div class="bg-red-50 border border-red-100 rounded-xl p-4">
+                        <div id="reset-initial-prompt"
+                            class="flex justify-between items-center transition-all duration-300">
+                            <div>
+                                <h4 class="font-bold text-red-900 text-sm">Reset All Data</h4>
+                                <p class="text-xs text-red-700 mt-1">Clears all settings and visit data.</p>
+                            </div>
+                            <button onclick="confirmReset()"
+                                class="bg-white text-red-600 border border-red-200 px-4 py-2 rounded-lg text-sm font-bold hover:bg-red-600 hover:text-white transition shadow-sm">Reset</button>
+                        </div>
+                        <!-- Confirmation UI (Hidden by Default) -->
+                        <div id="reset-confirm" class="hidden mt-4 pt-4 border-t border-red-200">
+                            <p class="text-xs font-bold text-red-800 mb-3">Are you sure? This cannot be undone.</p>
+                            <div class="flex gap-2 justify-end">
+                                <button onclick="cancelReset()"
+                                    class="px-3 py-1.5 bg-white text-stone-600 border border-stone-200 rounded text-xs font-medium hover:bg-stone-50">Cancel</button>
+                                <button onclick="performReset()"
+                                    class="px-3 py-1.5 bg-red-600 text-white border border-red-600 rounded text-xs font-bold hover:bg-red-700 shadow-sm">Yes,
+                                    Delete Everything</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Export/Import Modal (Updated Height) -->
+    <div id="export-modal"
+        class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[75vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">Data Options</h2>
+                <button onclick="toggleExportModal(false)" class="text-stone-400 hover:text-stone-600"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-8 space-y-8 overflow-y-auto">
+
+                <!-- Load Example Data Section (1st) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="12" y1="18" x2="12" y2="12"></line>
+                            <line x1="9" y1="15" x2="15" y2="15"></line>
+                        </svg>
+                        Load Example Data
+                    </h3>
+                    <div class="flex gap-2">
+                        <select id="example-select"
+                            class="flex-1 text-sm bg-white border border-stone-300 rounded-lg px-3 py-2 outline-none cursor-pointer focus:border-green-600">
+                            <!-- Options populated by JS -->
+                        </select>
+                        <button onclick="showLoadConfirmation()"
+                            class="px-4 py-2 bg-stone-100 text-stone-700 font-bold text-sm border border-stone-200 rounded-lg hover:bg-stone-200 transition">Load</button>
+                    </div>
+
+                    <!-- Confirmation Dialog (Initially Hidden) -->
+                    <div id="load-example-confirm"
+                        class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
+                        <p class="text-xs text-red-700 font-bold mb-2 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round">
+                                <path
+                                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                <line x1="12" y1="9" x2="12" y2="13" />
+                                <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
+                            Are you sure? Current data will be replaced.
+                        </p>
+                        <div class="flex gap-2 justify-end">
+                            <button onclick="cancelLoad()"
+                                class="px-3 py-1.5 bg-white border border-stone-300 rounded text-xs font-medium text-stone-600 hover:bg-stone-50">Cancel</button>
+                            <button onclick="performLoad()"
+                                class="px-3 py-1.5 bg-red-600 text-white border border-red-600 rounded text-xs font-bold hover:bg-red-700 shadow-sm">Yes,
+                                Replace Data</button>
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-stone-400 mt-1">Loads JSON files from the 'examples' folder if present.
+                    </p>
+                </div>
+
+                <!-- Backup Section (2nd) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                            <polyline points="17 21 17 13 7 13 7 21" />
+                            <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Full App Backup (JSON)
+                    </h3>
+                    <div class="flex flex-col gap-4">
+                        <div
+                            class="flex items-center justify-between p-4 rounded-xl border border-blue-100 bg-blue-50/30">
+                            <div>
+                                <span class="block font-bold text-stone-700">Backup Everything</span>
+                                <span class="text-xs text-stone-500">Save settings, family members, and all
+                                    checkmarks.</span>
+                            </div>
+                            <button onclick="saveBackupJSON()"
+                                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition shadow-sm">Export
+                                JSON</button>
+                        </div>
+
+                        <label id="restore-dropzone"
+                            class="flex flex-col items-center justify-center w-full p-4 border-2 border-dashed border-stone-300 rounded-xl hover:bg-stone-50 hover:border-blue-500 cursor-pointer transition-all group">
+                            <span class="text-sm font-medium text-stone-600 group-hover:text-blue-700">Restore from JSON
+                                Backup</span>
+                            <span class="text-xs text-stone-400 mt-1">Select a .json file to restore all data</span>
+                            <input type="file" accept=".json" class="hidden" onchange="handleBackupImport(event)">
+                        </label>
+
+                        <!-- Restore Confirmation (Initially Hidden) -->
+                        <div id="restore-confirm"
+                            class="hidden mt-2 p-3 bg-red-50 border border-red-200 rounded-lg animate-in fade-in slide-in-from-top-2 duration-200">
+                            <p class="text-xs text-red-700 font-bold mb-2 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <path
+                                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                                    <line x1="12" y1="9" x2="12" y2="13" />
+                                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                                </svg>
+                                Overwrite current data with backup?
+                            </p>
+                            <div class="flex gap-2 justify-end">
+                                <button onclick="cancelRestore()"
+                                    class="px-3 py-1.5 bg-white border border-stone-300 rounded text-xs font-medium text-stone-600 hover:bg-stone-50">Cancel</button>
+                                <button onclick="performRestore()"
+                                    class="px-3 py-1.5 bg-red-600 text-white border border-red-600 rounded text-xs font-bold hover:bg-red-700 shadow-sm">Yes,
+                                    Restore</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Export Section (3rd) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" x2="12" y1="15" y2="3" />
+                        </svg>
+                        Export Spreadsheet (CSV/Excel)
+                    </h3>
+                    <div class="space-y-4">
+                        <div
+                            class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
+                            <div><span class="block font-bold text-stone-700">National Parks</span><span
+                                    class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('parks')"
+                                    class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button
+                                    onclick="saveToExcel('parks')"
+                                    class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button>
+                            </div>
+                        </div>
+                        <div
+                            class="flex items-center justify-between p-4 rounded-xl border border-stone-100 bg-stone-50/50">
+                            <div><span class="block font-bold text-stone-700">States & Provinces</span><span
+                                    class="text-xs text-stone-500">Current selection based on settings</span></div>
+                            <div class="flex gap-2"><button onclick="saveToCSV('states')"
+                                    class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">CSV</button><button
+                                    onclick="saveToExcel('states')"
+                                    class="px-3 py-1.5 bg-white border border-stone-200 rounded-lg text-xs font-bold text-stone-600 hover:text-green-700 hover:border-green-600 transition shadow-sm">Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Import CSV Section (4th) -->
+                <div>
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-stone-400 mb-4 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" x2="12" y1="3" y2="15" />
+                        </svg>
+                        Import Spreadsheet
+                    </h3>
+                    <label
+                        class="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-stone-300 rounded-xl hover:bg-stone-50 hover:border-green-500 cursor-pointer transition-all group">
+                        <span class="text-sm font-medium text-stone-600 group-hover:text-green-700">Import CSV
+                            File</span>
+                        <span class="text-xs text-stone-400 mt-1">Detects Parks or States automatically</span>
+                        <input type="file" accept=".csv" class="hidden" onchange="handleImport(event)">
+                    </label>
+                </div>
+            </div>
+            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center flex-shrink-0">
+                <button onclick="toggleExportModal(false)"
+                    class="text-stone-500 hover:text-stone-800 font-medium text-sm transition">Close</button>
+            </div>
+        </div>
+    </div>
+    <!-- Info Modal -->
+    <div id="info-modal"
+        class="fixed inset-0 z-[2000] hidden flex items-center justify-center bg-black/50 backdrop-blur-sm opacity-0 no-print">
+        <div
+            class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col max-h-[75vh]">
+            <div class="p-6 border-b border-stone-100 flex justify-between items-center bg-stone-50 flex-shrink-0">
+                <h2 class="text-xl font-bold text-stone-800 flex items-center gap-2">About & Data Privacy</h2>
+                <button onclick="toggleInfoModal(false)" class="text-stone-400 hover:text-stone-600"><svg
+                        xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 6 6 18" />
+                        <path d="m6 6 12 12" />
+                    </svg></button>
+            </div>
+            <div class="p-8 space-y-6 overflow-y-auto text-stone-600 text-sm leading-relaxed">
+                <section>
+                    <h3 class="text-lg font-bold text-stone-800 mb-2">Local Storage & Privacy</h3>
+                    <p>Your travel data and settings are stored entirely in your browser's <strong>Local
+                            Storage</strong>.</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                        <li>No data is sent to any external server.</li>
+                        <li>Your privacy is preserved as everything stays on your device.</li>
+                        <li><strong>Note:</strong> Clearing your browser cache or browsing history may delete this data.
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-bold text-stone-800 mb-2">Resetting Data</h3>
+                    <p>If you wish to start over:</p>
+                    <ol class="list-decimal pl-5 mt-2 space-y-1">
+                        <li>Open the <strong>Settings</strong> menu (gear icon).</li>
+                        <li>Scroll to the bottom "Danger Zone".</li>
+                        <li>Click <strong>Reset</strong>.</li>
+                        <li>Confirm the action to delete all your tracked visits and custom family members.</li>
+                    </ol>
+                </section>
+
+                <section>
+                    <h3 class="text-lg font-bold text-stone-800 mb-2">Backup & Restore</h3>
+                    <p>Since data is local, we highly recommend creating periodic backups:</p>
+                    <ol class="list-decimal pl-5 mt-2 space-y-1">
+                        <li>Click the <strong>Export / Restore</strong> button.</li>
+                        <li>Under "Full App Backup (JSON)", click <strong>Download JSON Backup</strong>.</li>
+                        <li>Save this file safely.</li>
+                        <li>You can restore your data anytime by uploading this file in the same menu.</li>
+                    </ol>
+                </section>
+
+                <hr class="border-stone-100">
+
+                <section>
+                    <h3 class="text-lg font-bold text-stone-800 mb-2">Attribution</h3>
+                    <p>This entire project was generated with Google Gemini as a fun "try it out" experiment to
+                        demonstrate AI-assisted coding capabilities.</p>
+                </section>
+            </div>
+            <div class="p-6 bg-stone-50 border-t border-stone-100 text-center flex-shrink-0">
+                <button onclick="toggleInfoModal(false)"
+                    class="bg-stone-200 text-stone-700 px-8 py-2 rounded-xl font-bold hover:bg-stone-300 transition">Close</button>
+            </div>
+        </div>
+    </div>
+    <!-- 
+      SECTION: Scripts
+      This block contains all the application logic. 
+      Data structures are defined first, followed by app state, then functions.
+    -->
+    <script src="js/data_constants.js?v=1.0.1"></script>
+    <script src="js/helpers.js?v=1.0.1"></script>
+    <script src="js/state.js?v=1.0.1"></script>
+    <script src="js/map.js?v=1.0.1"></script>
+    <script src="js/ui.js?v=1.0.1"></script>
+    <script src="js/demo_route.js?v=1.0.1"></script>
+    <script src="js/app.js?v=1.0.1"></script>
+</body>
+
+</html>

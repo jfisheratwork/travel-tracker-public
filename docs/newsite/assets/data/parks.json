@@ -1,0 +1,974 @@
+[
+  {
+    "id": "acadia",
+    "name": "Acadia",
+    "region": "ME",
+    "lat": 31.94371877495822,
+    "lng": -102.40845781764105,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "american-samoa",
+    "name": "American Samoa",
+    "region": "AS",
+    "lat": 30.51248664154204,
+    "lng": -109.3019969296596,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "arches",
+    "name": "Arches",
+    "region": "UT",
+    "lat": 37.34176269629727,
+    "lng": -87.91806597346674,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "badlands",
+    "name": "Badlands",
+    "region": "SD",
+    "lat": 41.03916132584278,
+    "lng": -107.24150816454612,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "big-bend",
+    "name": "Big Bend",
+    "region": "TX",
+    "lat": 41.85355111080033,
+    "lng": -91.70515108002694,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "biscayne",
+    "name": "Biscayne",
+    "region": "FL",
+    "lat": 35.49656012648375,
+    "lng": -95.34306705607008,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "black-canyon-of-the-gunnison",
+    "name": "Black Canyon of the Gunnison",
+    "region": "CO",
+    "lat": 32.20978609453533,
+    "lng": -83.89947084228785,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "bryce-canyon",
+    "name": "Bryce Canyon",
+    "region": "UT",
+    "lat": 39.284150832833284,
+    "lng": -104.95441661076752,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "canyonlands",
+    "name": "Canyonlands",
+    "region": "UT",
+    "lat": 32.40776518558172,
+    "lng": -88.2289671661072,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "capitol-reef",
+    "name": "Capitol Reef",
+    "region": "UT",
+    "lat": 40.11239861079156,
+    "lng": -82.09979754559737,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "carlsbad-caverns",
+    "name": "Carlsbad Caverns",
+    "region": "NM",
+    "lat": 32.735531928357865,
+    "lng": -110.65968026265985,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "channel-islands",
+    "name": "Channel Islands",
+    "region": "CA",
+    "lat": 31.90033298840126,
+    "lng": -111.0497305429069,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "congaree",
+    "name": "Congaree",
+    "region": "SC",
+    "lat": 42.04161442136831,
+    "lng": -109.70312955358267,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "crater-lake",
+    "name": "Crater Lake",
+    "region": "OR",
+    "lat": 40.74804649106048,
+    "lng": -80.58429249571194,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "cuyahoga-valley",
+    "name": "Cuyahoga Valley",
+    "region": "OH",
+    "lat": 31.003588334129752,
+    "lng": -95.95068378335364,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "death-valley",
+    "name": "Death Valley",
+    "region": "CA/NV",
+    "lat": 36.78999229847081,
+    "lng": -89.67357511292091,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "denali",
+    "name": "Denali",
+    "region": "AK",
+    "lat": 38.431653346687284,
+    "lng": -110.75878629574834,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "dry-tortugas",
+    "name": "Dry Tortugas",
+    "region": "FL",
+    "lat": 30.004573581309334,
+    "lng": -83.84631171221343,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "everglades",
+    "name": "Everglades",
+    "region": "FL",
+    "lat": 35.33263848214971,
+    "lng": -113.09001430656456,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "gates-of-the-arctic",
+    "name": "Gates of the Arctic",
+    "region": "AK",
+    "lat": 44.305453657230714,
+    "lng": -109.11772049365022,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "gateway-arch",
+    "name": "Gateway Arch",
+    "region": "MO",
+    "lat": 38.36440851250934,
+    "lng": -94.29823031167126,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "glacier",
+    "name": "Glacier",
+    "region": "MT",
+    "lat": 37.90623057235056,
+    "lng": -77.87595579552476,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "glacier-bay",
+    "name": "Glacier Bay",
+    "region": "AK",
+    "lat": 35.554594189191725,
+    "lng": -112.98189503461789,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "grand-canyon",
+    "name": "Grand Canyon",
+    "region": "AZ",
+    "lat": 33.98008387631574,
+    "lng": -117.88280686275213,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "grand-teton",
+    "name": "Grand Teton",
+    "region": "WY",
+    "lat": 35.78188808607888,
+    "lng": -90.58563643699902,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "great-basin",
+    "name": "Great Basin",
+    "region": "NV",
+    "lat": 32.22501195972429,
+    "lng": -107.4557817227856,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "great-sand-dunes",
+    "name": "Great Sand Dunes",
+    "region": "CO",
+    "lat": 39.89983282738229,
+    "lng": -103.40940698970604,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "great-smoky-mountains",
+    "name": "Great Smoky Mountains",
+    "region": "TN/NC",
+    "lat": 39.656882861321606,
+    "lng": -106.81745934573803,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "guadalupe-mountains",
+    "name": "Guadalupe Mountains",
+    "region": "TX",
+    "lat": 35.205884661371655,
+    "lng": -114.52151271183376,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "haleakal-",
+    "name": "Haleakalā",
+    "region": "HI",
+    "lat": 37.47559586821505,
+    "lng": -80.92838065981859,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "hawai-i-volcanoes",
+    "name": "Hawaiʻi Volcanoes",
+    "region": "HI",
+    "lat": 34.49822353026512,
+    "lng": -77.46918052677535,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "hot-springs",
+    "name": "Hot Springs",
+    "region": "AR",
+    "lat": 36.40605893255732,
+    "lng": -87.7578511597493,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "indiana-dunes",
+    "name": "Indiana Dunes",
+    "region": "IN",
+    "lat": 40.84472808140066,
+    "lng": -108.47424625776134,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "isle-royale",
+    "name": "Isle Royale",
+    "region": "MI",
+    "lat": 39.99155995905698,
+    "lng": -80.69483289260674,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "joshua-tree",
+    "name": "Joshua Tree",
+    "region": "CA",
+    "lat": 35.86572122538268,
+    "lng": -112.20668832196264,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "katmai",
+    "name": "Katmai",
+    "region": "AK",
+    "lat": 42.03334901294846,
+    "lng": -92.76479342061963,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "kenai-fjords",
+    "name": "Kenai Fjords",
+    "region": "AK",
+    "lat": 41.06352195725242,
+    "lng": -115.12132336178675,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "kings-canyon",
+    "name": "Kings Canyon",
+    "region": "CA",
+    "lat": 36.97294559376873,
+    "lng": -88.20091629084492,
+    "visitedBy": [
+      "Jake"
+    ],
+    "visited": true
+  },
+  {
+    "id": "kobuk-valley",
+    "name": "Kobuk Valley",
+    "region": "AK",
+    "lat": 35.73393279384709,
+    "lng": -118.20283482050804,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "lake-clark",
+    "name": "Lake Clark",
+    "region": "AK",
+    "lat": 37.57884427949444,
+    "lng": -116.89163837279774,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "lassen-volcanic",
+    "name": "Lassen Volcanic",
+    "region": "CA",
+    "lat": 33.28784941402835,
+    "lng": -83.68949405794248,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "mammoth-cave",
+    "name": "Mammoth Cave",
+    "region": "KY",
+    "lat": 31.564881067408614,
+    "lng": -109.47868142287302,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "mesa-verde",
+    "name": "Mesa Verde",
+    "region": "CO",
+    "lat": 32.28623096658673,
+    "lng": -78.58254629819822,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "mount-rainier",
+    "name": "Mount Rainier",
+    "region": "WA",
+    "lat": 35.62435551130278,
+    "lng": -95.22814095709394,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "new-river-gorge",
+    "name": "New River Gorge",
+    "region": "WV",
+    "lat": 31.826794978020068,
+    "lng": -92.23223239205345,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "north-cascades",
+    "name": "North Cascades",
+    "region": "WA",
+    "lat": 37.25833828488361,
+    "lng": -77.46326515619106,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "olympic",
+    "name": "Olympic",
+    "region": "WA",
+    "lat": 33.74303825658162,
+    "lng": -86.56787160419796,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "petrified-forest",
+    "name": "Petrified Forest",
+    "region": "AZ",
+    "lat": 32.86272470638318,
+    "lng": -112.19404416491423,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "pinnacles",
+    "name": "Pinnacles",
+    "region": "CA",
+    "lat": 40.246733480561446,
+    "lng": -112.56817463947844,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "redwood",
+    "name": "Redwood",
+    "region": "CA",
+    "lat": 40.16297965659429,
+    "lng": -97.66057328959884,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "rocky-mountain",
+    "name": "Rocky Mountain",
+    "region": "CO",
+    "lat": 41.147828261457526,
+    "lng": -86.5426209776858,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "saguaro",
+    "name": "Saguaro",
+    "region": "AZ",
+    "lat": 38.64500029678806,
+    "lng": -96.79768137825047,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "sequoia",
+    "name": "Sequoia",
+    "region": "CA",
+    "lat": 38.72253212607888,
+    "lng": -98.84701912491369,
+    "visitedBy": [
+      "Jake"
+    ],
+    "visited": true
+  },
+  {
+    "id": "shenandoah",
+    "name": "Shenandoah",
+    "region": "VA",
+    "lat": 40.27859019961615,
+    "lng": -111.17572602462675,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "theodore-roosevelt",
+    "name": "Theodore Roosevelt",
+    "region": "ND",
+    "lat": 32.257242918972786,
+    "lng": -103.37626778664307,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "virgin-islands",
+    "name": "Virgin Islands",
+    "region": "VI",
+    "lat": 33.21031685127836,
+    "lng": -94.32572913110168,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "voyageurs",
+    "name": "Voyageurs",
+    "region": "MN",
+    "lat": 34.23084484137621,
+    "lng": -78.24915173068754,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "white-sands",
+    "name": "White Sands",
+    "region": "NM",
+    "lat": 32.03607117100088,
+    "lng": -117.939989621205,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "wind-cave",
+    "name": "Wind Cave",
+    "region": "SD",
+    "lat": 41.513056625708046,
+    "lng": -89.73055570467142,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "wrangell-st-elias",
+    "name": "Wrangell–St. Elias",
+    "region": "AK",
+    "lat": 39.682407622062414,
+    "lng": -118.63820998859057,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "yellowstone",
+    "name": "Yellowstone",
+    "region": "WY/MT/ID",
+    "lat": 41.20093545175184,
+    "lng": -101.81900091508105,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "yosemite",
+    "name": "Yosemite",
+    "region": "CA",
+    "lat": 38.49329581986146,
+    "lng": -113.41164266215193,
+    "visitedBy": [
+      "Jake"
+    ],
+    "visited": true
+  },
+  {
+    "id": "zion",
+    "name": "Zion",
+    "region": "UT",
+    "lat": 39.21610622261131,
+    "lng": -78.88266749524487,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "banff",
+    "name": "Banff",
+    "region": "AB",
+    "lat": 31.170840389276755,
+    "lng": -102.7965119616712,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "jasper",
+    "name": "Jasper",
+    "region": "AB",
+    "lat": 37.14426348467303,
+    "lng": -102.62880677765467,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "yoho",
+    "name": "Yoho",
+    "region": "BC",
+    "lat": 41.97078974530783,
+    "lng": -113.55286249011515,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "kootenay",
+    "name": "Kootenay",
+    "region": "BC",
+    "lat": 37.67431750497679,
+    "lng": -83.9703346787299,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "waterton-lakes",
+    "name": "Waterton Lakes",
+    "region": "AB",
+    "lat": 38.40470866375725,
+    "lng": -77.6035950880223,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "pacific-rim",
+    "name": "Pacific Rim",
+    "region": "BC",
+    "lat": 38.860847196586136,
+    "lng": -92.37693260290933,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "glacier-can-",
+    "name": "Glacier (Can)",
+    "region": "BC",
+    "lat": 30.083584865394617,
+    "lng": -104.29361824493928,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "mount-revelstoke",
+    "name": "Mount Revelstoke",
+    "region": "BC",
+    "lat": 31.881652717696557,
+    "lng": -110.79115407941971,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "fundy",
+    "name": "Fundy",
+    "region": "NB",
+    "lat": 37.51282378291614,
+    "lng": -78.20780745134735,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "gros-morne",
+    "name": "Gros Morne",
+    "region": "NL",
+    "lat": 41.72932085001762,
+    "lng": -99.02202313647932,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "cape-breton-highlands",
+    "name": "Cape Breton Highlands",
+    "region": "NS",
+    "lat": 43.418237602824476,
+    "lng": -116.92430280975039,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "prince-edward-island",
+    "name": "Prince Edward Island",
+    "region": "PE",
+    "lat": 37.59799443526135,
+    "lng": -109.09453144848077,
+    "visitedBy": [
+      "Jake",
+      "Lisa",
+      "Travis",
+      "Grace",
+      "Lucas"
+    ],
+    "visited": true
+  },
+  {
+    "id": "bruce-peninsula",
+    "name": "Bruce Peninsula",
+    "region": "ON",
+    "lat": 41.49466839299051,
+    "lng": -114.87563483646883,
+    "visitedBy": [
+      "Jake",
+      "Lisa"
+    ],
+    "visited": true
+  },
+  {
+    "id": "point-pelee",
+    "name": "Point Pelee",
+    "region": "ON",
+    "lat": 42.73804664914867,
+    "lng": -98.76020513167491,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "rouge",
+    "name": "Rouge",
+    "region": "ON",
+    "lat": 30.292624793801114,
+    "lng": -106.06667947327308,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "grasslands",
+    "name": "Grasslands",
+    "region": "SK",
+    "lat": 40.12317878758017,
+    "lng": -114.7651434310823,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "prince-albert",
+    "name": "Prince Albert",
+    "region": "SK",
+    "lat": 41.7825945658939,
+    "lng": -108.04646426957163,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "riding-mountain",
+    "name": "Riding Mountain",
+    "region": "MB",
+    "lat": 42.22299343127566,
+    "lng": -80.12054374338948,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "nahanni",
+    "name": "Nahanni",
+    "region": "NT",
+    "lat": 44.72052238064814,
+    "lng": -102.44427961279757,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "wood-buffalo",
+    "name": "Wood Buffalo",
+    "region": "AB/NT",
+    "lat": 40.12540555677632,
+    "lng": -91.92903409326325,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "kluane",
+    "name": "Kluane",
+    "region": "YT",
+    "lat": 32.809506854168696,
+    "lng": -115.26332795562051,
+    "visitedBy": [],
+    "visited": false
+  },
+  {
+    "id": "auyuittuq",
+    "name": "Auyuittuq",
+    "region": "NU",
+    "lat": 39.44385691667052,
+    "lng": -85.4769149478974,
+    "visitedBy": [],
+    "visited": false
+  }
+]

@@ -1,0 +1,29 @@
+User-agent: *
+Disallow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /newsite/llms.txt
+Allow: /newsite/llms-full.txt
+
+User-agent: GPTBot
+Disallow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: ClaudeBot
+Disallow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: PerplexityBot
+Disallow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: Google-Extended
+Disallow: /
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+User-agent: CCBot
+Disallow: /
